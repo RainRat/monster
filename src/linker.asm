@@ -49,7 +49,7 @@ SEGMENT_DEFINE = $02
 ; ZEROPAGE variables
 ; OBJPTR is the cursor in the object code (where we are reading in the current
 ; object file)
-; SEGPTR is the cursor to the .PRG or .D file (where we are WRITIING)
+; SEGPTR is the cursor to the .PRG or .D file (where we are WRITING)
 objptr=zp::link
 segptr=zp::link+2
 
@@ -117,7 +117,7 @@ section_names:    .res MAX_SECTIONS*MAX_SECTION_NAME_LEN
 ;*******************************************************************************
 ; IMPORT TABLES
 ; Each object file has its own table of imports. This allows the object code to
-; store refrences to external labels in a more efficient manner: by storing the
+; store references to external labels in a more efficient manner: by storing the
 ; index to the label in the IMPORT table instead of the label itself.
 import_tabslo: .res MAX_OBJS
 import_tabshi: .res MAX_OBJS
@@ -999,7 +999,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 
 ;*******************************************************************************
 ; LINK OBJECT
-; Handles the main block of the object code defintion using the data extracted
+; Handles the main block of the object code definition using the data extracted
 ; from the OBJ headers.
 .proc link_object
 	ldx activeobj
@@ -1076,7 +1076,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 ;*******************************************************************************
 ; OBJ REL WORD
 ; Handles the OBJ_REL_WORD command
-; Inserts a WORD with the value of the symobl that follows + an offset to
+; Inserts a WORD with the value of the symbol that follows + an offset to
 ; the current address of the segment pointer
 ; A textual representation of this command looks like this:
 ;  `RW LABEL 12`
@@ -1117,7 +1117,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 ; Sets the segment to the given segment name
 ; e.g.
 ;  SEG "DATA"
-; The binary representatino is similar
+; The binary representation is similar
 ;  $03 "DATA",0
 ; Where $03 is the binary opcode for "SEG" and "DATA" is still the literal
 ; segment data (0-terminated)
@@ -1243,7 +1243,7 @@ EXPORT_BLOCK_ITEM_SIZE = 8 + EXPORT_SEG + EXPORT_SIZE
 	jsr get_segment_by_name
 	stxy @segaddr
 
-	; calclulate the absolute address for the EXPORT
+	; calculate the absolute address for the EXPORT
 	ldy #EXPORT_SIZE
 	lda (@buff),y
 	clc
