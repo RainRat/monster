@@ -76,7 +76,7 @@ __expr_symbol: .word 0
 .export __expr_postproc
 __expr_postproc: .byte 0
 
-.segment "UDGEDIT_BSS"
+.segment "EXPR_BSS"
 operands: .res $100
 
 .CODE
@@ -90,7 +90,7 @@ operands: .res $100
 .endproc
 
 ; expression code stored in UDG bank
-.segment "UDGEDIT"
+.segment "EXPR"
 
 ;*******************************************************************************
 ; END_ON_SPACE
