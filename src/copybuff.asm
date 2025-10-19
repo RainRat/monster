@@ -1,6 +1,6 @@
-.include "finalex.inc"
-.include "../errors.inc"
-.include "../macros.inc"
+.include "errors.inc"
+.include "macros.inc"
+.include "vic20/finalex.inc"
 
 ;*******************************************************************************
 .import __COPYBUFF_BSS_SIZE__
@@ -135,6 +135,7 @@ copybuff:
 	stxy @buff
 	cmpw #copybuff+MAX_COPY_SIZE	; buffer is full
 	bcs @done
+	ldy #$00
 	STOREB_Y @buff
 
 	cmp #$0d
