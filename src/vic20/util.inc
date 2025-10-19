@@ -5,4 +5,3 @@
 	i_jmp_bank
 	i_jmp_abs
 .endscope
-

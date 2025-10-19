@@ -51,20 +51,36 @@
 ;*******************************************************************************
 ; STORE_BYTE
 ; stores the byte given in zp::bankval to address .YX in bank .A
+; Because the return address is adjusted, should only be called (JSR)
+; e.g.
+;	jsr ram::store_byte
+;	.word addr
 ; IN:
-;  - .XY:         the address to store to
 ;  - .A:          the bank to store to
+;  - *+3:         the address to store to
 ;  - zp::bankval: the byte to write
 ; CLOBBERS:
 ;  - .A
 .export	__ram_store_byte
 .proc __ram_store_byte
 @dst=zp::banktmp
-	stxy @dst
+	sta @val
+	pla
+	clc
+	adc #$02	; update return address past argument(s)
+	sta @ret
+	pla
+	adc #$00
+	sta @ret+1
+
 	ldy #$00
+@val=*+1
+	lda #$00
 	sta (@dst),y
 	ldy @dst+1
-	rts
+
+@ret=*+1
+	jmp $0000	; return
 .endproc
 
 ;*******************************************************************************

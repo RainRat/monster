@@ -17,7 +17,7 @@
 .include "strings.inc"
 .include "text.inc"
 .include "zeropage.inc"
-.include "vic20/prefs.inc"
+.include "prefs.inc"
 
 ;*******************************************************************************
 MAX_WINDOWS = 3

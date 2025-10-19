@@ -1,6 +1,6 @@
 .include "errors.inc"
 .include "macros.inc"
-.include "vic20/finalex.inc"
+.include "ram.inc"
 
 ;*******************************************************************************
 .import __COPYBUFF_BSS_SIZE__
@@ -62,8 +62,7 @@ REVERSE
 .endenum
 
 .RODATA
-.define buff_procs putch, getch, getline, clear, lastline, lines_copied, push,\
-	pop, len, reverse
+.define buff_procs putch, getch, getline, clear, lastline, lines_copied, push, pop, len, reverse
 buff_procs_lo: .lobytes buff_procs
 buff_procs_hi: .hibytes buff_procs
 

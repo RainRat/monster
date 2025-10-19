@@ -79,7 +79,6 @@ __label_get_banon        = get_banon
 __label_index            = index
 __label_id_by_addr_index = id_by_addr_index
 __label_addrmode         = addrmode
-__label_get_segment      = get_segment
 __label_set_addr         = setaddr
 
 .else
@@ -121,12 +120,7 @@ LOAD
 
 .RODATA
 
-.linecont +
-.define procs clr, add, find, by_addr, by_id, name_by_id, is_valid, get_name, \
-getaddr, is_local, set, del, address, address_by_id, set_scope, \
-add_anon, get_fanon, get_banon, index, id_by_addr_index, addrmode, \
-get_segment, setaddr, dump, load
-.linecont -
+.define procs clr, add, find, by_addr, by_id, name_by_id, is_valid, get_name, getaddr, is_local, set, del, address, address_by_id, set_scope, add_anon, get_fanon, get_banon, index, id_by_addr_index, addrmode, get_segment, setaddr, dump, load
 
 procs_lo: .lobytes procs
 procs_hi: .hibytes procs

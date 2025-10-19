@@ -25,4 +25,3 @@
 .proc __run_go_basic
 	rts
 .endproc
-

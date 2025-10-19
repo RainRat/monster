@@ -6,6 +6,22 @@
 .CODE
 
 ;******************************************************************************
+; HILINE
+.export __draw_hiline
+.proc __draw_hiline
+	; TODO
+	rts
+.endproc
+
+;******************************************************************************
+; RESETLINE
+.export __draw_resetline
+.proc __draw_resetline
+	; TODO
+	rts
+.endproc
+
+;******************************************************************************
 ; HLINE
 ; Draws a horizontal line at the row given in .A
 ; IN:
@@ -77,5 +93,13 @@
 .export __draw_coloroff
 .proc __draw_coloroff
 	; TODO:
+	rts
+.endproc
+
+;******************************************************************************
+; REFRESH COLORS
+.export __draw_refresh_colors
+.proc __draw_refresh_colors
+	; TODO
 	rts
 .endproc

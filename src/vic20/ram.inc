@@ -8,7 +8,6 @@ VIC20_RAM_INC = 1
 ; LDA24
 ; Loads the given 24 bit address into .A
 .macro lda24 bank, addr, offset
-.ifdef vic20
 .ifnblank offset
 	lda offset
 	sta zp::bankval
@@ -24,19 +23,16 @@ VIC20_RAM_INC = 1
 	lda bank
 	jsr __ram_load_byte_off
 .endif
-.endif
 .endmacro
 
 ;******************************************************************************
 ; STA24
 ; Stores the value in .A to the given 24 bit address
 .macro sta24 bank, addr
-.ifdef vic20
 	sta zp::bankval
 	ldxy addr
 	lda bank
 	jsr __ram_store_byte
-.endif
 .endmacro
 
 ;******************************************************************************
@@ -51,4 +47,178 @@ VIC20_RAM_INC = 1
 	.endif
 	sta24 dst24
 .endmacro
+
+;*******************************************************************************
+; LOADB Y
+; Load a byte from memory with Y offset
+; IN:
+;  - addr: the address to load from
+;  - .Y:   offset to apply to load address
+; OUT:
+;  - .A: the value that was read
+.macro LOADB_Y addr
+	lda (addr),y
+.endmacro
+
+;*******************************************************************************
+; LOADB
+; Load a byte from the given address
+; IN:
+;  - addr: the address to load from
+; OUT:
+;  - .A: the value that was read
+.macro LOADB addr
+	ldy #$00
+	LOADB_Y addr
+.endmacro
+
+;*******************************************************************************
+; LOADW Y
+; Read a word from the given address + .Y (offset)
+; IN:
+;   - addr: source address
+;   - .Y:    offset
+; OUT:
+;   - .XY: the value that was read
+.macro LOADW_Y addr
+	lda (addr),y
+	tax
+	iny
+	lda (addr),y
+	tay
+.endmacro
+
+;*******************************************************************************
+; LOADW
+; Read a word from the given address
+; IN:
+;   - addr: source address
+; OUT:
+;   - .XY: the value that was read
+.macro LOADW addr
+	ldy #$00
+	LOADW_Y addr
+.endmacro
+
+;*******************************************************************************
+; STOREB Y
+; Store a byte to memory with Y offset
+; IN:
+;   - .A: byte to write
+;   - .Y: offset
+;   - addr: address to write to
+.macro STOREB_Y addr
+	sta (addr),y
+.endmacro
+
+;*******************************************************************************
+; STOREB
+; Stores the value in .A to the target address
+; IN:
+;   - .A:   value to store
+;   - addr: target address
+.macro STOREB addr
+	ldy #$00
+	STOREB_Y addr
+.endmacro
+
+;*******************************************************************************
+; STOREW_Y
+; Write a word to memory at the target address offset by the value in .Y
+; IN:
+;   - val:  value to write
+;   - addr: address to store to
+; OUT:
+;   - .Y: the input value of .Y + 2
+.macro STOREW_Y val, addr
+	lda val
+	STOREB_Y addr
+	iny
+	STOREB_Y addr
+	iny
+.endmacro
+
+;*******************************************************************************
+; STOREW
+; Write a word to memory
+; IN:
+;   - .XY:  value to write
+;   - addr: address to store to
+.macro STOREW addr
+	txa
+	sta (addr),y
+	iny
+	tya
+	sta (addr),y
+	dey
+.endmacro
+
+;*******************************************************************************
+; SWAPB_Y
+; Swaps 2 bytes at the given addresses offset by the value of .Y
+; IN:
+;   - addr1: one address to swap
+;   - addr2: the other address to swap
+.macro SWAPB_Y addr1, addr2
+	lda (addr1),y
+	tax
+	lda (addr2),y
+	sta (addr1),y
+	txa
+	sta (addr2),y
+.endmacro
+
+;*******************************************************************************
+; SWAPW_Y
+; Swaps 2 words at the given addresses offset by the value of .Y
+; IN:
+;   - addr1: one address to swap
+;   - addr2: the other address to swap
+.macro SWAPW_Y addr1, addr2
+	SWAPB_Y
+	iny
+	SWAPB_Y
+.endmacro
+
+;*******************************************************************************
+; COPY_Y
+; Copy the number of bytes in .Y from src to dst
+; IN:
+;   - src:  source address
+;   - dst:  destination address
+;   - .Y:   the number of bytes to copy
+.macro COPY_Y src, dst
+.local @loop
+@loop:	lda (src),y
+	sta (dst),y
+	dey
+	bpl @loop
+.endmacro
+
+;*******************************************************************************
+; COPYxx
+; Copy a chunk of memory (count in Y register, decrementing)
+; IN:
+;   - src:  source address
+;   - dst:  destination address
+;   - size: size (0-255)
+.macro COPYxx src, dst, size
+	ldy #size
+	COPY_Y
+.endmacro
+
+;*******************************************************************************
+; FILL_Y
+; Fill memory with a single byte value
+; IN:
+;   - addr: start address to fill
+;   - .A:   byte value
+;   - .Y:   number of bytes to fill
+.macro FILL_Y addr
+.local @loop
+@loop:	sta (addr),y
+	dey
+	bpl @loop
+.endmacro
+
 .endif

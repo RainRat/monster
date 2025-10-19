@@ -332,4 +332,3 @@ rowcnt: .byte 0
 	sta $912e
 	rts
 .endproc
-
