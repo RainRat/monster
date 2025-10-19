@@ -1,13 +1,24 @@
-.include "reu.inc"
+.include "finalex.inc"
 .include "../errors.inc"
 .include "../macros.inc"
 
 ;*******************************************************************************
-MAX_COPY_SIZE = $ffff
+.import __COPYBUFF_BSS_SIZE__
+MAX_COPY_SIZE   = __COPYBUFF_BSS_SIZE__
 SAVESTACK_DEPTH = 4
 
 .export copybuff
-copybuff = $0000	; copybuff starts at $0000 in its REU bank
+
+.export __buff_clear
+.export __buff_putch
+.export __buff_getch
+.export __buff_getline
+.export __buff_lastline
+.export __buff_lines_copied
+.export __buff_push
+.export __buff_pop
+.export __buff_len
+.export __buff_reverse
 
 ;*******************************************************************************
 ; VARS
@@ -25,6 +36,88 @@ buffsave_sp:		.byte 0
 .export __buff_num_lines_copied
 __buff_num_lines_copied:	.byte 0
 
+.CODE
+
+.if FINAL_BANK_MAIN <> FINAL_BANK_BUFF
+
+;*******************************************************************************
+.linecont +
+.macro COPYBUFFJUMP proc_id
+	pha
+	lda #proc_id
+	bpl do_buff_proc
+.endmacro
+
+.enum buff_proc_ids
+PUTCH
+GETCH
+GETLINE
+CLEAR
+LASTLINE
+LINES_COPIED
+PUSH
+POP
+LEN
+REVERSE
+.endenum
+
+.RODATA
+.define buff_procs putch, getch, getline, clear, lastline, lines_copied, push,\
+	pop, len, reverse
+buff_procs_lo: .lobytes buff_procs
+buff_procs_hi: .hibytes buff_procs
+
+.CODE
+;*******************************************************************************
+; Copy Buff JUMP table
+__buff_putch:        COPYBUFFJUMP buff_proc_ids::PUTCH
+__buff_getch:        COPYBUFFJUMP buff_proc_ids::GETCH
+__buff_getline:      COPYBUFFJUMP buff_proc_ids::GETLINE
+__buff_clear:        COPYBUFFJUMP buff_proc_ids::CLEAR
+__buff_lastline:     COPYBUFFJUMP buff_proc_ids::LASTLINE
+__buff_lines_copied: COPYBUFFJUMP buff_proc_ids::LINES_COPIED
+__buff_push:         COPYBUFFJUMP buff_proc_ids::PUSH
+__buff_pop:          COPYBUFFJUMP buff_proc_ids::POP
+__buff_len:          COPYBUFFJUMP buff_proc_ids::LEN
+__buff_reverse:      COPYBUFFJUMP buff_proc_ids::REVERSE
+
+;*******************************************************************************
+; Entrypoint for copy buffer routines
+.proc do_buff_proc
+	stx @savex
+	tax
+	lda buff_procs_lo,x
+	sta zp::bankjmpvec
+	lda buff_procs_hi,x
+	sta zp::bankjmpvec+1
+	lda #FINAL_BANK_BUFF
+	sta zp::banktmp
+@savex=*+1
+	ldx #$00
+	pla
+	jmp __ram_call
+.endproc
+.linecont -
+
+.else
+__buff_putch        = putch
+__buff_getch        = getch
+__buff_getline      = getline
+__buff_clear        = clear
+__buff_lastline     = lastline
+__buff_lines_copied = lines_copied
+__buff_push         = push
+__buff_pop          = pop
+__buff_len          = len
+__buff_reverse      = reverse
+.endif
+
+.segment "COPYBUFF_BSS"
+
+;*******************************************************************************
+.export copybuff
+copybuff:
+	.res $1e00	; buffer for copy data
 
 .segment "COPYBUFF"
 
@@ -36,17 +129,14 @@ __buff_num_lines_copied:	.byte 0
 ; OUT:
 ;  - .A: the same as was passed in
 ;  - .C: set if the buffer is full (couldn't add char)
-.export __buff_putch
-.proc __buff_putch
-@char=r0
-	sta @char
+.proc putch
+@buff=r0
 	ldxy buffptr
+	stxy @buff
 	cmpw #copybuff+MAX_COPY_SIZE	; buffer is full
 	bcs @done
+	STOREB_Y @buff
 
-	STORE16 #^REU_COPYBUFF_ADDR, buffptr, #@char, #1
-
-	lda @char
 	cmp #$0d
 	bne :+
 	inc __buff_num_lines_copied
@@ -64,8 +154,7 @@ __buff_num_lines_copied:	.byte 0
 ; OUT:
 ;  - .A: the last character PUT into the buffer (0 if none)
 ;  - .C: set if the buffer is empty
-.export __buff_getch
-.proc __buff_getch
+.proc getch
 @buff=rb
 	ldxy buffptr
 	stxy @buff
@@ -75,7 +164,7 @@ __buff_num_lines_copied:	.byte 0
 	decw buffptr
 	decw @buff
 	ldy #$00
-	lda (@buff),y
+	LOADB_Y @buff
 	clc
 @done:	rts
 .endproc
@@ -93,22 +182,21 @@ __buff_num_lines_copied:	.byte 0
 ; OUT:
 ;  - .Y: the number of characters that were read to the buffer
 ;  - .C: set if the buffer is empty
-.export __buff_lastline
-.proc __buff_lastline
+.proc lastline
 @buff=r9
 @dst=rb
 	stxy @dst
 
-	jsr __buff_push	; save the buffer pointers
+	jsr push	; save the buffer pointers
 	ldxy #copybuff
 	stxy @buff
 
 	; make sure buffer is not empty
-	lda (@buff),y
+	LOADB_Y @buff
 	beq @done	; buffer is empty
 
 	; seek for the start of the oldest line
-:	lda (@buff),y
+:	LOADB_Y @buff
 	cmp #$0d
 	beq @found
 	iny
@@ -123,10 +211,10 @@ __buff_num_lines_copied:	.byte 0
 	inc buffptr+1
 
 @done:	ldxy @dst
-	jsr __buff_getline
+	jsr getline
 
 	php
-	jsr __buff_pop	; restore the buffer
+	jsr pop		; restore the buffer
 	plp
 	rts
 .endproc
@@ -141,37 +229,33 @@ __buff_num_lines_copied:	.byte 0
 ;  - .Y: the number of characters that were read to the buffer
 ;  - .C: set if the buffer is empty
 ;  - r9: the address of the string that was read (same as given)
-.export __buff_getline
-.proc __buff_getline
+.proc getline
 @dst=r9
-@buff=rb
 @i=r4
 	stxy @dst
 	lda #$00
 	tay
-	sta (@dst),y		; init buffer
+	STOREB_Y @dst		; init buffer
 	ldxy buffptr
 	cmpw #copybuff
 	beq @done		; buffer empty
 
 	lda #$00
 	sta @i
-@l0:	jsr __buff_getch
+@l0:	jsr getch
 	bcs @empty
 	cmp #$0d
 	beq @ok
 	ldy @i
-	sta (@dst),y
+	STOREB_Y @dst
 	inc @i
 	bne @l0
 
 @empty: lda #$00
 @ok:	pha
-	ldxy @buff
-	stxy buffptr
 	lda #$00
 	ldy @i
-	sta (@dst),y	; terminate the line
+	STOREB_Y @dst	; terminate the line
 	pla
 	clc
 @done:	rts
@@ -180,8 +264,7 @@ __buff_num_lines_copied:	.byte 0
 ;*******************************************************************************
 ; CLEAR
 ; Initializes the copy buffer by clearing it
-.export __buff_clear
-.proc __buff_clear
+.proc clear
 	ldx #$00
 	stx buffsave_sp
 	stx __buff_num_lines_copied
@@ -196,9 +279,8 @@ __buff_num_lines_copied:	.byte 0
 ; OUT:
 ;   - .A: the number of lines in the copy buffer
 ;   - .C: clear if there are no lines copied
-.export __buff_lines_copied
-.proc __buff_lines_copied
-	lda __buff_lines_copied
+.proc lines_copied
+	lda __buff_num_lines_copied
 	cmp #$01
 	rts
 .endproc
@@ -209,8 +291,7 @@ __buff_num_lines_copied:	.byte 0
 ; it
 ; OUT:
 ;   - .C: set on overflow
-.export __buff_push
-.proc __buff_push
+.proc push
 	ldx buffsave_sp
 	cpx #SAVESTACK_DEPTH-1
 	bcc :+
@@ -229,8 +310,7 @@ __buff_num_lines_copied:	.byte 0
 ; Pops the buffer pointer that was saved by calling buff::push
 ; OUT:
 ;   - .C: set on underflow
-.export __buff_pop
-.proc __buff_pop
+.proc pop
 	dec buffsave_sp
 	bpl :+
 	RETURN_ERR ERR_STACK_UNDERFLOW
@@ -248,9 +328,38 @@ __buff_num_lines_copied:	.byte 0
 ; Returns the length of the buffer
 ; OUT:
 ;   - .XY: the number of characters in the buffer
-.export __buff_len
-.proc __buff_len
+.proc len
 	ldxy buffptr
 	sub16 #copybuff
 	rts
+.endproc
+
+;*******************************************************************************
+; REVERSE
+; Reverses the contents of the copy buffer
+.proc reverse
+@left=r0
+@right=r2
+	ldxy buffptr
+	stxy @right
+	decw @right
+	ldxy #copybuff
+	stxy @left
+	cmpw @right
+	bcs @done
+
+@l0:	ldy #$00
+	LOADB_Y @left
+	tax
+	LOADB_Y @right
+	STOREB_Y @left
+	txa
+	STOREB_Y @right
+	incw @left
+	decw @right
+	ldxy @left
+	cmpw @right
+	bcc @l0
+
+@done:	rts
 .endproc
