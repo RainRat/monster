@@ -86,6 +86,10 @@
 .import __FASTCOPY_RUN__
 .import __FASTCOPY_SIZE__
 
+.import __EXPR_LOAD__
+.import __EXPR_RUN__
+.import __EXPR_SIZE__
+
 .import __UDGEDIT_LOAD__
 .import __UDGEDIT_RUN__
 .import __UDGEDIT_SIZE__
@@ -106,8 +110,9 @@
 TOTAL_SIZE = __SETUP_SIZE__+__BANKCODE_SIZE__+__BANKCODE2_SIZE__+__DATA_SIZE__+\
 	     __FASTTEXT_SIZE__+__MACROCODE_SIZE__+__VSCREEN_SIZE__+ \
 	     __IRQ_SIZE__+__LINKER_SIZE__+__LABELS_SIZE__+__UDGEDIT_SIZE__+ \
-	     __CONSOLE_SIZE__+__COPYBUFF_SIZE__+__RODATA_SIZE__+ \
-	     __DEBUGINFO_CODE_SIZE__+__FASTCOPY_SIZE__+__OBJCODE_SIZE__
+	     __EXPR_SIZE__ + __CONSOLE_SIZE__+__COPYBUFF_SIZE__+ \
+	     __RODATA_SIZE__ + __DEBUGINFO_CODE_SIZE__+__FASTCOPY_SIZE__+ \
+	     __OBJCODE_SIZE__
 .linecont -
 
 ;*******************************************************************************
@@ -513,6 +518,10 @@ relocs:
 .word __LABELS_LOAD__, __LABELS_RUN__, __LABELS_SIZE__
 .byte FINAL_BANK_SYMBOLS
 
+; EXPR
+.word __EXPR_LOAD__, __EXPR_RUN__, __EXPR_SIZE__
+.byte FINAL_BANK_UDGEDIT
+
 ; UDG EDITOR
 .word __UDGEDIT_LOAD__, __UDGEDIT_RUN__, __UDGEDIT_SIZE__
 .byte FINAL_BANK_UDGEDIT
@@ -525,13 +534,13 @@ relocs:
 .word __COPYBUFF_LOAD__, __COPYBUFF_RUN__, __COPYBUFF_SIZE__
 .byte FINAL_BANK_BUFF
 
-; RODATA
-.word __RODATA_LOAD__, __RODATA_RUN__, __RODATA_SIZE__
-.byte FINAL_BANK_MAIN
-
 ; FASTCOPY
 .word __FASTCOPY_LOAD__, __FASTCOPY_RUN__, __FASTCOPY_SIZE__
 .byte FINAL_BANK_FASTCOPY
+
+; RODATA
+.word __RODATA_LOAD__, __RODATA_RUN__, __RODATA_SIZE__
+.byte FINAL_BANK_MAIN
 
 num_relocs=(*-relocs)/7
 
@@ -586,7 +595,6 @@ num_relocs=(*-relocs)/7
 	jsr asm::reset
 	jsr buff::clear		; clear copy buffer
 	jsr run::clr		; init user state (run BASIC startup proc)
-	jmp *
 
 	lda #$00
 	sta mem::linebuffer

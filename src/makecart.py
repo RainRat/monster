@@ -17,7 +17,7 @@ infile = sys.argv[2]
 imgfile = sys.argv[3]
 
 # segments to crunch in the bootloader
-bootsegments = ["BANKCODE", "BANKCODE2", "DEBUGINFO_CODE", "SETUP", "FASTTEXT", "MACROCODE", "VSCREEN", "IRQ", "DATA", "LABELS", "UDGEDIT", "CONSOLE", "COPYBUFF", "OBJCODE", "LINKER", "RODATA", "FASTCOPY"]
+bootsegments = ["BANKCODE", "BANKCODE2", "DEBUGINFO_CODE", "SETUP", "FASTTEXT", "MACROCODE", "VSCREEN", "IRQ", "DATA", "LABELS", "FASTCOPY", "UDGEDIT", "EXPR", "CONSOLE", "COPYBUFF", "OBJCODE", "LINKER", "RODATA"]
 
 cartsegmentnames = ["CART"]
 
@@ -60,18 +60,23 @@ stop_addr = BASE_ADDR
 cart_header_size = 0
 
 # find the highest load address and set the total size to it + its size
-for s in segments.values():
-    if s['load'] >= stop_addr:
-        stop_addr = s['load'] + s['size']
+for s in segments:
+    print(s)
+    v = segments[s]
+    print(f' load: ${v["load"]:02x}')
+    print(f' size: ${v["size"]:02x}')
+    if v['load'] >= stop_addr:
+        stop_addr = v['load'] + v['size']
 
+print(f'stop addr {stop_addr:02x}')
 for s in cartsegments.values():
     cart_header_size = s['size']
 
 # get the total size of the boot segments and cart-boot segments
 size = stop_addr - start_addr
 
-print(f'  setup block | $0000-${size:02x} | ${size:02x} bytes')
-print(f'  boot block  | $6000-${0x6000+cart_header_size:02x} | ${cart_header_size:02x} bytes')
+print(f'  setup block | $0000-${size:02x} | ${size:04x} bytes')
+print(f'  boot block  | $6000-${0x6000+cart_header_size:02x} | ${cart_header_size:04x} bytes')
 
 with open(infile, 'rb') as file:
     # read the entire mega-file

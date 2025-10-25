@@ -151,9 +151,7 @@ TRAMPOLINE_ADDR = TRAMPOLINE+13
 .export __run_init
 .proc __run_init
 	jsr install_brk		; install the BRK/NMI handler
-	jmp *
 	jsr install_step	; install the STEP handler
-	jmp *
 	jmp install_trampoline
 .endproc
 
