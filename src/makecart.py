@@ -60,15 +60,10 @@ stop_addr = BASE_ADDR
 cart_header_size = 0
 
 # find the highest load address and set the total size to it + its size
-for s in segments:
-    print(s)
-    v = segments[s]
-    print(f' load: ${v["load"]:02x}')
-    print(f' size: ${v["size"]:02x}')
-    if v['load'] >= stop_addr:
-        stop_addr = v['load'] + v['size']
+for s in segments.values():
+    if s['load'] >= stop_addr:
+        stop_addr = s['load'] + s['size']
 
-print(f'stop addr {stop_addr:02x}')
 for s in cartsegments.values():
     cart_header_size = s['size']
 

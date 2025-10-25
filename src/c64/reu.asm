@@ -809,6 +809,7 @@ __reu_move_size=zp::bank+6
 	ldx savex
 	ldy savey
 
+	jmp *
 @ret=*+1
 	jmp $f00d	; return
 .endproc
@@ -828,6 +829,7 @@ __reu_move_size=zp::bank+6
 	sta @ret+1
 
 	pla
+	jmp *
 @ret=*+1
 	jmp $f00d	; return
 .endproc

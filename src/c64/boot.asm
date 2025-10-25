@@ -34,6 +34,11 @@
 start:
 	sei
 
+	; disable BASIC
+	lda $01
+	and #$fe
+	sta $01
+
 ;--------------------------------------
 ; zero the BSS segment
 	ldxy #__BSS_LOAD__
@@ -68,7 +73,7 @@ start:
 	sta $0316		; BRK
 	lda #>start
 	sta $0317		; BRK
-	cli
+	;cli
 
 	; initialize the status row reverse
 	lda #DEFAULT_RVS
@@ -94,10 +99,5 @@ start:
 
 	lda #$4c
 	sta zp::jmpaddr
-
-	; disable BASIC
-	lda $01
-	and #$fe
-	sta $01
 
 	jmp edit::init
