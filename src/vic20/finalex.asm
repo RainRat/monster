@@ -130,7 +130,7 @@ final_store_size=*-__ram_store_byte
 	iny
 	cpy #LINESIZE
 	bne :-
-@done:	beq return_to_x	; restore bank
+@done:	beq return_to_x	; branch always (restore bank)
 .endproc
 
 ;*******************************************************************************

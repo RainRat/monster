@@ -30,10 +30,6 @@ RAM_INC = 1
 	store     = __ram_store_byte
 	store_off = __ram_bank_store_rel
 	get_byte  = __ram_get_byte
-	load      = __ram_load_byte
-	load_off  = __ram_load_byte_off
-
-	load_byte_off  = __ram_load_byte_off
 .endscope
 
 .endif

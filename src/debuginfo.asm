@@ -13,6 +13,7 @@
 .include "string.inc"
 .include "ram.inc"
 .include "zeropage.inc"
+.macpack longbranch
 
 ; Debug info constants
 MAX_FILES  = 64		; max files debug info may be generated for
@@ -1274,14 +1275,14 @@ get_filename = get_filename_addr
 	clc
 	adc addr
 	sta addr
-	bcc @ok
+	jcc @ok
 	inc addr+1
-	bcs @ok		; branch always
+	jcs @ok		; branch always
 
 @extended_i:
 	incw line	; move line program PC to byte 2 of opcode
 	LOADB_Y line	; get byte 2 of opcode
-	beq @end	; if byte 2 is 0, we're at the end of the program
+	jeq @end	; if byte 2 is 0, we're at the end of the program
 
 	incw line	; move to operand
 

@@ -3,24 +3,83 @@
 .include "../macros.inc"
 .include "../zeropage.inc"
 
+;*******************************************************************************
+.CODE
+
+;*******************************************************************************
+; GET BYTE
+; Returns the value of the byte at the given address
+; IN:
+;   - .XY: the address to get the value of
+; OUT:
+;   - .A: the value for the given address in the MAIN bank
+; CLOBBERS:
+;   - .A, .Y, r0-r1
 .export __ram_get_byte
 .proc __ram_get_byte
-	; TODO:
+@addr=zp::banktmp
+	stxy @addr
+	ldy #$00
+	lda (@addr),y
+	rts
 .endproc
 
+;*******************************************************************************
+; CALL
+; Performs a JSR to the target address.
+; For the C64, the "bank" represents where the data for the target procedure
+; lives (not the code itself).
+; IN:
+;  - zp::bank:        the bank of the procedure to call
+;  - zp::bankjmpaddr: the procedure address
+;  - zp::banktmp:     the destination bank address
 .export	__ram_call
 .proc __ram_call
-	; TODO:
+@a=zp::banktmp+1
+@x=zp::banktmp+2
+@bank=zp::banktmp
+	stx @x
+	sta @a
+
+	lda #$4c
+	sta zp::bankjmpaddr	; write the JMP instruction
+
+	; "push" the current bank
+	lda reu::reuaddr+2
+	ldx zp::banksp
+	inc zp::banksp
+	sta zp::bankstack,x
+
+	lda @bank
+	sta reu::reuaddr+2	; set REU MSB to the target bank
+	lda @a			; restore .A
+	ldx @x			; restore .X
+	jsr zp::bankjmpaddr	; call the target routine
+	sta @a			; save .A
+	stx @x			; save .X
+
+	dec zp::banksp
+	ldx zp::banksp
+	lda zp::bankstack,x	; get the caller's bank
+	sta reu::reuaddr+2	; restore bank
+
+	lda @a			; restore .A
+	ldx @x			; restore .X
+	rts
 .endproc
 
+;*******************************************************************************
 .export	__ram_copy
 .proc __ram_copy
 	; TODO:
+	rts
 .endproc
 
+;*******************************************************************************
 .export	__ram_memcpy
 .proc __ram_memcpy
 	; TODO:
+	rts
 .endproc
 
 ;*******************************************************************************
@@ -94,18 +153,17 @@
 .export	__ram_bank_store_rel
 .proc __ram_bank_store_rel
 	; TODO:
+	rts
 .endproc
 
-.export	__ram_load_byte
-.proc	__ram_load_byte
-	; TODO:
-.endproc
-
+;*******************************************************************************
 .export	__ram_load_byte_off
 .proc __ram_load_byte_off
 	; TODO:
+	rts
 .endproc
 
+;*******************************************************************************
 .export	__ram_copy_banked
 .proc __ram_copy_banked
 	; TODO:

@@ -26,6 +26,12 @@ REU_SYMTABLE_ADDRS_ADDR = $fd0000	; label addresses
 REU_SYMTABLE_NAMES_ADDR = $fc0000	; label names
 REU_SYMTABLE_ANONS_ADDR = $fb0000	; anonymous label addresses
 
+;*******************************************************************************
+savex  = zp::bank
+savey  = zp::banktmp
+params = zp::banktmp+1
+tmp    = zp::bankoffset
+
 .BSS
 ;*******************************************************************************
 ; TABLE STATE
@@ -47,6 +53,33 @@ tab_num_elements: .word 0
 .endproc
 
 ;*******************************************************************************
+; STORE1
+; Stores one byte to the given source 24-bit address
+; IN:
+;   - .A:            the value to store
+;   - reu::reu_addr: the address to store to (24 bit)
+.export __reu_store1
+.proc __reu_store1
+@tmp=tmp
+	sta @tmp
+
+	lda #@tmp
+	sta __reu_c64_addr
+
+	lda #$01
+	sta __reu_txlen
+
+	lda #$00
+	sta __reu_c64_addr
+	sta __reu_txlen+1
+	sta $df0a
+
+	lda #$90	; transfer from c64 -> REU with immediate execution
+	sta $df01	; execute
+	lda @tmp	; restore .A
+	rts
+.endproc
+;*******************************************************************************
 ; STORE
 ; Moves the data from the given source 24-bit address to the given
 ; destination one.
@@ -60,6 +93,33 @@ tab_num_elements: .word 0
 	sta $df0a
 	lda #$90	; transfer from c64 -> REU with immediate execution
 	sta $df01	; execute
+	rts
+.endproc
+
+;*******************************************************************************
+; LOAD1
+; Loads one byte from the given source 24-bit address
+; IN:
+;   - reu::reu_addr: the address to load from (24 bit)
+; OUT:
+;   - .A: the byte that was read
+.export __reu_load1
+.proc __reu_load1
+@tmp=tmp
+	lda #@tmp
+	sta __reu_c64_addr
+
+	lda #$01
+	sta __reu_txlen
+
+	lda #$00
+	sta __reu_c64_addr
+	sta __reu_txlen+1
+	sta $df0a
+
+	lda #$91	; transfer from REU -> c64 with immediate execution
+	sta $df01	; execute
+	lda @tmp	; read the byte we loaded
 	rts
 .endproc
 
@@ -119,10 +179,9 @@ tab_num_elements: .word 0
 	lda #$90
 	sta $df01		; transfer c64 -> REU
 
+@zero=*+1			; zero byte
 	lda #$00
 	sta $df0a		; unfix c64 address
-
-@zero:	.byte 0
 .endproc
 
 ;*******************************************************************************
@@ -472,4 +531,303 @@ __reu_move_size=zp::bank+6
 
 @found:	ldxy @cnt
 	RETURN_OK
+.endproc
+
+;*******************************************************************************
+; STORE_BYTE
+; stores the byte given in zp::bankval to address .YX in bank .A
+; Because the return address is adjusted, should only be called (JSR)
+; e.g.
+;	jsr reu::storeb
+;	.word addr
+; IN:
+;  - .A:          the bank to store to
+;  - *+3:         the address to store to
+;  - zp::bankval: the byte to write
+; CLOBBERS:
+;  - .A
+.export	__reu_storeb
+.proc __reu_storeb
+@dst=zp::banktmp
+	pha
+	jsr setup_param_proc
+
+	jsr get_param_word
+	stx @dst
+	sta @dst+1
+
+	pla
+	ldy #$00
+	sta (@dst),y
+
+	jmp return_from_proc
+.endproc
+
+;*******************************************************************************
+; STOREB OFF
+; IN:
+;  - *+3: address to write to
+;  - .A:  the value to write
+.export	__reu_storeb_off
+.proc __reu_storeb_off
+	jsr setup_param_proc
+
+	; read the address to load from
+	jsr get_param_word
+	stx __reu_reu_addr
+	sta __reu_reu_addr+1
+
+	jsr __reu_store1
+	jmp return_from_proc
+.endproc
+
+;*******************************************************************************
+; STOREW
+; IN:
+;  - *+3: address to write to
+;  - .XY: the value to write
+.export	__reu_storew
+.proc __reu_storew
+@dst=tmp
+	stxy @dst
+
+	jsr setup_param_proc
+
+	; read the address to store to
+	jsr get_param_word
+	stx __reu_reu_addr
+	sta __reu_reu_addr+1
+
+	; 2 bytes
+	ldxy #$02
+	stxy __reu_txlen
+
+	ldxy #@dst
+	stxy __reu_c64_addr
+
+	jsr __reu_store
+	jmp return_from_proc
+.endproc
+
+;*******************************************************************************
+; LOADB
+; IN:
+;  - *+3: address to read
+; OUT:
+;  - .A: the byte that was read
+.export	__reu_loadb
+.proc __reu_loadb
+	jsr setup_param_proc
+
+	; read the address to load from
+	jsr get_param_word
+	stx __reu_reu_addr
+	sta __reu_reu_addr+1
+
+	jsr __reu_load1
+	jmp return_from_proc
+.endproc
+
+;*******************************************************************************
+; LOADB OFF
+; IN:
+;  - *+3: base address to read
+;  - .Y:  offset from base address
+; OUT:
+;  - .A: the byte that was read
+.export	__reu_loadb_off
+.proc	__reu_loadb_off
+	jsr setup_param_proc
+
+	jsr get_param_word
+	stx __reu_reu_addr
+	sta __reu_reu_addr+1
+	tya
+	clc
+	adc __reu_reu_addr
+	bcc :+
+	inc __reu_reu_addr+1
+
+	jsr __reu_load1
+	jmp return_from_proc
+.endproc
+
+;*******************************************************************************
+; LOADW
+; IN:
+;  - *+3: address to read
+; OUT:
+;  - .XY: the value that was read
+.export	__reu_loadw
+.proc	__reu_loadw
+@dst=tmp
+	jsr setup_param_proc
+
+	jsr get_param_word
+	stx __reu_reu_addr
+	sta __reu_reu_addr+1
+
+	; 2 bytes
+	ldxy #$02
+	stxy __reu_txlen
+
+	ldxy #@dst
+	stxy __reu_c64_addr
+
+	; load the word
+	jsr __reu_load
+
+	ldxy @dst
+	jmp return_from_proc_without_restore
+.endproc
+
+;*******************************************************************************
+; LOADB OFF
+; IN:
+;  - *+3: address to write to
+;  - .Y:  the offset in bytes
+; OUT:
+;  - .A: the value that was loaded
+.export	__reu_load_byte_off
+.proc __reu_load_byte_off
+@dst=tmp
+	jsr setup_param_proc
+
+	; read the base address to write to
+	jsr get_param_word
+	stx @dst
+	sta @dst+1
+
+	tya
+	clc
+	adc @dst
+	sta @dst
+	bcc :+
+	inc @dst+1
+:	jsr __reu_load1
+
+	jmp return_from_proc
+.endproc
+
+;*******************************************************************************
+; COPY Y
+; Copies .Y bytes from the source to destination
+; IN:
+;  - *+3: source address
+;  - *+5: destination address
+;  - .Y:  the offset in bytes
+.export __reu_copy_y
+.proc __reu_copy_y
+	jsr setup_param_proc
+
+	sty __reu_move_size
+	lda #$00
+	sta __reu_move_size+1
+
+	; get source and destination addresses
+	jsr get_param_word
+	stx __reu_move_src
+	sta __reu_move_src+1
+	jsr get_param_word
+	stx __reu_move_dst
+	sta __reu_move_dst+1
+	jsr __reu_move		; move from source -> dest
+
+	jmp return_from_proc
+.endproc
+
+;*******************************************************************************
+; SETUP PARM PROC
+; Sets up pointers for parameterized procedures like reu::store
+.proc setup_param_proc
+	; save the .X and .Y registers
+	stx savex
+	sty savey
+
+	tsx
+
+	pha			; save .A
+
+	; read the address of the parameters (return address of procedure call)
+	lda $100,x
+	sta params
+	lda $101,x
+	sta params+1
+
+	pla			; restore .A
+
+	rts
+.endproc
+
+;*******************************************************************************
+; GET PARAM BYTE
+; Gets an argument from a parametrized function and updates the param pointer
+; to point to the next argument (if there is one)
+; e.g.
+;    jsr proc
+;    .byte val <- returns this
+; OUT:
+;   - .A: the byte value that was read
+.proc get_param_byte
+	ldy #$00
+	lda (params),y
+	incw params		; move to next param
+	rts
+.endproc
+
+;*******************************************************************************
+; GET PARAM WORD
+; Gets an argument from a parametrized function and updates the param pointer
+; to point to the next argument (if there is one)
+; e.g.
+;    jsr proc
+;    .word val <- returns this
+; OUT:
+;   - .AX: the word value that was read
+.proc get_param_word
+	ldy #$00
+	lda (params),y
+	tax
+	incw params		; move to next param
+	lda (params),y
+	incw params
+	rts
+.endproc
+
+;*******************************************************************************
+; RETURN FROM PROC
+; Restores registers (except .A) and returns from a parameterized procedure.
+; This works by jumping to the address after all the parameters
+.proc return_from_proc
+	; store the return address to jump to
+	ldx params
+	stx @ret
+	ldx params+1
+	stx @ret+1
+
+	; restore registers
+	ldx savex
+	ldy savey
+
+@ret=*+1
+	jmp $f00d	; return
+.endproc
+
+;*******************************************************************************
+; RETURN FROM PROC WITHOUT RESTORE
+; Returns from a parameterized procedure without restoring the .X and .Y
+; registers that were passed in.  Used for procedures that return data
+; in .X and/or .Y
+.proc return_from_proc_without_restore
+	pha
+
+	; store the return address to jump to
+	lda params
+	sta @ret
+	lda params+1
+	sta @ret+1
+
+	pla
+@ret=*+1
+	jmp $f00d	; return
 .endproc

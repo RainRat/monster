@@ -36,6 +36,7 @@
 .include "string.inc"
 .include "strings.inc"
 .include "util.inc"
+.include "target.inc"
 .include "vmem.inc"
 .include "zeropage.inc"
 
@@ -126,7 +127,7 @@ __file_load_src:
 ; OUT:
 ;  - .C: set on error, clear on success
 ;  - .A: if .C is set, the error code
-.proc load
+OSPROC load
 	tax
 	jsr $ffc6	; CHKIN (file in .X now used as input)
 @l0: 	jsr $ffb7	; call READST (read status byte)
@@ -140,7 +141,7 @@ __file_load_src:
 	beq @eof	; if EOF, return
 @error:	jmp __file_geterr
 @eof:	RETURN_OK
-.endproc
+ENDOSPROC
 
 ;*******************************************************************************
 ; SAVEBIN
@@ -154,14 +155,14 @@ __file_load_src:
 ; OUT:
 ;  .C: set on error, clear on success
 .export __file_save_bin
-.proc __file_save_bin
+OSPROC __file_save_bin
 	stxy __file_save_address
 	tax
 	jsr $ffc9	; CHKOUT (file in .X now uesd as output)
 	lda #$01
 	sta isbin	; flag that we're saving binary
 	jmp dosave
-.endproc
+ENDOSPROC
 
 ;*******************************************************************************
 ; SAVE SRC
@@ -172,14 +173,14 @@ __file_load_src:
 ; OUT:
 ;  .C: set on error, clear on success
 .export __file_save_src
-.proc __file_save_src
+OSPROC __file_save_src
 	tax
 	jsr $ffc9	; CHKOUT (file in .X now uesd as output)
 	ldx #$00
 	stx isbin	; not binary
 
 	; fall through to dosave
-.endproc
+ENDOSPROC
 
 ;*******************************************************************************
 ; DOSAVE
@@ -190,7 +191,7 @@ __file_load_src:
 ;  - the file to write out should be open (file::open_w)
 ; OUT:
 ;  - .C: set on error, clear on success
-.proc dosave
+OSPROC dosave
 	ldx isbin
 	bne @save
 	jsr src::rewind	; if saving source, go back to the start of it
@@ -207,7 +208,7 @@ __file_load_src:
 	RETURN_OK	; done
 
 @error:	jmp __file_geterr
-.endproc
+ENDOSPROC
 
 ;*******************************************************************************
 ; READB
@@ -217,7 +218,7 @@ __file_load_src:
 ;  - .A:  the byte that was read
 ;  - eof: set if READST returns eof
 .export __file_readb
-.proc __file_readb
+OSPROC __file_readb
 	lda #$00
 	sta __file_eof
 	jsr $ffb7     ; call READST (read status byte)
@@ -232,7 +233,7 @@ __file_load_src:
 	RETURN_OK
 
 @err:	jmp __file_geterr
-.endproc
+ENDOSPROC
 
 ;*******************************************************************************
 ; GETLINE
@@ -246,7 +247,7 @@ __file_load_src:
 ;  - .A: contains the # of bytes read OR the error code
 ;  - .C: is set if an error occurred
 .export __file_getline
-.proc __file_getline
+OSPROC __file_getline
 	stxy __file_load_address
 	tax
 	jsr $ffc6     ; CHKIN (file in .X now used as input)
@@ -269,7 +270,7 @@ __file_load_src:
 	tya		; put # of bytes read in .A
 @ok:	clc		; no error
 @ret:	rts
-.endproc
+ENDOSPROC
 
 ;*******************************************************************************
 ; SCRATCH
@@ -279,7 +280,7 @@ __file_load_src:
 ; OUT:
 ;   - .C: set on error
 .export __file_scratch
-.proc __file_scratch
+OSPROC __file_scratch
 	stx r0
 	sty r0+1
 
@@ -301,7 +302,7 @@ __file_load_src:
 @s_colon:
 	.byte "s:",0
 .POPSEG
-.endproc
+ENDOSPROC
 
 ;*******************************************************************************
 ; OPEN_W
@@ -346,11 +347,11 @@ __file_load_src:
 ; OPEN_R_PRG
 ; Opens a file for reading as a .PRG
 .export __file_open_r_prg
-.proc __file_open_r_prg
+OSPROC __file_open_r_prg
 	lda #$00
 
 	; fall through to __file_open
-.endproc
+ENDOSPROC
 
 ;*******************************************************************************
 ; OPEN
@@ -363,7 +364,7 @@ __file_load_src:
 ;  - .A: the file handle
 ;  - .C: set on error
 .export __file_open
-.proc __file_open
+OSPROC __file_open
 @file=r2
 @filename=r3
 	sta secondaryaddr
@@ -411,7 +412,7 @@ __file_load_src:
 :	jmp __file_geterr
 @ok:	lda @file		; get file ID that we opened
 	rts			; return it
-.endproc
+ENDOSPROC
 
 ;*******************************************************************************
 ; EXISTS
@@ -422,7 +423,7 @@ __file_load_src:
 ; OUT:
 ;  - .Z: set if the file exists; clear if it does
 .export __file_exists
-.proc __file_exists
+OSPROC __file_exists
 @file=r0
 	jsr __file_open_r
 	ldx #$01		; failed to open file
@@ -440,7 +441,7 @@ __file_load_src:
 	RETURN_OK
 
 @done:	jmp __file_geterr
-.endproc
+ENDOSPROC
 
 ;*******************************************************************************
 ; CLOSE
@@ -449,17 +450,17 @@ __file_load_src:
 ;  - .A: the file handle to close
 ;  - .Z: clear on error
 .export __file_close
-.proc __file_close
+OSPROC __file_close
 	pha
 	jsr $ffc3		; CLOSE
 	pla
 	jmp $ffb7		; READST
-.endproc
+ENDOSPROC
 
 ;*******************************************************************************
 ; INIT DRIVE
 ; Initializes the drive
-.proc init_drive
+OSPROC init_drive
 	ldxy #@i
 	lda #1
 	jsr $ffbd	; SETNAM
@@ -475,7 +476,7 @@ __file_load_src:
 .RODATA
 @i:	.byte "I"
 .POPSEG
-.endproc
+ENDOSPROC
 
 ;*******************************************************************************
 ; GETB

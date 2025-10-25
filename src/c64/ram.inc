@@ -1,6 +1,8 @@
 .ifndef C64_RAM_INC
 C64_RAM_INC = 1
 
+.include "reu.inc"
+
 .import __ram_copyline
 
 FINAL_BANK_ROM0	   = $00
@@ -119,8 +121,11 @@ FINAL_BANK_SYMVIEW = $00
 ;  - .Y:   offset to apply to load address
 ; OUT:
 ;  - .A: the value that was read
+;  - .Z: set if the value read was 0
+;  - .N: set if the value read is negative
 .macro LOADB_Y addr
-	lda (addr),y
+	jsr reu::loadb_off
+	.word addr
 .endmacro
 
 ;*******************************************************************************
@@ -130,25 +135,11 @@ FINAL_BANK_SYMVIEW = $00
 ;  - addr: the address to load from
 ; OUT:
 ;  - .A: the value that was read
+;  - .Z: set if the value read was 0
+;  - .N: set if the value read is negative
 .macro LOADB addr
-	ldy #$00
-	LOADB_Y addr
-.endmacro
-
-;*******************************************************************************
-; LOADW Y
-; Read a word from the given address + .Y (offset)
-; IN:
-;   - addr: source address
-;   - .Y:    offset
-; OUT:
-;   - .XY: the value that was read
-.macro LOADW_Y addr
-	lda (addr),y
-	tax
-	iny
-	lda (addr),y
-	tay
+	jsr reu::loadb
+	.word addr
 .endmacro
 
 ;*******************************************************************************
@@ -159,8 +150,8 @@ FINAL_BANK_SYMVIEW = $00
 ; OUT:
 ;   - .XY: the value that was read
 .macro LOADW addr
-	ldy #$00
-	LOADW_Y addr
+	jsr reu::loadw
+	.word addr
 .endmacro
 
 ;*******************************************************************************
@@ -171,7 +162,8 @@ FINAL_BANK_SYMVIEW = $00
 ;   - .Y: offset
 ;   - addr: address to write to
 .macro STOREB_Y addr
-	sta (addr),y
+	jsr reu::storeb_off
+	.word addr
 .endmacro
 
 ;*******************************************************************************
@@ -181,24 +173,8 @@ FINAL_BANK_SYMVIEW = $00
 ;   - .A:   value to store
 ;   - addr: target address
 .macro STOREB addr
-	ldy #$00
-	STOREB_Y addr
-.endmacro
-
-;*******************************************************************************
-; STOREW_Y
-; Write a word to memory at the target address offset by the value in .Y
-; IN:
-;   - val:  value to write
-;   - addr: address to store to
-; OUT:
-;   - .Y: the input value of .Y + 2
-.macro STOREW_Y val, addr
-	lda val
-	STOREB_Y addr
-	iny
-	STOREB_Y addr
-	iny
+	jsr reu::store
+	.word addr
 .endmacro
 
 ;*******************************************************************************
@@ -208,12 +184,8 @@ FINAL_BANK_SYMVIEW = $00
 ;   - .XY:  value to write
 ;   - addr: address to store to
 .macro STOREW addr
-	txa
-	sta (addr),y
-	iny
-	tya
-	sta (addr),y
-	dey
+	jsr reu::storew
+	.word addr
 .endmacro
 
 ;*******************************************************************************
@@ -223,12 +195,12 @@ FINAL_BANK_SYMVIEW = $00
 ;   - addr1: one address to swap
 ;   - addr2: the other address to swap
 .macro SWAPB_Y addr1, addr2
-	lda (addr1),y
-	tax
-	lda (addr2),y
-	sta (addr1),y
-	txa
-	sta (addr2),y
+	LOADB_Y addr1
+	pha
+	LOADB_Y addr2
+	STOREB_Y addr1
+	pla
+	STOREB_Y addr2
 .endmacro
 
 ;*******************************************************************************
@@ -251,11 +223,10 @@ FINAL_BANK_SYMVIEW = $00
 ;   - dst:  destination address
 ;   - .Y:   the number of bytes to copy
 .macro COPY_Y src, dst
-.local @loop
-@loop:	lda (src),y
-	sta (dst),y
-	dey
-	bpl @loop
+.local size
+	jsr reu::copy_y
+	.word src
+	.word dst
 .endmacro
 
 ;*******************************************************************************
@@ -277,10 +248,11 @@ FINAL_BANK_SYMVIEW = $00
 ;   - addr: start address to fill
 ;   - .A:   byte value
 ;   - .Y:   number of bytes to fill
-.macro FILL_Y addr
-.local @loop
-@loop:	sta (addr),y
-	dey
-	bpl @loop
+.macro FILL_Y addr, size, val
+	jsr reu::fill
+	.word addr
+	.byte size
+	.byte val
 .endmacro
+
 .endif

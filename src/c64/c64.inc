@@ -5,3 +5,11 @@
 	rowslo = __screen_rowslo
 	rowshi = __screen_rowshi
 .endscope
+
+.macro OSPROC fn
+.proc fn
+.endmacro
+
+.macro ENDOSPROC fn
+.endproc
+.endmacro

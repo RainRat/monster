@@ -1,3 +1,7 @@
+.ifndef C64_REU_INC
+C64_REU_INC = 1
+
+.import __reu_copy_y
 .import __reu_dbg
 .import __reu_move
 .import __reu_compare
@@ -5,10 +9,16 @@
 .import __reu_find
 .import __reu_init
 .import __reu_load
+.import __reu_loadb
+.import __reu_loadb_off
+.import __reu_loadw
 .import __reu_move
 .import __reu_reu_addr
 .import __reu_swap
 .import __reu_store
+.import	__reu_storeb
+.import __reu_storeb_off
+.import	__reu_storew
 .import __reu_txlen
 .import __reu_tabsetup
 .import __reu_tabfind
@@ -31,14 +41,21 @@ REU_COPYBUFF_ADDR       = $f80000
 
 .scope reu
 	c64addr        = __reu_c64_addr
+	copy_y         = __reu_copy_y
 	compare        = __reu_compare
 	dbg            = __reu_dbg
 	find           = __reu_find
 	load           = __reu_load
+	loadb          = __reu_loadb
+	loadb_off      = __reu_loadb_off
+	loadw          = __reu_loadw
 	init           = __reu_init
 	move           = __reu_move
 	reuaddr        = __reu_reu_addr
 	store          = __reu_store
+	storeb         = __reu_storeb
+	storeb_off     = __reu_storeb_off
+	storew         = __reu_storew
 	swap           = __reu_swap
 	tabsetup       = __reu_tabsetup
 	tabfind        = __reu_tabfind
@@ -172,3 +189,5 @@ REU_COPYBUFF_ADDR       = $f80000
 		COPY16 ^dst24, dst24 & $ffff, src16, size16
 	.endif
 .endmacro
+
+.endif

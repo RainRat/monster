@@ -8,7 +8,7 @@
 
 ; must be in same segment as expr.asm
 .CODE
-.segment "UDGEDIT"
+.segment "EXPR"
 
 ;*******************************************************************************
 ; MUL16

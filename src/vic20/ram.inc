@@ -56,6 +56,8 @@ VIC20_RAM_INC = 1
 ;  - .Y:   offset to apply to load address
 ; OUT:
 ;  - .A: the value that was read
+;  - .Z: set if the value read was 0
+;  - .N: set if the value read is negative
 .macro LOADB_Y addr
 	lda (addr),y
 .endmacro
@@ -67,25 +69,11 @@ VIC20_RAM_INC = 1
 ;  - addr: the address to load from
 ; OUT:
 ;  - .A: the value that was read
+;  - .Z: set if the value read was 0
+;  - .N: set if the value read is negative
 .macro LOADB addr
 	ldy #$00
 	LOADB_Y addr
-.endmacro
-
-;*******************************************************************************
-; LOADW Y
-; Read a word from the given address + .Y (offset)
-; IN:
-;   - addr: source address
-;   - .Y:    offset
-; OUT:
-;   - .XY: the value that was read
-.macro LOADW_Y addr
-	lda (addr),y
-	tax
-	iny
-	lda (addr),y
-	tay
 .endmacro
 
 ;*******************************************************************************
@@ -97,7 +85,11 @@ VIC20_RAM_INC = 1
 ;   - .XY: the value that was read
 .macro LOADW addr
 	ldy #$00
-	LOADW_Y addr
+	lda (addr),y
+	tax
+	iny
+	lda (addr),y
+	tay
 .endmacro
 
 ;*******************************************************************************

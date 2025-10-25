@@ -586,6 +586,7 @@ num_relocs=(*-relocs)/7
 	jsr asm::reset
 	jsr buff::clear		; clear copy buffer
 	jsr run::clr		; init user state (run BASIC startup proc)
+	jmp *
 
 	lda #$00
 	sta mem::linebuffer
@@ -630,6 +631,9 @@ init_sig:
 	.byte 6,5,6,0
 init_sig_len=*-init_sig
 
+.PUSHSEG
+.RODATA
 recover_reset:
 	.byte " reset detected - restore state? (y/n)",0
+.POPSEG
 .endif
