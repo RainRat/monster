@@ -110,12 +110,6 @@ editortmp 	= $dc
 ; Be cautious when relying on this data to be in tact
 ; after calling a procedure as it is likely that that
 ; procedure uses some of these locations
-tmpa  = $fa
-tmpb  = $fb
-tmpc  = $fc
-tmpd  = $fd
-tmpe  = $fe
-tmpf  = $ff
 tmp10 = $e0
 tmp11 = $e1
 tmp12 = $e2
@@ -125,8 +119,11 @@ tmp15 = $e5
 tmp16 = $e6
 tmp17 = $e7
 
-; $e8-$ef is utility storage
+; $e8-$ea is utility storage
 util = $e8
+
+; "inline" procedure storage
+inline = $ec
 .endscope
 
 r0 = $f0
@@ -145,5 +142,4 @@ rc = $fc
 rd = $fd
 re = $fe
 rf = $ff
-
 .endif

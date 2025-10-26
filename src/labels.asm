@@ -51,7 +51,7 @@ allow_overwrite = zp::labels+4	; when !0, addlabel will overwrite existing
 .export __label_get_segment
 .export __label_set_addr
 
-.if FINAL_BANK_SYMBOLS=FINAL_BANK_MAIN
+.ifndef vic20
 
 ;*******************************************************************************
 ; Flat memory procedure mappings
@@ -158,14 +158,15 @@ __label_load: LBLJUMP proc_ids::LOAD
 	stx @savex
 	tax
 	lda procs_lo,x
-	sta zp::bankjmpvec
+	sta @vec
 	lda procs_hi,x
-	sta zp::bankjmpvec+1
-	lda #FINAL_BANK_SYMBOLS
-	sta zp::banktmp
+	sta @vec+1
 	ldx @savex
 	pla
-	jmp __ram_call
+	jsr __ram_call
+	.byte FINAL_BANK_SYMBOLS
+@vec:	.word $f00d
+	rts
 .endproc
 .endif
 

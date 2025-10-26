@@ -12,6 +12,7 @@ __reu_reu_addr = $df04
 __reu_txlen    = $df07
 
 .include "../errors.inc"
+.include "../inline.inc"
 .include "../macros.inc"
 .include "../memory.inc"
 .include "../zeropage.inc"
@@ -27,10 +28,7 @@ REU_SYMTABLE_NAMES_ADDR = $fc0000	; label names
 REU_SYMTABLE_ANONS_ADDR = $fb0000	; anonymous label addresses
 
 ;*******************************************************************************
-savex  = zp::bankoffset
-savey  = savex+1
-params = savey+1
-tmp    = params+2
+tmp = zp::bankaddr1
 
 .BSS
 ;*******************************************************************************
@@ -357,183 +355,6 @@ __reu_move_size=zp::bank+6
 .endproc
 
 ;*******************************************************************************
-; TAB SETUP
-; Sets up the table with the given parameters
-; IN:
-;   - .A:    the MSB of the REU address of the table
-;   - .X:    the size of each element in the table
-;            NOTE: 256 % this must be 0
-;   - r0/r1: the number of elements in the table
-.export __reu_tabsetup
-.proc __reu_tabsetup
-	sta tab_addr+2
-	lda #$00
-	sta tab_addr
-	sta tab_addr+1
-
-	stx tab_element_size
-
-	lda r0
-	sta tab_num_elements
-	lda r0+1
-	sta tab_num_elements+1
-
-	rts
-.endproc
-
-;*******************************************************************************
-; TAB FIND
-; Finds the given data in the table and returns its address (if found)
-; IN:
-;   - .XY: address of the data to match
-;   - .A:  length of the data to match
-; OUT:
-;   - .C:   set if the item wasn't found
-;   - .XYA: if the data was found, the address of it
-.export __reu_tabfind
-.proc __reu_tabfind
-@cnt=zp::banktmp
-	sta __reu_txlen
-
-	; make sure there are elements in our table, return if not
-	lda tab_num_elements
-	bne :+
-	lda tab_num_elements+1
-	bne :+
-	sec
-	rts
-
-:	stxy __reu_c64_addr
-
-	lda #$00
-	sta __reu_txlen+1
-	sta @cnt
-	sta @cnt+1
-
-	lda tab_addr
-	sta __reu_reu_addr
-	lda tab_addr+1
-	sta __reu_reu_addr+1
-	lda tab_addr+2
-	sta __reu_reu_addr+2
-
-@l0:	jsr __reu_compare
-	beq @found
-
-@next:	; move to next entry in the table
-	lda __reu_reu_addr
-	clc
-	adc tab_element_size
-	sta __reu_reu_addr
-	bcc :+
-	inc __reu_reu_addr+1
-	bne :+
-	inc __reu_reu_addr+2
-
-:	inc @cnt
-	bne :+
-	inc @cnt+1
-:	lda @cnt+1
-	cmp tab_num_elements+1
-	bne @l0
-	lda @cnt
-	cmp tab_num_elements
-	bne @l0
-	sec			; not found
-	rts
-
-@found:	ldx __reu_reu_addr
-	ldy __reu_reu_addr+1
-	lda __reu_reu_addr+2
-	RETURN_OK
-.endproc
-
-;*******************************************************************************
-; TAB FIND SORTED
-; Finds the given data in the table assuming the table is sorted
-; IN:
-;   - .XY: the data to find
-;   - .A:  the length of the input data
-; OUT:
-;   - .XY: the index of the matched data (or where it would be if it existed)
-;   - .C:  set if the input was not found in the table
-.export __reu_tabfind_sorted
-.proc __reu_tabfind_sorted
-@cnt=zp::banktmp
-@src=zp::banktmp+2
-@len=zp::banktmp+4
-@buff=mem::spare
-	sta @len
-
-	lda tab_element_size
-	sta __reu_txlen
-
-	lda #$00
-	sta __reu_txlen+1
-	sta @cnt
-	sta @cnt+1
-
-	; make sure there are elements in our table, return if not
-	lda tab_num_elements
-	bne :+
-	lda tab_num_elements+1
-	beq @notfound
-
-:	stxy @src
-	ldxy #@buff
-	stxy __reu_c64_addr
-
-	lda tab_addr
-	sta __reu_reu_addr
-	lda tab_addr+1
-	sta __reu_reu_addr+1
-	lda tab_addr+2
-	sta __reu_reu_addr+2
-
-@l0:	; load the data to compare
-	ldxy #@buff
-	stxy __reu_c64_addr
-	jsr __reu_load
-
-	; compare the data we're searching for with the loaded table data
-	ldy #$00
-:	lda (@src),y
-	cmp @buff,y
-	bcc @notfound
-	bne @next
-	iny
-	cpy @len
-	bcc :-
-
-	; make sure the table element is the same size (if not max size)
-	cpy tab_element_size
-	bcs @found		; max size, don't require null
-	lda @buff,y
-	beq @found
-
-@next:	; move to next entry in the table
-	lda tab_element_size
-	sta __reu_txlen
-	inc @cnt
-	bne :+
-	inc @cnt+1
-:	lda @cnt+1
-	cmp tab_num_elements+1
-	bne @l0
-	lda @cnt
-	cmp tab_num_elements
-	bne @l0
-
-@notfound:
-	ldxy @cnt
-	sec			; not found
-	rts
-
-@found:	ldxy @cnt
-	RETURN_OK
-.endproc
-
-;*******************************************************************************
 ; STORE_BYTE
 ; stores the byte given in zp::bankval to address .YX in bank .A
 ; Because the return address is adjusted, should only be called (JSR)
@@ -550,17 +371,19 @@ __reu_move_size=zp::bank+6
 .proc __reu_storeb
 @dst=zp::banktmp
 	pha
-	jsr setup_param_proc
 
-	jsr get_param_word
-	stx @dst
-	sta @dst+1
+	jsr inline::setup
+	jsr inline::getarg_w
+	stx __reu_reu_addr
+	sta __reu_reu_addr+1
+	jsr inline::setup_done
 
 	pla
-	ldy #$00
-	sta (@dst),y
+	jsr __reu_store1
 
-	jmp return_from_proc
+	ldx savex
+	ldy savey
+	rts
 .endproc
 
 ;*******************************************************************************
@@ -570,15 +393,19 @@ __reu_move_size=zp::bank+6
 ;  - .A:  the value to write
 .export	__reu_storeb_off
 .proc __reu_storeb_off
-	jsr setup_param_proc
+	jsr inline::setup
 
 	; read the address to load from
-	jsr get_param_word
+	jsr inline::getarg_w
 	stx __reu_reu_addr
 	sta __reu_reu_addr+1
+	jsr inline::setup_done
 
 	jsr __reu_store1
-	jmp return_from_proc
+
+	ldx savex
+	ldy savey
+	rts
 .endproc
 
 ;*******************************************************************************
@@ -591,12 +418,13 @@ __reu_move_size=zp::bank+6
 @dst=tmp
 	stxy @dst
 
-	jsr setup_param_proc
+	jsr inline::setup
 
 	; read the address to store to
-	jsr get_param_word
+	jsr inline::getarg_w
 	stx __reu_reu_addr
 	sta __reu_reu_addr+1
+	jsr inline::setup_done
 
 	; 2 bytes
 	ldxy #$02
@@ -606,7 +434,10 @@ __reu_move_size=zp::bank+6
 	stxy __reu_c64_addr
 
 	jsr __reu_store
-	jmp return_from_proc
+
+	ldx savex
+	ldy savey
+	rts
 .endproc
 
 ;*******************************************************************************
@@ -617,15 +448,19 @@ __reu_move_size=zp::bank+6
 ;  - .A: the byte that was read
 .export	__reu_loadb
 .proc __reu_loadb
-	jsr setup_param_proc
+	jsr inline::setup
 
 	; read the address to load from
-	jsr get_param_word
+	jsr inline::getarg_w
 	stx __reu_reu_addr
 	sta __reu_reu_addr+1
+	jsr inline::setup_done
 
 	jsr __reu_load1
-	jmp return_from_proc
+
+	ldx savex
+	ldy savey
+	rts
 .endproc
 
 ;*******************************************************************************
@@ -637,9 +472,8 @@ __reu_move_size=zp::bank+6
 ;  - .A: the byte that was read
 .export	__reu_loadb_off
 .proc	__reu_loadb_off
-	jsr setup_param_proc
-
-	jsr get_param_word
+	jsr inline::setup
+	jsr inline::getarg_w
 	stx __reu_reu_addr
 	sta __reu_reu_addr+1
 	tya
@@ -647,9 +481,13 @@ __reu_move_size=zp::bank+6
 	adc __reu_reu_addr
 	bcc :+
 	inc __reu_reu_addr+1
+:	jsr inline::setup_done
 
-:	jsr __reu_load1
-	jmp return_from_proc
+	jsr __reu_load1
+
+	ldx savex
+	ldy savey
+	rts
 .endproc
 
 ;*******************************************************************************
@@ -661,11 +499,11 @@ __reu_move_size=zp::bank+6
 .export	__reu_loadw
 .proc	__reu_loadw
 @dst=tmp
-	jsr setup_param_proc
-
-	jsr get_param_word
+	jsr inline::setup
+	jsr inline::getarg_w
 	stx __reu_reu_addr
 	sta __reu_reu_addr+1
+	jsr inline::setup_done
 
 	; 2 bytes
 	ldxy #$02
@@ -676,9 +514,8 @@ __reu_move_size=zp::bank+6
 
 	; load the word
 	jsr __reu_load
-
 	ldxy @dst
-	jmp return_from_proc_without_restore
+	rts
 .endproc
 
 ;*******************************************************************************
@@ -691,22 +528,24 @@ __reu_move_size=zp::bank+6
 .export	__reu_load_byte_off
 .proc __reu_load_byte_off
 @dst=tmp
-	jsr setup_param_proc
+	jsr inline::setup
 
 	; read the base address to write to
-	jsr get_param_word
+	jsr inline::getarg_w
 	stx @dst
 	sta @dst+1
-
 	tya
 	clc
 	adc @dst
 	sta @dst
 	bcc :+
 	inc @dst+1
-:	jsr __reu_load1
+:	jsr inline::setup_done
 
-	jmp return_from_proc
+	jsr __reu_load1
+	ldx savex
+	ldy savey
+	rts
 .endproc
 
 ;*******************************************************************************
@@ -718,124 +557,24 @@ __reu_move_size=zp::bank+6
 ;  - .Y:  the offset in bytes
 .export __reu_copy_y
 .proc __reu_copy_y
-	jsr setup_param_proc
+	jsr inline::setup
 
 	sty __reu_move_size
 	lda #$00
 	sta __reu_move_size+1
 
 	; get source and destination addresses
-	jsr get_param_word
+	jsr inline::getarg_w
 	stx __reu_move_src
 	sta __reu_move_src+1
-	jsr get_param_word
+	jsr inline::getarg_w
 	stx __reu_move_dst
 	sta __reu_move_dst+1
+	jsr inline::setup_done
+
 	jsr __reu_move		; move from source -> dest
 
-	jmp return_from_proc
-.endproc
-
-;*******************************************************************************
-; SETUP PARM PROC
-; Sets up pointers for parameterized procedures like reu::store
-.proc setup_param_proc
-	; save the .X and .Y registers
-	stx savex
-	sty savey
-
-	tsx
-
-	pha			; save .A
-
-	; read the address of the parameters (return address of procedure call)
-	lda $100,x
-	sta params
-	lda $101,x
-	sta params+1
-	incw params
-
-	pla			; restore .A
-
-	rts
-.endproc
-
-;*******************************************************************************
-; GET PARAM BYTE
-; Gets an argument from a parametrized function and updates the param pointer
-; to point to the next argument (if there is one)
-; e.g.
-;    jsr proc
-;    .byte val <- returns this
-; OUT:
-;   - .A: the byte value that was read
-.proc get_param_byte
-	ldy #$00
-	lda (params),y
-	incw params		; move to next param
-	ldy savey
-	rts
-.endproc
-
-;*******************************************************************************
-; GET PARAM WORD
-; Gets an argument from a parametrized function and updates the param pointer
-; to point to the next argument (if there is one)
-; e.g.
-;    jsr proc
-;    .word val <- returns this
-; OUT:
-;   - .AX: the word value that was read
-.proc get_param_word
-	ldy #$00
-	lda (params),y
-	tax
-	incw params		; move to next param
-	lda (params),y
-	incw params
-	ldy savey
-	rts
-.endproc
-
-;*******************************************************************************
-; RETURN FROM PROC
-; Restores registers (except .A) and returns from a parameterized procedure.
-; This works by jumping to the address after all the parameters
-.proc return_from_proc
-	php
-
-	; store the return address to jump to
-	ldx params
-	stx @ret
-	ldx params+1
-	stx @ret+1
-
-	; restore registers
 	ldx savex
 	ldy savey
-
-	plp
-@ret=*+1
-	jmp $f00d	; return
-.endproc
-
-;*******************************************************************************
-; RETURN FROM PROC WITHOUT RESTORE
-; Returns from a parameterized procedure without restoring the .X and .Y
-; registers that were passed in.  Used for procedures that return data
-; in .X and/or .Y
-.proc return_from_proc_without_restore
-	php
-	pha
-
-	; store the return address to jump to
-	lda params
-	sta @ret
-	lda params+1
-	sta @ret+1
-
-	pla
-	plp
-@ret=*+1
-	jmp $f00d	; return
+	rts
 .endproc

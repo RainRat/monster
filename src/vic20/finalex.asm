@@ -7,6 +7,7 @@
 ;******************************************************************************
 
 .include "../config.inc"
+.include "../inline.inc"
 .include "../macros.inc"
 .include "../zeropage.inc"
 
@@ -145,9 +146,10 @@ final_store_size=*-__ram_store_byte
 .proc __ram_call
 @a=zp::banktmp+1
 @x=zp::banktmp+2
-@bank=zp::banktmp
 	stx @x
 	sta @a
+
+	jsr inline::setup
 
 	lda #$4c
 	sta zp::bankjmpaddr	; write the JMP instruction
@@ -156,7 +158,17 @@ final_store_size=*-__ram_store_byte
 	inc zp::banksp
 	sta zp::bankstack,x
 
-	lda @bank
+	jsr inline::getarg_b	; get bank byte
+	sta @bank_sel
+
+	jsr inline::getarg_w	; get procedure address
+	stx zp::bankjmpvec
+	sta zp::bankjmpvec+1
+
+	jsr inline::setup_done
+
+@bank_sel=*+1
+	lda #$00
 	sta $9c02		; swap in the target bank
 	lda @a			; restore .A
 	ldx @x			; restore .X

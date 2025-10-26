@@ -15,7 +15,7 @@
 ;  - mem::drive_err: the drive error message
 .export __io_readerr
 .proc __io_readerr
-@ch=zp::tmpf
+@ch=rf
 	lda #$00	; no filename
 	tax
 	tay

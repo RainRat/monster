@@ -38,7 +38,7 @@ __buff_num_lines_copied:	.byte 0
 
 .CODE
 
-.if FINAL_BANK_MAIN <> FINAL_BANK_BUFF
+.ifdef vic20
 
 ;*******************************************************************************
 .linecont +
@@ -86,15 +86,17 @@ __buff_reverse:      COPYBUFFJUMP buff_proc_ids::REVERSE
 	stx @savex
 	tax
 	lda buff_procs_lo,x
-	sta zp::bankjmpvec
+	sta @vec
 	lda buff_procs_hi,x
-	sta zp::bankjmpvec+1
-	lda #FINAL_BANK_BUFF
-	sta zp::banktmp
+	sta @vec+1
+
 @savex=*+1
 	ldx #$00
 	pla
-	jmp __ram_call
+	jsr __ram_call
+	.byte FINAL_BANK_BUFF
+@vec:	.word $f00d
+	rts
 .endproc
 .linecont -
 

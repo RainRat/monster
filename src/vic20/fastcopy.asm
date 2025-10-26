@@ -228,14 +228,14 @@ copytabhi: .hibytes copytab
 .proc __fastcopy_restore_debug_state
 	ldx #proc_ids::RESTORE_DEBUG_STATE
 .endproc
-
 	lda copytablo,x
-	sta zp::bankjmpvec
+	sta @vec
 	lda copytabhi,x
-	sta zp::bankjmpvec+1
-	lda #FINAL_BANK_FASTCOPY
-	sta zp::banktmp
-	jmp __ram_call
+	sta @vec+1
+	jsr __ram_call
+	.byte FINAL_BANK_FASTCOPY
+@vec:	.word $f00d
+	rts
 
 .SEGMENT "FASTCOPY"
 

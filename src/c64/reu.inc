@@ -21,9 +21,6 @@ C64_REU_INC = 1
 .import __reu_storeb_off
 .import	__reu_storew
 .import __reu_txlen
-.import __reu_tabsetup
-.import __reu_tabfind
-.import __reu_tabfind_sorted
 .import __reu_zero
 
 .importzp __reu_move_src
@@ -59,9 +56,6 @@ REU_COPYBUFF_ADDR       = $f80000
 	storeb_off     = __reu_storeb_off
 	storew         = __reu_storew
 	swap           = __reu_swap
-	tabsetup       = __reu_tabsetup
-	tabfind        = __reu_tabfind
-	tabfind_sorted = __reu_tabfind_sorted
 	txlen          = __reu_txlen
 	move_src       = __reu_move_src
 	move_dst       = __reu_move_dst

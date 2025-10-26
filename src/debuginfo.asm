@@ -142,7 +142,7 @@ debuginfo:
 .export __debuginfo_get_fileid
 
 ;******************************************************************************
-.if FINAL_BANK_MAIN = FINAL_BANK_DEBUG
+.ifndef vic20
 	__debug_addr2line         = addr2line
 	__debug_end_block         = end_block
 	__debug_line2addr         = line2addr
@@ -182,15 +182,16 @@ __debuginfo_set_seg_id:   BANKJUMP dbgi_proc_ids::SET_SEG_ID
 	stx @savex
 	tax
 	lda dbgi_procs_lo,x
-	sta zp::bankjmpvec
+	sta @vec
 	lda dbgi_procs_hi,x
-	sta zp::bankjmpvec+1
-	lda #FINAL_BANK_DEBUG
-	sta zp::banktmp
+	sta @vec+1
 @savex=*+1
 	ldx #$00
 	pla
-	jmp __ram_call
+	jsr __ram_call
+	.byte FINAL_BANK_DEBUG
+@vec:	.word $f00d
+	rts
 .endproc
 
 .POPSEG
@@ -970,7 +971,7 @@ blockaddresseshi: .res MAX_FILES
 ;  - .XY: address of filename for the given file ID
 ;  - .C:  set if there is no filename for the given file (XY will STILL
 ;         point to the address the filename WOULD exist at)
-.if FINAL_BANK_MAIN=FINAL_BANK_DEBUG
+.ifndef vic20
 get_filename = get_filename_addr
 .else
 .proc get_filename

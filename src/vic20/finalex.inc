@@ -107,16 +107,9 @@ FINAL_BANK_FASTTEXT  = $a0|$e
 ;  bank: the bank of the procedure to call
 ;  proc: the procedure to call
 .macro CALL bank, proc
-	pha
-	lda #<(proc)
-	sta zp::bankjmpvec
-	lda #>(proc)
-	sta zp::bankjmpvec+1
-
-	lda #bank
-	sta zp::banktmp
-	pla
 	jsr __ram_call
+	.byte bank
+	.word proc
 .endmacro
 
 ;******************************************************************************
@@ -126,16 +119,10 @@ FINAL_BANK_FASTTEXT  = $a0|$e
 ;  bank: the bank of the procedure to jump to
 ;  proc: the procedure to jump to
 .macro JUMP bank, proc
-	pha
-	lda #<(proc)
-	sta zp::bankjmpvec
-	lda #>(proc)
-	sta zp::bankjmpvec+1
-
-	lda #bank
-	sta zp::banktmp
-	pla
-	jmp __ram_call
+	jsr __ram_call
+	.byte bank
+	.word proc
+	rts
 .endmacro
 
 .endif
