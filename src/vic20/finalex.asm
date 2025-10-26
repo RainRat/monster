@@ -208,7 +208,7 @@ __ram_copy_banked:
 	skw	; don't overwrite destination bank
 
 ;*******************************************************************************
-; COPY
+; MEMCPY
 ; Writes the memory from (tmp0) to (tmp2)
 ; The number of bytes is given in .YX and the block # to write to is given in .A
 ; This routine assumes that IF the memory overlaps, that it will do so from

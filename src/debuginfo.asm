@@ -1037,9 +1037,9 @@ get_filename = get_filename_addr
 	tax
 	inx
 	ldy #$00
-	lda #FINAL_BANK_DEBUG		; dest bank
+	lda #FINAL_BANK_DEBUG			; dest bank
 	sta r7
-	lda #FINAL_BANK_MAIN		; source bank
+	lda #FINAL_BANK_MAIN			; source bank
 	CALL FINAL_BANK_MAIN, ram::copybanked
 
 	lda numfiles	; get ID of new file

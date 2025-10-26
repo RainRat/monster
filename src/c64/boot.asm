@@ -45,7 +45,7 @@ start:
 	stxy r0
 
 	lda #$00
-	ldy #$00
+	tay
 @zerobss:
 	sta (r0),y
 	iny
@@ -73,7 +73,6 @@ start:
 	sta $0316		; BRK
 	lda #>start
 	sta $0317		; BRK
-	;cli
 
 	; initialize the status row reverse
 	lda #DEFAULT_RVS
@@ -94,6 +93,10 @@ start:
 
 	jsr mon::init
 	jsr run::clr
+
+	lda #$80
+	sta $028a	; repeat all characters
+	sta $0291	; don't swap charset on C= + SHIFT
 
 	jsr dbgi::initonce
 

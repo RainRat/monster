@@ -27,10 +27,10 @@ REU_SYMTABLE_NAMES_ADDR = $fc0000	; label names
 REU_SYMTABLE_ANONS_ADDR = $fb0000	; anonymous label addresses
 
 ;*******************************************************************************
-savex  = zp::bank
-savey  = zp::banktmp
-params = zp::banktmp+1
-tmp    = zp::bankoffset
+savex  = zp::bankoffset
+savey  = savex+1
+params = savey+1
+tmp    = params+2
 
 .BSS
 ;*******************************************************************************
@@ -753,6 +753,7 @@ __reu_move_size=zp::bank+6
 	sta params
 	lda $101,x
 	sta params+1
+	incw params
 
 	pla			; restore .A
 
@@ -799,6 +800,8 @@ __reu_move_size=zp::bank+6
 ; Restores registers (except .A) and returns from a parameterized procedure.
 ; This works by jumping to the address after all the parameters
 .proc return_from_proc
+	php
+
 	; store the return address to jump to
 	ldx params
 	stx @ret
@@ -809,7 +812,7 @@ __reu_move_size=zp::bank+6
 	ldx savex
 	ldy savey
 
-	jmp *
+	plp
 @ret=*+1
 	jmp $f00d	; return
 .endproc
@@ -820,6 +823,7 @@ __reu_move_size=zp::bank+6
 ; registers that were passed in.  Used for procedures that return data
 ; in .X and/or .Y
 .proc return_from_proc_without_restore
+	php
 	pha
 
 	; store the return address to jump to
@@ -829,7 +833,7 @@ __reu_move_size=zp::bank+6
 	sta @ret+1
 
 	pla
-	jmp *
+	plp
 @ret=*+1
 	jmp $f00d	; return
 .endproc

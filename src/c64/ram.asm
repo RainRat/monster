@@ -76,13 +76,6 @@
 .endproc
 
 ;*******************************************************************************
-.export	__ram_memcpy
-.proc __ram_memcpy
-	; TODO:
-	rts
-.endproc
-
-;*******************************************************************************
 ; COPY LINE
 ; Copies up to LINESIZE bytes from zp::bankaddr0 to zp::bankaddr1 stopping at
 ; the first $0d or $00
@@ -90,9 +83,9 @@
 ;  - .A:            the bank to perform the copy within
 ;  - zp::bankaddr0: the source address to copy from
 ;  - zp::bankaddr1: the destination address to copy to
-;  OUT:
-;   - .Y: the number of bytes copied
-;   - .A: the last byte copied
+; OUT:
+;  - .Y: the number of bytes copied
+;  - .A: the last byte copied
 .export	__ram_copy_line
 .proc __ram_copy_line
 	ldy #$00
@@ -139,7 +132,7 @@
 	ldy @dst+1
 
 @ret=*+1
-	jmp $0000	; return
+	jmp $f00d	; return
 .endproc
 
 ;*******************************************************************************
@@ -157,15 +150,61 @@
 .endproc
 
 ;*******************************************************************************
+; LOAD BYTE OFF
+; Returns the byte in bank .A at address .YX plus a given offset
+; IN:
+;  - .XY: the address to read from
+;  - .A: the bank to read from
+;  - zp::bankval: the offset to read from
+; OUT:
+;  - .A: the byte that was read
+;  - .Y: contains the offset (same that was given as zp::bankval)
 .export	__ram_load_byte_off
 .proc __ram_load_byte_off
 	; TODO:
+	; add the offset
+	jsr reu::load1
 	rts
 .endproc
 
 ;*******************************************************************************
-.export	__ram_copy_banked
-.proc __ram_copy_banked
-	; TODO:
-	rts
+; COPY BANKED
+; Entrypoint to copy from one bank to another
+; IN:
+;  - .A:  the source bank
+;  - .XY: the number of bytes to copy
+;  - r2:  the source address
+;  - r4:  the destination address
+;  - r7:  the destination bank
+.export __ram_copy_banked
+__ram_copy_banked:
+	skw	; don't overwrite destination bank
+
+;*******************************************************************************
+; MEMCPY
+; Writes the memory from (tmp0) to (tmp2)
+; The number of bytes is given in .YX and the block # to write to is given in .A
+; This routine assumes that IF the memory overlaps, that it will do so from
+; the TOP. (dst > src)
+; IN:
+;  - .A:  the source/destination bank
+;  - .XY: the number of bytes to copy
+;  - r2:  the source address
+;  - r4:  the destination address
+.export __ram_memcpy
+.proc __ram_memcpy
+@size=r0
+@src=r2
+@dst=r4
+@bank=r6
+@bankdst=r7
+	sta reu::reuaddr+2
+	lda @src
+
+	lda @size
+	sta reu::txlen
+	lda @size+1
+	sta reu::txlen+1
+
 .endproc
+

@@ -9,6 +9,7 @@ C64_REU_INC = 1
 .import __reu_find
 .import __reu_init
 .import __reu_load
+.import __reu_load1
 .import __reu_loadb
 .import __reu_loadb_off
 .import __reu_loadw
@@ -47,6 +48,7 @@ REU_COPYBUFF_ADDR       = $f80000
 	find           = __reu_find
 	load           = __reu_load
 	loadb          = __reu_loadb
+	load1          = __reu_load1
 	loadb_off      = __reu_loadb_off
 	loadw          = __reu_loadw
 	init           = __reu_init
