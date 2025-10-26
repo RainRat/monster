@@ -648,7 +648,7 @@ __reu_move_size=zp::bank+6
 	bcc :+
 	inc __reu_reu_addr+1
 
-	jsr __reu_load1
+:	jsr __reu_load1
 	jmp return_from_proc
 .endproc
 
@@ -773,6 +773,7 @@ __reu_move_size=zp::bank+6
 	ldy #$00
 	lda (params),y
 	incw params		; move to next param
+	ldy savey
 	rts
 .endproc
 
@@ -792,6 +793,7 @@ __reu_move_size=zp::bank+6
 	incw params		; move to next param
 	lda (params),y
 	incw params
+	ldy savey
 	rts
 .endproc
 
