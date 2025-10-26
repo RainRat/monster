@@ -27,6 +27,9 @@ REU_SYMTABLE_ADDRS_ADDR = $fd0000	; label addresses
 REU_SYMTABLE_NAMES_ADDR = $fc0000	; label names
 REU_SYMTABLE_ANONS_ADDR = $fb0000	; anonymous label addresses
 
+savex  = zp::inline
+savey  = zp::inline+1
+
 ;*******************************************************************************
 tmp = zp::bankaddr1
 
