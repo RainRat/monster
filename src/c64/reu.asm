@@ -463,6 +463,8 @@ __reu_move_size=zp::bank+6
 
 	ldx savex
 	ldy savey
+
+	cmp #$00
 	rts
 .endproc
 
@@ -490,6 +492,8 @@ __reu_move_size=zp::bank+6
 
 	ldx savex
 	ldy savey
+
+	cmp #$00		; set .Z/.N appropriately
 	rts
 .endproc
 
@@ -518,36 +522,6 @@ __reu_move_size=zp::bank+6
 	; load the word
 	jsr __reu_load
 	ldxy @dst
-	rts
-.endproc
-
-;*******************************************************************************
-; LOADB OFF
-; IN:
-;  - *+3: address to write to
-;  - .Y:  the offset in bytes
-; OUT:
-;  - .A: the value that was loaded
-.export	__reu_load_byte_off
-.proc __reu_load_byte_off
-@dst=tmp
-	jsr inline::setup
-
-	; read the base address to write to
-	jsr inline::getarg_w
-	stx @dst
-	sta @dst+1
-	tya
-	clc
-	adc @dst
-	sta @dst
-	bcc :+
-	inc @dst+1
-:	jsr inline::setup_done
-
-	jsr __reu_load1
-	ldx savex
-	ldy savey
 	rts
 .endproc
 
