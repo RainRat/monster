@@ -27,11 +27,13 @@ REU_SYMTABLE_ADDRS_ADDR = $fd0000	; label addresses
 REU_SYMTABLE_NAMES_ADDR = $fc0000	; label names
 REU_SYMTABLE_ANONS_ADDR = $fb0000	; anonymous label addresses
 
-savex  = zp::inline
-savey  = zp::inline+1
+savex = zp::inline
+savey = zp::inline+1
 
 ;*******************************************************************************
-tmp = zp::bankaddr1
+savea = zp::bankaddr0
+savep = zp::bankaddr0+1
+tmp   = zp::bankaddr0+2
 
 .BSS
 ;*******************************************************************************
@@ -392,10 +394,21 @@ __reu_move_size=zp::bank+6
 ;*******************************************************************************
 ; STOREB OFF
 ; IN:
-;  - *+3: address to write to
-;  - .A:  the value to write
+;   - *+3: address to write to
+;   - .A:  the value to write
+; OUT:
+;   - .P: unaffected
+; CLOBBERS:
+;   - NONE
 .export	__reu_storeb_off
 .proc __reu_storeb_off
+	; save flags register
+	sta savea
+
+	php
+	pla
+	sta savep
+
 	jsr inline::setup
 
 	; read the address to load from
@@ -404,10 +417,18 @@ __reu_move_size=zp::bank+6
 	sta __reu_reu_addr+1
 	jsr inline::setup_done
 
+	lda savea
 	jsr __reu_store1
 
 	ldx savex
 	ldy savey
+
+	; restore flags register
+	lda savep
+	pha
+	lda savea
+	plp
+
 	rts
 .endproc
 
@@ -416,6 +437,8 @@ __reu_move_size=zp::bank+6
 ; IN:
 ;  - *+3: address to write to
 ;  - .XY: the value to write
+; CLOBBERS:
+;  - .A, .X, .Y, .P
 .export	__reu_storew
 .proc __reu_storew
 @dst=tmp
@@ -449,8 +472,15 @@ __reu_move_size=zp::bank+6
 ;  - *+3: address to read
 ; OUT:
 ;  - .A: the byte that was read
+;  - .N: set if loaded byte is negative
+;  - .Z: set if loaded byte is 0
 .export	__reu_loadb
 .proc __reu_loadb
+	; save .C flag
+	php
+	pla
+	and #$01		; mask .C bit
+	sta savep
 	jsr inline::setup
 
 	; read the address to load from
@@ -464,7 +494,16 @@ __reu_move_size=zp::bank+6
 	ldx savex
 	ldy savey
 
+	; set flags
 	cmp #$00
+	php
+	pla
+	and #$7f
+	ora savep	; restore .C bit
+	pha
+
+	; restore flags register
+	plp
 	rts
 .endproc
 
@@ -475,8 +514,17 @@ __reu_move_size=zp::bank+6
 ;  - .Y:  offset from base address
 ; OUT:
 ;  - .A: the byte that was read
+;  - .N: set if loaded byte is negative
+;  - .Z: set if loaded byte is 0
 .export	__reu_loadb_off
 .proc	__reu_loadb_off
+	; save .C flag
+	php
+	pla
+	and #$01		; mask .C bit
+	sta savep
+
+	jsr inline::setup
 	jsr inline::setup
 	jsr inline::getarg_w
 	stx __reu_reu_addr
@@ -493,7 +541,14 @@ __reu_move_size=zp::bank+6
 	ldx savex
 	ldy savey
 
-	cmp #$00		; set .Z/.N appropriately
+	; set flags
+	cmp #$00
+	php
+	pla
+	and #$7f
+	ora savep	; restore .C bit
+	pha
+
 	rts
 .endproc
 
@@ -503,6 +558,8 @@ __reu_move_size=zp::bank+6
 ;  - *+3: address to read
 ; OUT:
 ;  - .XY: the value that was read
+; CLOBBERS:
+;  - .A, .X, .Y, .P
 .export	__reu_loadw
 .proc	__reu_loadw
 @dst=tmp
@@ -532,6 +589,8 @@ __reu_move_size=zp::bank+6
 ;  - *+3: source address
 ;  - *+5: destination address
 ;  - .Y:  the offset in bytes
+; CLOBBERS:
+;  - .A, .P
 .export __reu_copy_y
 .proc __reu_copy_y
 	jsr inline::setup
