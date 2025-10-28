@@ -905,10 +905,10 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 
 	; -2 so that id #1 *2 points to start of our list
 	; -16 because object file ids are also 1-based
-	adc #<file_segments_start-2-(MAX_SEGMENTS*2)
+	adc #<(file_segments_start-2-(MAX_SEGMENTS*2))
 	tax
 	lda @msb
-	adc #>file_segments_start-2-(MAX_SEGMENTS*2)
+	adc #>(file_segments_start-2-(MAX_SEGMENTS*2))
 	tay
 	rts
 .endproc

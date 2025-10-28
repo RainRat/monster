@@ -1,5 +1,6 @@
 .include "reu.inc"
 .include "../config.inc"
+.include "../inline.inc"
 .include "../macros.inc"
 .include "../zeropage.inc"
 
@@ -41,6 +42,8 @@
 	stx @x
 	sta @a
 
+	jsr inline::setup
+
 	lda #$4c
 	sta zp::bankjmpaddr	; write the JMP instruction
 
@@ -50,8 +53,14 @@
 	inc zp::banksp
 	sta zp::bankstack,x
 
-	lda @bank
+	jsr inline::getarg_b	; get bank byte
 	sta reu::reuaddr+2	; set REU MSB to the target bank
+	jsr inline::getarg_w	; get procedure address
+	stx zp::bankjmpvec
+	sta zp::bankjmpvec+1
+
+	jsr inline::setup_done
+
 	lda @a			; restore .A
 	ldx @x			; restore .X
 	jsr zp::bankjmpaddr	; call the target routine

@@ -4,6 +4,7 @@ C64_RAM_INC = 1
 .include "reu.inc"
 
 .import __ram_copyline
+.import __ram_call
 
 ;******************************************************************************
 ; BANKS
@@ -32,13 +33,16 @@ FINAL_BANK_SYMVIEW = $11
 FINAL_BANK_MONITOR = $12
 
 .macro CALL bank, proc
-	jsr proc
+	jsr __ram_call
 	.byte bank
 	.word proc
 .endmacro
 
 .macro JUMP bank, proc
-	jmp proc
+	jsr __ram_call
+	.byte bank
+	.word proc
+	rts
 .endmacro
 
 ;******************************************************************************

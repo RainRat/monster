@@ -73,7 +73,6 @@ params = zp::inline+2
 	jmp $f00d		; return to caller
 .endproc
 
-
 ;*******************************************************************************
 ; GET ARG B
 ; Gets a byte argument from a parametrized proc and updates the param pointer
