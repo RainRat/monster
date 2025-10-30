@@ -340,27 +340,7 @@ __reu_move_size=zp::bank+6
 .endproc
 
 ;*******************************************************************************
-; DBG
-; Copies the contents of REU to $0500
-.export __reu_dbg
-.proc __reu_dbg
-	ldxy #$200
-	stxy __reu_txlen
-	stx __reu_reu_addr
-	stx __reu_reu_addr+1
-
-.import __src_bank
-	lda __src_bank
-	lda #^REU_SYMTABLE_NAMES_ADDR
-	sta __reu_reu_addr+2
-
-	ldxy #$500
-	stxy __reu_c64_addr
-	jmp __reu_load
-.endproc
-
-;*******************************************************************************
-; STORE_BYTE
+; STORE BYTE
 ; stores the byte given in zp::bankval to address .YX in bank .A
 ; Because the return address is adjusted, should only be called (JSR)
 ; e.g.
@@ -394,7 +374,7 @@ __reu_move_size=zp::bank+6
 ;*******************************************************************************
 ; STOREB OFF
 ; IN:
-;   - *+3: address to write to
+;   - *+3: 1 byte - the zeropage address to write to
 ;   - .A:  the value to write
 ; OUT:
 ;   - .P: unaffected
@@ -402,9 +382,9 @@ __reu_move_size=zp::bank+6
 ;   - NONE
 .export	__reu_storeb_off
 .proc __reu_storeb_off
-	; save flags register
 	sta savea
 
+	; save flags register
 	php
 	pla
 	sta savep
@@ -412,7 +392,7 @@ __reu_move_size=zp::bank+6
 	jsr inline::setup
 
 	; read the address to load from
-	jsr inline::getarg_w
+	jsr inline::getarg_zp_ind_off
 	stx __reu_reu_addr
 	sta __reu_reu_addr+1
 	jsr inline::setup_done
@@ -484,7 +464,7 @@ __reu_move_size=zp::bank+6
 	jsr inline::setup
 
 	; read the address to load from
-	jsr inline::getarg_w
+	jsr inline::getarg_zp_ind
 	stx __reu_reu_addr
 	sta __reu_reu_addr+1
 	jsr inline::setup_done
@@ -510,7 +490,7 @@ __reu_move_size=zp::bank+6
 ;*******************************************************************************
 ; LOADB OFF
 ; IN:
-;  - *+3: base address to read
+;  - *+3: 1 byte - base address to read
 ;  - .Y:  offset from base address
 ; OUT:
 ;  - .A: the byte that was read
@@ -526,15 +506,10 @@ __reu_move_size=zp::bank+6
 
 	jsr inline::setup
 	jsr inline::setup
-	jsr inline::getarg_w
+	jsr inline::getarg_zp_ind_off
 	stx __reu_reu_addr
 	sta __reu_reu_addr+1
-	tya
-	clc
-	adc __reu_reu_addr
-	bcc :+
-	inc __reu_reu_addr+1
-:	jsr inline::setup_done
+	jsr inline::setup_done
 
 	jsr __reu_load1
 
@@ -548,6 +523,7 @@ __reu_move_size=zp::bank+6
 	and #$7f
 	ora savep	; restore .C bit
 	pha
+	plp
 
 	rts
 .endproc

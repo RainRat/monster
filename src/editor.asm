@@ -60,6 +60,10 @@
 .include "vic20/udgedit.inc"
 .endif
 
+.ifdef c64
+.include "c64/c64.inc"
+.endif
+
 ;******************************************************************************
 ; CONSTANTS
 MODE_COMMAND     = 1
@@ -182,7 +186,14 @@ main:	jsr key::getch
 	jsr cur::off
 	pla
 
+
 :	jsr __edit_handle_key
+
+	; TODO: delete
+	.ifdef c64
+	jsr c64::dbg
+	.endif
+
 @done:	jsr text::update
 	bne main	; branch always (continue main loop)
 .endproc

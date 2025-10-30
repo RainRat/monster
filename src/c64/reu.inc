@@ -2,7 +2,6 @@
 C64_REU_INC = 1
 
 .import __reu_copy_y
-.import __reu_dbg
 .import __reu_move
 .import __reu_compare
 .import __reu_c64_addr
@@ -41,7 +40,6 @@ REU_COPYBUFF_ADDR       = $f80000
 	c64addr        = __reu_c64_addr
 	copy_y         = __reu_copy_y
 	compare        = __reu_compare
-	dbg            = __reu_dbg
 	find           = __reu_find
 	load           = __reu_load
 	loadb          = __reu_loadb

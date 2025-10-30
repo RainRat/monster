@@ -57,6 +57,7 @@ start:
 
 	lda #$00
 	sta r0
+	sta zp::banksp
 
 	ldy #<(__BSS_LOAD__+__BSS_SIZE__-1)
 	beq @zero_bss_done
@@ -103,4 +104,6 @@ start:
 	lda #$4c
 	sta zp::jmpaddr
 
+	lda #$10
+	sta reu::reuaddr+2
 	jmp edit::init

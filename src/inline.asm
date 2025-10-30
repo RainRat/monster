@@ -16,6 +16,7 @@
 savex  = zp::inline
 savey  = zp::inline+1
 params = zp::inline+2
+tmp    = zp::inline+3
 
 .segment "BANKCODE2"
 
@@ -109,5 +110,69 @@ params = zp::inline+2
 	incw params
 	lda (params),y
 	ldy savey
+	rts
+.endproc
+
+;*******************************************************************************
+; GET ARG ZP IND
+; Gets an argument from a parametrized function and updates the param pointer
+; to point to the next argument (if there is one)
+; The argument fetched is used to lookup the address in the zeropage location
+; that it references.  The value at that location is returned
+; e.g.
+;    jsr proc
+;    .byte $10
+; $10: $1234 <- returns this
+; OUT:
+;   - .AX: the word value that was read
+.export __inline_getarg_zp_ind
+.proc __inline_getarg_zp_ind
+	jsr __inline_getarg_b
+	sta @addr0
+	clc
+	adc #$01
+	sta @addr1
+
+	; read the indirect address
+@addr0=*+1
+	lda $f0
+	tax
+@addr1=*+1
+	lda $0d
+
+	rts
+.endproc
+
+;*******************************************************************************
+; GET ARG ZP IND OFF
+; Gets an argument from a parametrized function and updates the param pointer
+; to point to the next argument (if there is one)
+; The argument fetched is used to lookup the address in the zeropage location
+; that it references.  The value at that base address + the given offset is
+; returned
+; e.g. given .Y=$03
+;    jsr proc
+;    .byte $10
+; $13: $1234 <- returns this
+; IN:
+;   - .Y: the offfset of the operand to get the address at
+; OUT:
+;   - .AX: the word value that was read
+.export __inline_getarg_zp_ind_off
+.proc __inline_getarg_zp_ind_off
+	jsr __inline_getarg_b
+	sta @addr0
+	clc
+	adc #$01
+	sta @addr1
+
+	; get the indirect operand + .Y
+	tya
+@addr0=*+1
+	adc $f0
+	tax
+@addr1=*+1
+	lda $0d
+	adc #$00
 	rts
 .endproc

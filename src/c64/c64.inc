@@ -1,9 +1,12 @@
 .import __screen_rowslo
 .import __screen_rowshi
+.import __c64_dbg
 
 .scope c64
 	rowslo = __screen_rowslo
 	rowshi = __screen_rowshi
+
+	dbg    = __c64_dbg
 .endscope
 
 .macro OSPROC fn

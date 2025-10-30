@@ -129,7 +129,7 @@ FINAL_BANK_MONITOR = $12
 ; LOADB Y
 ; Load a byte from memory with Y offset
 ; IN:
-;  - addr: the address to load from
+;  - addr: the zeropage address to load from
 ;  - .Y:   offset to apply to load address
 ; OUT:
 ;  - .A: the value that was read
@@ -137,21 +137,21 @@ FINAL_BANK_MONITOR = $12
 ;  - .N: set if the value read is negative
 .macro LOADB_Y addr
 	jsr reu::loadb_off
-	.word addr
+	.byte addr
 .endmacro
 
 ;*******************************************************************************
 ; LOADB
 ; Load a byte from the given address
 ; IN:
-;  - addr: the address to load from
+;  - addr: the zeropage address to load from
 ; OUT:
 ;  - .A: the value that was read
 ;  - .Z: set if the value read was 0
 ;  - .N: set if the value read is negative
 .macro LOADB addr
 	jsr reu::loadb
-	.word addr
+	.byte addr
 .endmacro
 
 ;*******************************************************************************
@@ -172,10 +172,10 @@ FINAL_BANK_MONITOR = $12
 ; IN:
 ;   - .A: byte to write
 ;   - .Y: offset
-;   - addr: address to write to
+;   - addr: zeropage address to write to
 .macro STOREB_Y addr
 	jsr reu::storeb_off
-	.word addr
+	.byte addr
 .endmacro
 
 ;*******************************************************************************

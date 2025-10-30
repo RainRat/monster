@@ -98,8 +98,11 @@
 .export	__ram_copy_line
 .proc __ram_copy_line
 	ldy #$00
-:	lda (zp::bankaddr0),y
-	sta (zp::bankaddr1),y
+	sta reu::reuaddr+2
+:	jsr reu::loadb_off
+	.byte zp::bankaddr0
+	jsr reu::storeb_off
+	.byte zp::bankaddr1
 	beq @done
 	cmp #$0d
 	beq @done
@@ -207,13 +210,12 @@ __ram_copy_banked:
 @dst=r4
 @bank=r6
 @bankdst=r7
-	sta reu::reuaddr+2
-	lda @src
-
-	lda @size
-	sta reu::txlen
-	lda @size+1
-	sta reu::txlen+1
-
+	sta reu::move_src+2
+	sta reu::move_dst+2
+	stxy reu::txlen
+	ldxy @src
+	stxy reu::move_src
+	ldxy @dst
+	stxy reu::move_dst
+	jmp reu::move
 .endproc
-
