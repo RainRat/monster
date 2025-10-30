@@ -181,16 +181,22 @@
 
 ;*******************************************************************************
 ; COPY BANKED
-; Entrypoint to copy from one bank to another
+; Entrypoint to store from the C64 to the destination bank
 ; IN:
-;  - .A:  the source bank
 ;  - .XY: the number of bytes to copy
 ;  - r2:  the source address
 ;  - r4:  the destination address
 ;  - r7:  the destination bank
 .export __ram_copy_banked
 __ram_copy_banked:
-	skw	; don't overwrite destination bank
+	stxy reu::txlen
+	lda r7
+	sta reu::reuaddr+2
+	ldxy r4
+	stxy reu::reuaddr
+	ldxy r2
+	stxy reu::c64addr
+	jmp reu::store
 
 ;*******************************************************************************
 ; MEMCPY
