@@ -129,7 +129,7 @@ screen: .res 40*24
 	; scroll everything up
 	ldx #$00
 	lda #HEIGHT-1
-	CALL FINAL_BANK_MAIN, text::scrollup
+	CALLMAIN text::scrollup
 
 	; scroll the monitor screen buffer
 	ldxy #screen
@@ -165,7 +165,7 @@ screen: .res 40*24
 @print:	ldxy @msg
 
 	; render the message
-	CALL FINAL_BANK_MAIN, text::render_ind
+	CALLMAIN text::render_ind
 	stxy @msg
 
 	lda #$00
@@ -218,7 +218,7 @@ screen: .res 40*24
 
 	ldxy @msg
 	lda __monitor_outfile
-	CALL FINAL_BANK_MAIN, file::savebin
+	CALLMAIN file::savebin
 
 	; write a newline
 	lda #$0d
@@ -248,7 +248,7 @@ screen: .res 40*24
 .proc __monitor_clear
 @scr=r0
 	; clear the screen
-	CALL FINAL_BANK_MAIN, scr::clr
+	CALLMAIN scr::clr
 
 	; clear the monitor buffer
 	ldxy #screen
@@ -284,7 +284,7 @@ screen: .res 40*24
 @scr=r0
 @line=r2
 @linebuff=mem::spare
-	CALL FINAL_BANK_MAIN, scr::clr
+	CALLMAIN scr::clr
 
 	lda line
 	beq @cont
@@ -303,7 +303,7 @@ screen: .res 40*24
 
 	lda @line
 	ldxy #@linebuff
-	CALL FINAL_BANK_MAIN, text::print
+	CALLMAIN text::print
 	lda @scr
 	clc
 	adc #40
@@ -347,7 +347,7 @@ screen: .res 40*24
 @prompt:
 	ldxy #mem::linebuffer
 	lda line
-	CALL FINAL_BANK_MAIN, text::print
+	CALLMAIN text::print
 	lda #MONITOR_PROMPT
 	sta mem::linebuffer
 	lda #$00
@@ -363,12 +363,12 @@ screen: .res 40*24
 	sta zp::curx		; move to start of line
 	ldx #$01
 	ldy #$00
-	CALL FINAL_BANK_MAIN, cur::setmin
+	CALLMAIN cur::setmin
 
-	CALL FINAL_BANK_MAIN, irq::on
+	CALLMAIN irq::on
 
 	ldxy #__monitor_getch
-	CALL FINAL_BANK_MAIN, edit::gets
+	CALLMAIN edit::gets
 	bcs @clrline
 	pha
 
@@ -384,7 +384,7 @@ screen: .res 40*24
 
 	; clear the input line
 	lda #HEIGHT-1
-	CALL FINAL_BANK_MAIN, scr::clrline
+	CALLMAIN scr::clrline
 
 	ldxy #mem::linebuffer
 	jsr set___monitor_outfile
@@ -407,14 +407,14 @@ screen: .res 40*24
 	; close the output file (if not screen)
 	lda __monitor_outfile
 	beq :+
-	CALL FINAL_BANK_MAIN, file::close
-	CALL FINAL_BANK_MAIN, irq::on
+	CALLMAIN file::close
+	CALLMAIN irq::on
 
 :	pla
 	plp
 	bcc @ok			; if it succeeded, continue
 
-@err:	CALL FINAL_BANK_MAIN, err::get
+@err:	CALLMAIN err::get
 	jsr __monitor_puts
 
 @ok:	lda __monitor_quit	; was QUIT signal sent?
@@ -471,7 +471,7 @@ screen: .res 40*24
 	pha
 
 	; disable IRQ for file IO
-	CALL FINAL_BANK_MAIN, irq::off
+	CALLMAIN irq::off
 
 	; found the start of the filename
 	; open the output fil$100e
@@ -482,7 +482,7 @@ screen: .res 40*24
 	lda #>(mem::linebuffer+1)
 	adc #$00
 	tay
-	CALL FINAL_BANK_MAIN, file::open_w
+	CALLMAIN file::open_w
 
 	bcs @err
 	sta __monitor_outfile

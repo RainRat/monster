@@ -32,6 +32,10 @@ FINAL_BANK_SYMBOLS = $10
 FINAL_BANK_SYMVIEW = $11
 FINAL_BANK_MONITOR = $12
 
+.macro CALLMAIN proc
+	jsr proc
+.endmacro
+
 .macro CALL bank, proc
 	jsr __ram_call
 	.byte bank

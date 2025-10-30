@@ -113,6 +113,15 @@ FINAL_BANK_FASTTEXT  = $a0|$e
 .endmacro
 
 ;******************************************************************************
+; CALLMAIN
+; equivalent to CALL FINAL_BANK_MAIN, proc
+.macro CALLMAIN proc
+	jsr __ram_call
+	.byte FINAL_BANK_MAIN
+	.word proc
+.endmacro
+
+;******************************************************************************
 ; JUMP
 ; jumps to the banked routine
 ; params:

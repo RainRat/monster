@@ -418,7 +418,7 @@ __obj_close_section:
 ;   - .C: set on error
 .export __obj_add_export
 .proc __obj_add_export
-	CALL FINAL_BANK_MAIN, lbl::find	; look up the label by name
+	CALLMAIN lbl::find	; look up the label by name
 	bcs @ret			; not found -> err
 	txa
 	ldx numexports
@@ -646,7 +646,7 @@ __obj_close_section:
 	sty @idx+1
 	lda import_indexeslo,y		; get MSB of index for symbol
 	sta @idx
-	CALL FINAL_BANK_MAIN, lbl::getname
+	CALLMAIN lbl::getname
 
 	; write out the name
 	ldy #$00
@@ -696,7 +696,7 @@ __obj_close_section:
 	tax
 	stxy @id
 
-	CALL FINAL_BANK_MAIN, lbl::getname
+	CALLMAIN lbl::getname
 
 	; write out the name
 	ldy #$00
@@ -709,14 +709,14 @@ __obj_close_section:
 
 @cont:	; write the SEGMENT id
 	ldxy @id
-	CALL FINAL_BANK_MAIN, lbl::getsegment	; get SEGMENT id
+	CALLMAIN lbl::getsegment	; get SEGMENT id
 	jsr $ffd2				; dump the SEGMENT id
 
 	; write the SEGMENT offset
 	; TODO: this is currently writing the SECTION offset
 	; need to look up this section's SEGMENT offset and add the two
 	ldxy @id
-	CALL FINAL_BANK_MAIN, lbl::getaddr
+	CALLMAIN lbl::getaddr
 	txa
 	jsr $ffd2				; write offset LSB
 	tya
@@ -1291,7 +1291,7 @@ __obj_close_section:
 :	; prepend the filename as scope so that we know the file the symbol
 	; was defined in when we resolve it
 	ldxy #@namebuff
-	CALL FINAL_BANK_MAIN, lbl::setscope
+	CALLMAIN lbl::setscope
 
 @export_loop:
 	jsr load_export
@@ -1331,11 +1331,11 @@ __obj_close_section:
 	sta zp::label_mode
 
 	ldxy #@namebuff
-	CALL FINAL_BANK_MAIN, lbl::find		; was label already added?
+	CALLMAIN lbl::find		; was label already added?
 	bcs :+					; if no -> add it
 
 	; validate: does address mode match existing symbol?
-	CALL FINAL_BANK_MAIN, lbl::addrmode
+	CALLMAIN lbl::addrmode
 	cmp zp::label_mode
 	beq @ok					; matches -> ok
 
@@ -1388,18 +1388,18 @@ __obj_close_section:
 	sta zp::label_value+1
 
 	ldxy #@namebuff
-	CALL FINAL_BANK_MAIN, lbl::find		; was label already added?
+	CALLMAIN lbl::find		; was label already added?
 	bcs @add				; no -> add it
 
 	; validate: is segment SEG_UNDEF?
 	; if not, error (only 1 EXPORT is allowed per symbol)
-	CALL FINAL_BANK_MAIN, lbl::getsegment
+	CALLMAIN lbl::getsegment
 	cmp #SEG_UNDEF
 	beq :+
 	RETURN_ERR ERR_ALREADY_EXPORTED		; multiple exports
 
 :	; validate: does address mode match existing symbol?
-	CALL FINAL_BANK_MAIN, lbl::addrmode
+	CALLMAIN lbl::addrmode
 	cmp zp::label_mode
 	bne @addr_mode_mismatch
 @ok:	clc
@@ -1471,8 +1471,8 @@ __obj_close_section:
 @mapimport:
 	; look up the import's fully resolved address by its name
 	ldxy #@namebuff
-	CALL FINAL_BANK_MAIN, lbl::find	; find label ID by name
-	CALL FINAL_BANK_MAIN, lbl::addr	; get the resolved address
+	CALLMAIN lbl::find	; find label ID by name
+	CALLMAIN lbl::addr	; get the resolved address
 	stxy @addr
 
 	jsr readb			; eat info byte

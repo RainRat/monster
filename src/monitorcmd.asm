@@ -49,7 +49,7 @@ CMD_BUFF = $101
 .export __dbgcmd_run
 .proc __dbgcmd_run
 @cnt=r0
-	CALL FINAL_BANK_MAIN, str::toupper	; commands are case insensitive
+	CALLMAIN str::toupper	; commands are case insensitive
 	stxy zp::line
 
 	ldy #$00
@@ -162,7 +162,7 @@ CMD_BUFF = $101
 
 @set:	ldxy @addr
 	lda @mode
-	CALL FINAL_BANK_MAIN, watch::add		; add the watch
+	CALLMAIN watch::add		; add the watch
 	clc
 @err:	rts
 .endproc
@@ -177,7 +177,7 @@ CMD_BUFF = $101
 	lda #$00
 	sta @cnt
 
-	CALL FINAL_BANK_MAIN, watch::getdata
+	CALLMAIN watch::getdata
 	stx @num
 	cpx #$00
 	beq @done
@@ -190,7 +190,7 @@ CMD_BUFF = $101
 	bcc @loop
 @done:	RETURN_OK
 
-@print:	CALL FINAL_BANK_MAIN, ui::render_watch
+@print:	CALLMAIN ui::render_watch
 	jmp mon::puts
 .endproc
 
@@ -204,12 +204,12 @@ CMD_BUFF = $101
 .proc remove_watch
 	; get the ID
 	ldxy zp::line
-	CALL FINAL_BANK_MAIN, atoi
+	CALLMAIN atoi
 	bcs @done
 @ok:	cpy #$00
 	bne @done				; there can't be > $ff watches
 	txa
-	CALL FINAL_BANK_MAIN, watch::remove
+	CALLMAIN watch::remove
 	clc
 @done:	rts
 .endproc
@@ -224,7 +224,7 @@ CMD_BUFF = $101
 	lda #$00
 	sta @cnt
 
-	CALL FINAL_BANK_MAIN, brkpt::num
+	CALLMAIN brkpt::num
 	sta @num
 	cmp #$00
 	beq @done
@@ -237,7 +237,7 @@ CMD_BUFF = $101
 	bcc @loop
 @done:	RETURN_OK
 
-@print:	CALL FINAL_BANK_MAIN, ui::render_breakpoint
+@print:	CALLMAIN ui::render_breakpoint
 	jmp mon::puts
 .endproc
 
@@ -257,11 +257,11 @@ CMD_BUFF = $101
 	stxy @addr
 
 	; get the line/file for the given address
-	CALL FINAL_BANK_MAIN, dbgi::addr2line
+	CALLMAIN dbgi::addr2line
 	bcs @skip_line
 	pha			; save file id
 	stxy @line
-	CALL FINAL_BANK_MAIN, dbg::setbrkatline
+	CALLMAIN dbg::setbrkatline
 
 	lda @addr
 	sta r0
@@ -269,13 +269,13 @@ CMD_BUFF = $101
 	sta r0+1
 	pla			; restore file id
 	ldxy @line
-	CALL FINAL_BANK_MAIN, dbg::brksetaddr
+	CALLMAIN dbg::brksetaddr
 	RETURN_OK
 
 @skip_line:
 	; no line number for the address requested
 	ldxy @addr
-	CALL FINAL_BANK_MAIN, dbg::setbrkataddr
+	CALLMAIN dbg::setbrkataddr
 	clc						; ok
 @done:	rts
 .endproc
@@ -309,7 +309,7 @@ CMD_BUFF = $101
 	bcc :+
 	inc zp::line+1
 
-:	CALL FINAL_BANK_MAIN, dbgi::getfileid
+:	CALLMAIN dbgi::getfileid
 	bcs @done				; no file found
 	pha					; save file ID
 
@@ -325,19 +325,19 @@ CMD_BUFF = $101
 
 	; add the breakpoint
 	lda @fileid
-	CALL FINAL_BANK_MAIN, dbg::setbrkatline
+	CALLMAIN dbg::setbrkatline
 
 	; get the address for the given line
 	ldxy @line
 	lda @fileid
-	CALL FINAL_BANK_MAIN, dbgi::line2addr
+	CALLMAIN dbgi::line2addr
 	bcs @done				; no matching line found
 
 	stxy r0
 	; map the address we looked up to the line
 	ldxy @line
 	lda @fileid
-	CALL FINAL_BANK_MAIN, dbg::brksetaddr
+	CALLMAIN dbg::brksetaddr
 	clc
 @done:	rts
 .endproc
@@ -352,14 +352,14 @@ CMD_BUFF = $101
 .proc remove_break
 	; get the ID
 	ldxy zp::line
-	CALL FINAL_BANK_MAIN, atoi
+	CALLMAIN atoi
 	bcs @done
 
 @ok:	cpy #$00
 	bne @done	; there can't be > $ff breakpoints
 
 	; .X is the ID to remove
-	CALL FINAL_BANK_MAIN, dbg::removebreakpointbyid
+	CALLMAIN dbg::removebreakpointbyid
 	clc
 @done:	rts
 .endproc
@@ -590,7 +590,7 @@ CMD_BUFF = $101
 .proc goto
 	jsr debugging
 	bcc :+				; can't step if not debugging
-	CALL FINAL_BANK_MAIN, run::go
+	CALLMAIN run::go
 :	rts
 .endproc
 
@@ -701,7 +701,7 @@ CMD_BUFF = $101
 
 	ldxy #strings::debug_registers
 	jsr mon::puts
-	CALL FINAL_BANK_MAIN, ui::regs_contents
+	CALLMAIN ui::regs_contents
 	jsr mon::puts
 	clc
 @done:	rts
@@ -724,7 +724,7 @@ CMD_BUFF = $101
 	ldxy #@buff
 	stxy r0
 	ldxy @addr
-	CALL FINAL_BANK_MAIN, asm::disassemble
+	CALLMAIN asm::disassemble
 	bcc @ok
 
 	; if invalid, just draw a literal byte value
@@ -824,7 +824,7 @@ CMD_BUFF = $101
 	jsr eval
 	bcs @ret		; return if address is invalid expression
 	stxy @addr
-	CALL FINAL_BANK_MAIN, asm::setpc
+	CALLMAIN asm::setpc
 
 	jsr process_ws
 	lda (zp::line),y
@@ -833,10 +833,10 @@ CMD_BUFF = $101
 
 @getop:	lda #FINAL_BANK_MAIN
 	ldxy zp::line
-	CALL FINAL_BANK_MAIN, asm::tokenize	; assemble the instruction
+	CALLMAIN asm::tokenize	; assemble the instruction
 	bcc @nexti
 
-@err:	CALL FINAL_BANK_MAIN, err::get
+@err:	CALLMAIN err::get
 	jsr mon::puts				; print the error
 	clc
 @ret:	rts
@@ -867,10 +867,10 @@ CMD_BUFF = $101
 	ldx #$08
 	stx zp::curx
 	ldy #$00
-	CALL FINAL_BANK_MAIN, cur::setmin
+	CALLMAIN cur::setmin
 
 	ldxy #mon::getch
-	CALL FINAL_BANK_MAIN, edit::gets
+	CALLMAIN edit::gets
 	ldxy #mem::linebuffer
 	jsr __monitor_puts
 	ldxy #mem::linebuffer
@@ -911,7 +911,7 @@ CMD_BUFF = $101
 @l0:	lda mon::int
 	bne @done		; SIGINT, quit
 	ldxy @addr
-	CALL FINAL_BANK_MAIN, view::memline
+	CALLMAIN view::memline
 	jsr mon::puts
 
 	; move to address for next row
@@ -947,7 +947,7 @@ CMD_BUFF = $101
 	bcs :+
 	rts		; can't step if not debugging
 
-:	CALL FINAL_BANK_MAIN, dbg::step
+:	CALLMAIN dbg::step
 	; print the registers
 	jsr __dbgcmd_regs
 	jmp put_instruction
@@ -961,7 +961,7 @@ CMD_BUFF = $101
 .proc step_over
 	jsr debugging
 	bcc @done				; can't step if not debugging
-	CALL FINAL_BANK_MAIN, dbg::step_over
+	CALLMAIN dbg::step_over
 	jsr __dbgcmd_regs
 	jmp put_instruction
 @done:	rts
@@ -974,7 +974,7 @@ CMD_BUFF = $101
 	jsr debugging
 	bcc @done				; can't step if not debugging
 
-	CALL FINAL_BANK_MAIN, dbg::trace
+	CALLMAIN dbg::trace
 	jsr __dbgcmd_regs
 	jmp put_instruction
 @done:	rts
@@ -1054,11 +1054,11 @@ CMD_BUFF = $101
 
 	; get the symbol name for this address (if there is one)
 	ldxy @addr
-	CALL FINAL_BANK_MAIN, lbl::by_addr
+	CALLMAIN lbl::by_addr
 	stxy @lbl		; save the id of the label
 
 	; subtract the address we found from the address we were looking for
-	CALL FINAL_BANK_MAIN, lbl::getaddr
+	CALLMAIN lbl::getaddr
 	stxy r0
 	ldxy @addr
 	sub16 r0
@@ -1074,7 +1074,7 @@ CMD_BUFF = $101
 	pha
 	sta r0
 	ldxy @lbl
-	CALL FINAL_BANK_MAIN, lbl::getname
+	CALLMAIN lbl::getname
 
 @push_addr:
 	; push the address of the procedure call
@@ -1106,7 +1106,7 @@ CMD_BUFF = $101
 	bcs :+
 	rts		; can't step if not debugging
 
-:	CALL FINAL_BANK_MAIN, dbg::step_out
+:	CALLMAIN dbg::step_out
 	jsr __dbgcmd_regs
 	jmp put_instruction
 .endproc
@@ -1124,28 +1124,28 @@ CMD_BUFF = $101
 	ldxy @stopaddr
 	stxy file::save_address_end
 
-	CALL FINAL_BANK_MAIN, irq::off
+	CALLMAIN irq::off
 
 	; open the output file for writing
 	ldxy zp::line
-	CALL FINAL_BANK_MAIN, file::open_w
+	CALLMAIN file::open_w
 	bcs @err
 	pha
 
 	; save the given memory range
 	ldxy @startaddr
-	CALL FINAL_BANK_MAIN, file::savebin
+	CALLMAIN file::savebin
 
 	pla
 	bcs @err				; if file save failed -> done
 
 	; close the file
-	CALL FINAL_BANK_MAIN, file::close
+	CALLMAIN file::close
 	jsr @err				; restore IRQ
 	RETURN_OK
 
 @err:	pha					; save error code
-	CALL FINAL_BANK_MAIN, irq::on
+	CALLMAIN irq::on
 	pla
 	sec
 @done:	rts
@@ -1238,7 +1238,7 @@ CMD_BUFF = $101
 ; NEW
 ; Reinitializes BASIC in "virtual" (user) memory
 .proc new
-	CALL FINAL_BANK_MAIN, run::clr
+	CALLMAIN run::clr
 	RETURN_OK
 .endproc
 
@@ -1404,7 +1404,7 @@ CMD_BUFF = $101
 	sta r0
 	lda #>$100
 	sta r0+1
-	CALL FINAL_BANK_MAIN, asm::disassemble
+	CALLMAIN asm::disassemble
 
 	; print the disassembled instruction of ??? if we couldn't disassemble
 	ldxy #strings::question_marks

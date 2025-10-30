@@ -853,6 +853,7 @@ main:	jsr key::getch
 	stxy @prompt
 	jsr cur::off
 	jsr text::savebuff
+	jmp *
 	jsr text::clrline
 
 	pushcur			; save the cursor state
@@ -2916,6 +2917,7 @@ goto_buffer:
 @new:	ldxy @file		; restore new file name
 	jsr dbgi::setfile	; replace existing name for this ID
 	ldxy @file		; restore new file name
+	jmp *
 	jmp src::name		; rename to the "source" name to string in .XY
 .endproc
 

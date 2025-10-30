@@ -82,6 +82,7 @@ start:
 
 	jsr reu::init
 	jsr asm::reset
+	jsr src::init
 	jsr src::new
 
 	; initialize bitmap
@@ -104,6 +105,4 @@ start:
 	lda #$4c
 	sta zp::jmpaddr
 
-	lda #$10
-	sta reu::reuaddr+2
 	jmp edit::init

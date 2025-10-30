@@ -72,6 +72,8 @@ __text_status_fmt: .byte 0	; the format to use for the status display
 render_off: .byte 0
 indirect:   .byte 0
 
+tempbuff: .res LINESIZE
+
 .CODE
 ;*******************************************************************************
 ; BUFFERON
@@ -216,7 +218,7 @@ indirect:   .byte 0
 	rts
 
 @printing:
-	jsr __text_savebuff
+	jsr savetmp
 	ldx zp::curx
 	cpx cur::maxx
 	bcs @err		; cursor is limited
@@ -273,7 +275,7 @@ indirect:   .byte 0
 	sta zp::curx
 	lda @savecury
 	sta zp::cury
-	jmp __text_restorebuff
+	jmp restoretmp
 
 :	lda __text_buffer
 	bne @done
@@ -779,12 +781,12 @@ LAST_TAB_COL=TAB_WIDTH*(tabs_end-tabs)
 
 ;*******************************************************************************
 ; SAVEBUFF
-; Stores the contents of linebuffer to spare memory. The contents of the
+; Stores the contents of kinebuffer to spare memory. The contents of the
 ; most recent call to this routine will be restored when text::restorebuff is
 ; called
 .export __text_savebuff
 .proc __text_savebuff
-	ldy #39
+	ldy #LINESIZE-1
 :	lda mem::linebuffer,y
 	sta mem::linesave,y
 	dey
@@ -798,13 +800,36 @@ LAST_TAB_COL=TAB_WIDTH*(tabs_end-tabs)
 ; recent call to text::savebuff)
 .export __text_restorebuff
 .proc __text_restorebuff
-	ldy #39
+	ldy #LINESIZE-1
 :	lda mem::linesave,y
 	sta mem::linebuffer,y
 	dey
 	bpl :-
 	rts
 .endproc
+
+;*******************************************************************************
+; SAVETMP
+.proc savetmp
+	ldy #LINESIZE-1
+:	lda mem::linebuffer,y
+	sta tempbuff,y
+	dey
+	bpl :-
+	rts
+.endproc
+
+;*******************************************************************************
+; RESTORETMP
+.proc restoretmp
+	ldy #LINESIZE-1
+:	lda tempbuff,y
+	sta mem::linebuffer,y
+	dey
+	bpl :-
+	rts
+.endproc
+
 
 ;*******************************************************************************
 ; INFO

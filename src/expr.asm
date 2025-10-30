@@ -224,7 +224,7 @@ operands: .res $100
 	bne  :+			; if '*' assume 2 bytes
 
 	; get the address mode of the symbol
-	CALL FINAL_BANK_MAIN, lbl::addrmode
+	CALLMAIN lbl::addrmode
 
 	cmp #$00		; zeropage?
 	bne :+			; if not zeropage, need 2 bytes
@@ -295,12 +295,12 @@ operands: .res $100
 	cmpw #SYM_UNRESOLVED	; check magic "unresolved" value
 	beq @unresolved
 
-	CALL FINAL_BANK_MAIN, lbl::addr_and_mode
+	CALLMAIN lbl::addr_and_mode
 	stxy @val1					; addend
 
 	; get the segment ID
 	ldxy @symbol
-	CALL FINAL_BANK_MAIN, lbl::getsegment
+	CALLMAIN lbl::getsegment
 
 	sta @segment		; store segment ID
 	ldxy @val1		; restore label address/addend
@@ -707,7 +707,7 @@ operands: .res $100
 
 	; check if symbol is in same segment
 	; (can't do postproc on inter-segment symbol)
-	CALL FINAL_BANK_MAIN, lbl::getsegment
+	CALLMAIN lbl::getsegment
 	cmp asm::segment
 	beq :+
 	sec
@@ -715,7 +715,7 @@ operands: .res $100
 :	ldxy @symbol		; restore symbol ID
 
 	; get the address (addend) of the label within the segment
-	CALL FINAL_BANK_MAIN, lbl::by_id
+	CALLMAIN lbl::by_id
 
 	lda @postproc
 	cmp #POSTPROC_MSB
@@ -984,7 +984,7 @@ operands: .res $100
 ;  - .XY:      the ID for the label
 .proc get_label
 @id=zp::expr
-	CALL FINAL_BANK_MAIN, lbl::isvalid 	; if verifying, let this pass if label is valid
+	CALLMAIN lbl::isvalid 	; if verifying, let this pass if label is valid
 	bcs @done
 
 	; if we are only verifying (e.g. in pass 1 of assembly), label
@@ -995,7 +995,7 @@ operands: .res $100
 @get_id:
 	; if not verifying (e.g. in pass 2), label ID is final; try to get it
 	ldxy zp::line
-	CALL FINAL_BANK_MAIN, lbl::find
+	CALLMAIN lbl::find
 	bcc :+
 
 	; failed to lookup symbol ID, check if pass 1
@@ -1008,7 +1008,7 @@ operands: .res $100
 	bcc @updateline	; proceed with dummy ID
 
 :	stxy @id
-	CALL FINAL_BANK_MAIN, lbl::addrmode
+	CALLMAIN lbl::addrmode
 	sta @mode
 
 @updateline:
@@ -1122,14 +1122,14 @@ operands: .res $100
 
 	pha			; save address mode
 	stxy @lbl
-	CALL FINAL_BANK_MAIN, lbl::getsegment
+	CALLMAIN lbl::getsegment
 	ldxy @lbl
 	cmp #SEG_ABS
 	bne @chkmode
 
 @val:	; if segment == SEG_ABS, label is constant, return its value
 	pla			; cleanup
-	CALL FINAL_BANK_MAIN, lbl::getaddr
+	CALLMAIN lbl::getaddr
 	lda #TOK_VALUE
 	RETURN_OK
 
@@ -1181,7 +1181,7 @@ operands: .res $100
 ;------------------
 @decimal:
 	ldxy zp::line
-	CALL FINAL_BANK_MAIN, atoi	; convert to binary
+	CALLMAIN atoi	; convert to binary
 	bcs @ret			; return err
 	adc zp::line
 	sta zp::line

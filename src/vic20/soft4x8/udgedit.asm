@@ -99,7 +99,7 @@ linebuffer = $0400
 	ldxy #CUR_DELAY
 	stxy cur_tmr
 
-:	CALL FINAL_BANK_MAIN, key::getch	; get key
+:	CALLMAIN key::getch	; get key
 	cmp #$00
 	beq @main
 	cmp #K_RETURN
@@ -155,7 +155,7 @@ linebuffer = $0400
 ; REFRESH STATUS
 ; Updates the status lines with the new row/column/mode info for the editor
 .proc refresh_status
-	CALL FINAL_BANK_MAIN, ui::update_statusline
+	CALLMAIN ui::update_statusline
 	lda #23
 	JUMP FINAL_BANK_MAIN, text::status
 .endproc

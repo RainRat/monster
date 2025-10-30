@@ -371,12 +371,12 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 	pla
 
 	; load link file into filebuff
-	CALL FINAL_BANK_MAIN, file::open_r_prg
+	CALLMAIN file::open_r_prg
 	pha					; save file ID
-	CALL FINAL_BANK_MAIN, file::loadbin
+	CALLMAIN file::loadbin
 	pla					; restore file ID
 	php					; save .C
-	CALL FINAL_BANK_MAIN, file::close
+	CALLMAIN file::close
 	plp					; restore .C
 	bcs @err
 
@@ -431,7 +431,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 	rts			; err, sections already declared
 
 :	; read past "MEMORY" declaration
-	CALL FINAL_BANK_MAIN, line::process_word
+	CALLMAIN line::process_word
 	inc @sections_declared
 
 	; look for the '['
@@ -460,7 +460,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 	rts			; err, sections already declared
 
 :	; read past "SEGMENTS"
-	CALL FINAL_BANK_MAIN, line::process_word
+	CALLMAIN line::process_word
 	inc @segments_declared
 
 	; look for the '['
@@ -936,7 +936,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 	ldxy #@namebuff
 	stxy r0
 	ldxy @i
-	CALL FINAL_BANK_MAIN, lbl::getname	; look up the label's name
+	CALLMAIN lbl::getname	; look up the label's name
 	ldxy #@namebuff
 	jsr file_id_from_scope
 	jsr get_file_segment_table		; get offset table for file
@@ -944,7 +944,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 
 	; look up the segment ID for the symbol
 	ldxy @i
-	CALL FINAL_BANK_MAIN, lbl::getsegment	; get segment ID
+	CALLMAIN lbl::getsegment	; get segment ID
 	cmp #SEG_ABS				; is segment ABSOLUTE?
 	beq @next				; if so, already resolved
 	cmp #SEG_UNDEF				; is segment UNDEFINED?
@@ -953,7 +953,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 
 	; look up the segment-offset (address) for the symbol
 	ldxy @i
-	CALL FINAL_BANK_MAIN, lbl::getaddr	; look up the symbol's offset
+	CALLMAIN lbl::getaddr	; look up the symbol's offset
 	tya
 	pha					; save MSB
 	clc
@@ -974,7 +974,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 
 	; store the resolved address
 	ldxy @i					; restore symbol ID to update
-	CALL FINAL_BANK_MAIN, lbl::setaddr	; store the resolved address
+	CALLMAIN lbl::setaddr	; store the resolved address
 
 @next:	incw @i
 	ldxy @i
@@ -1015,8 +1015,8 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 	; initialize state:
 	; labels (global symbol table)
 	; debug info (global debug info)
-	CALL FINAL_BANK_MAIN, lbl::clr
-	CALL FINAL_BANK_MAIN, dbgi::init
+	CALLMAIN lbl::clr
+	CALLMAIN dbgi::init
 
 @initsegments:
 	; set the start address for each SECTION to the SEGMENT
@@ -1046,7 +1046,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 	; load the next .O (object) file in the object list
 	ldxy @objfile
 	stxy obj::filename
-	CALL FINAL_BANK_MAIN, file::open_r_prg
+	CALLMAIN file::open_r_prg
 	pha					; save file handle
 	tax
 	jsr $ffc6				; CHKIN
@@ -1056,7 +1056,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 	php			; save .C (error)
 
 	; close the object file
-	CALL FINAL_BANK_MAIN, file::close
+	CALLMAIN file::close
 	jsr $ffcc				; CLRCHN
 	plp					; restore load_headers error
 	bcc :+
@@ -1196,7 +1196,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 .proc link_object
 @sec_idx=zp::tmp10
 @obj_file_handle=zp::tmp12
-	CALL FINAL_BANK_MAIN, file::open_r_prg
+	CALLMAIN file::open_r_prg
 	sta @obj_file_handle
 
 	tax
@@ -1205,7 +1205,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 
 	php					; save error flag
 	lda @obj_file_handle
-	CALL FINAL_BANK_MAIN, file::close
+	CALLMAIN file::close
 
 	plp					; restore error flag
 	rts
@@ -1415,13 +1415,13 @@ __link_get_segment_by_name:
 	beq @hex
 
 @dec:	ldxy #@buff
-	CALL FINAL_BANK_MAIN, atoi
+	CALLMAIN atoi
 	bcc @cont
 	rts			; error
 
 @hex:	; get the value of the value string
 	ldxy #@buff+1		; +1 to get after the '$'
-	CALL FINAL_BANK_MAIN, util::parsehex
+	CALLMAIN util::parsehex
 	bcs @ret
 
 @cont:	stxy @val
@@ -1625,7 +1625,7 @@ __link_get_segment_by_name:
 @name=r6
 @symbuff=$100
 	ldxy #@filename
-	CALL FINAL_BANK_MAIN, file::open_w
+	CALLMAIN file::open_w
 	bcc :+
 	rts
 
@@ -1726,7 +1726,7 @@ __link_get_segment_by_name:
 	ldxy #@symbuff
 	stxy r0
 	ldxy @i
-	CALL FINAL_BANK_MAIN, lbl::getname
+	CALLMAIN lbl::getname
 	ldxy #@symbuff
 	jsr puts
 
@@ -1743,7 +1743,7 @@ __link_get_segment_by_name:
 
 	; write the label's address
 	ldxy @i
-	CALL FINAL_BANK_MAIN, lbl::addr_and_mode
+	CALLMAIN lbl::addr_and_mode
 	cmp #$00					; zeropage?
 	beq @zp
 @abs:	jsr putword
@@ -1795,7 +1795,7 @@ __link_get_segment_by_name:
 	jsr $ffd2
 
 	txa
-	CALL FINAL_BANK_MAIN, util::hextostr
+	CALLMAIN util::hextostr
 	tya
 	jsr $ffd2
 	txa
@@ -1814,13 +1814,13 @@ __link_get_segment_by_name:
 	txa
 	pha
 	tya
-	CALL FINAL_BANK_MAIN, util::hextostr
+	CALLMAIN util::hextostr
 	tya
 	jsr $ffd2
 	txa
 	jsr $ffd2
 	pla
-	CALL FINAL_BANK_MAIN, util::hextostr
+	CALLMAIN util::hextostr
 	tya
 	jsr $ffd2
 	txa

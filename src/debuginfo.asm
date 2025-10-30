@@ -1032,7 +1032,7 @@ get_filename = get_filename_addr
 	jsr get_filename_addr	; get the destination address for ID
 	stxy @dst
 	ldxy @filename		; restore filename
-	CALL FINAL_BANK_MAIN, str::len
+	CALLMAIN str::len
 
 	; bytes to copy = strlen(@filename)+1
 	tax
@@ -1041,7 +1041,7 @@ get_filename = get_filename_addr
 	lda #FINAL_BANK_DEBUG			; dest bank
 	sta r7
 	lda #FINAL_BANK_MAIN			; source bank
-	CALL FINAL_BANK_MAIN, ram::copybanked
+	CALLMAIN ram::copybanked
 
 	lda numfiles	; get ID of new file
 	inc numfiles
