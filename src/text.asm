@@ -830,7 +830,6 @@ LAST_TAB_COL=TAB_WIDTH*(tabs_end-tabs)
 	rts
 .endproc
 
-
 ;*******************************************************************************
 ; INFO
 ; Copies the given message directly to the status line.

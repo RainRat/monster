@@ -297,6 +297,7 @@ COLMEM_ADDR=$9400
 	tay
 	dey
 	beq @drive
+
 	ldx #39
 :	lda (@filename),y
 	sta mem::statusline,x
