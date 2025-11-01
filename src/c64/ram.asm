@@ -66,6 +66,7 @@ FINAL_BANK_MAIN = $00
 	lda @a			; restore .A
 	ldx @x			; restore .X
 	jsr zp::bankjmpaddr	; call the target routine
+	php
 	sta @a			; save .A
 	stx @x			; save .X
 
@@ -76,6 +77,7 @@ FINAL_BANK_MAIN = $00
 
 	lda @a			; restore .A
 	ldx @x			; restore .X
+	plp
 	rts
 .endproc
 

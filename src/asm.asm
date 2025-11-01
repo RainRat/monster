@@ -63,6 +63,7 @@
 .include "errlog.inc"
 .include "expr.inc"
 .include "file.inc"
+.include "kernal.inc"
 .include "layout.inc"
 .include "labels.inc"
 .include "line.inc"
@@ -1841,7 +1842,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	bcs @ret
 	pha		; save file handle
 	tax
-	jsr $ffc6	; CHKIN (use file as input)
+	jsr krn::chkin	; CHKIN (use file as input)
 
 @l0:	; read the binary file contents byte-by-byte
 	jsr file::readb

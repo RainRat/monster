@@ -8,6 +8,7 @@
 .include "debuginfo.inc"
 .include "errors.inc"
 .include "file.inc"
+.include "kernal.inc"
 .include "labels.inc"
 .include "line.inc"
 .include "macros.inc"
@@ -1049,7 +1050,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 	CALLMAIN file::open_r_prg
 	pha					; save file handle
 	tax
-	jsr $ffc6				; CHKIN
+	jsr krn::chkin				; CHKIN
 
 	jsr obj::load_headers	; get section sizes and add global labels
 	pla			; restore file handle
@@ -1057,7 +1058,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 
 	; close the object file
 	CALLMAIN file::close
-	jsr $ffcc				; CLRCHN
+	jsr krn::clrchn				; CLRCHN
 	plp					; restore load_headers error
 	bcc :+
 	rts
@@ -1200,7 +1201,7 @@ OBJ_RELABS  = $06	; byte value followed by relative word "RA $20 LAB+5"
 	sta @obj_file_handle
 
 	tax
-	jsr $ffc6		; CHKIN
+	jsr krn::chkin		; CHKIN
 	jsr obj::load		; load the object file with the given index
 
 	php					; save error flag
@@ -1631,7 +1632,7 @@ __link_get_segment_by_name:
 
 :	pha				; save file handle
 	tax
-	jsr $ffc9			; CHKOUT
+	jsr krn::chkout			; CHKOUT
 
 	lda #$00
 	sta @i
@@ -1655,7 +1656,7 @@ __link_get_segment_by_name:
 	ldy #$00
 :	lda (@name),y
 	beq :+
-	jsr $ffd2
+	jsr krn::chrout
 	iny
 	cpy #MAX_SEGMENT_NAME_LEN
 	bne :-
@@ -1667,7 +1668,7 @@ __link_get_segment_by_name:
 	sbc @tmp
 	tay
 	lda #' '
-:	jsr $ffd2
+:	jsr krn::chrout
 	dey
 	bpl :-
 
@@ -1680,8 +1681,8 @@ __link_get_segment_by_name:
 
 	; padding between start and size
 	lda #' '
-	jsr $ffd2
-	jsr $ffd2
+	jsr krn::chrout
+	jsr krn::chrout
 
 @segsize:
 	ldx @i
@@ -1692,7 +1693,7 @@ __link_get_segment_by_name:
 
 @nextseg:
 	lda #$0d
-	jsr $ffd2
+	jsr krn::chrout
 
 	lda @name
 	clc
@@ -1708,7 +1709,7 @@ __link_get_segment_by_name:
 
 @symbols:
 	lda #$0d
-	jsr $ffd2
+	jsr krn::chrout
 
 	ldxy #@symbols_title
 	jsr puts		; write the "symbols" title
@@ -1737,7 +1738,7 @@ __link_get_segment_by_name:
 	sbc @tmp
 	tay
 	lda #' '
-:	jsr $ffd2
+:	jsr krn::chrout
 	dey
 	bne :-
 
@@ -1751,7 +1752,7 @@ __link_get_segment_by_name:
 @zp:	jsr putbyte
 @nextsym:
 	lda #$0d
-	jsr $ffd2
+	jsr krn::chrout
 	incw @i
 	ldxy @i
 	cmpw lbl::num
@@ -1777,11 +1778,11 @@ __link_get_segment_by_name:
 .proc write_h_line
 	lda #'-'
 	ldy #40
-:	jsr $ffd2
+:	jsr krn::chrout
 	dey
 	bne :-
 	lda #$0d
-	jsr $ffd2
+	jsr krn::chrout
 	rts
 .endproc
 
@@ -1792,14 +1793,14 @@ __link_get_segment_by_name:
 ;   - .X: the value to output
 .proc putbyte
 	lda #'$'
-	jsr $ffd2
+	jsr krn::chrout
 
 	txa
 	CALLMAIN util::hextostr
 	tya
-	jsr $ffd2
+	jsr krn::chrout
 	txa
-	jmp $ffd2
+	jmp krn::chrout
 .endproc
 
 ;*******************************************************************************
@@ -1809,22 +1810,22 @@ __link_get_segment_by_name:
 ;   - .XY: the value to output
 .proc putword
 	lda #'$'
-	jsr $ffd2
+	jsr krn::chrout
 
 	txa
 	pha
 	tya
 	CALLMAIN util::hextostr
 	tya
-	jsr $ffd2
+	jsr krn::chrout
 	txa
-	jsr $ffd2
+	jsr krn::chrout
 	pla
 	CALLMAIN util::hextostr
 	tya
-	jsr $ffd2
+	jsr krn::chrout
 	txa
-	jmp $ffd2
+	jmp krn::chrout
 .endproc
 
 ;*******************************************************************************
@@ -1841,7 +1842,7 @@ __link_get_segment_by_name:
 	ldy #$00
 :	lda (@str),y
 	beq @done
-	jsr $ffd2
+	jsr krn::chrout
 	iny
 	bne :-
 

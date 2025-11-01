@@ -27,6 +27,7 @@
 .include "guis.inc"
 .include "io.inc"
 .include "irq.inc"
+.include "kernal.inc"
 .include "key.inc"
 .include "keycodes.inc"
 .include "layout.inc"
@@ -446,7 +447,7 @@ main:	jsr key::getch
 	bcs @done
 	sta @fileid
 	tax
-	jsr $ffc9		; CHKOUT, file in .X is output
+	jsr krn::chkout		; CHKOUT, file in .X is output
 
 	ldxy #strings::dumping
 	jsr print_info
@@ -3057,29 +3058,29 @@ goto_buffer:
 
 	sta @file
 	tax
-	jsr $ffc6		; CHKIN, file in .X is input
+	jsr krn::chkin		; CHKIN, file in .X is input
 
 	; read the start address of the program
-	jsr $ffa5
+	jsr krn::chrin
 	sta asm::origin
 	sta @addr
-	jsr $ffa5
+	jsr krn::chrin
 	sta asm::origin+1
 	sta @addr+1
 
 	; read the size of the program and calculate the "top" address
-	jsr $ffa5
+	jsr krn::chrin
 	clc
 	adc asm::origin
 	sta asm::top
 	php
-	jsr $ffa5
+	jsr krn::chrin
 	plp
 	adc asm::origin+1
 	sta asm::top+1
 
 	; read the CODE (binary data)
-:	jsr $ffa5
+:	jsr krn::chrin
 	ldxy @addr
 	jsr vmem::store
 	incw @addr
@@ -3119,31 +3120,31 @@ goto_buffer:
 
 :	sta @file
 	tax
-	jsr $ffc9		; CHKOUT, file in .X is output
+	jsr krn::chkout		; CHKOUT, file in .X is output
 
 	; write the start address of the program
 	lda asm::origin
 	sta @addr
-	jsr $ffd2
+	jsr krn::chrout
 	lda asm::origin+1
 	sta @addr+1
-	jsr $ffd2
+	jsr krn::chrout
 
 	; write the size of the program
 	lda asm::top
 	sec
 	sbc asm::origin
 	php
-	jsr $ffd2
+	jsr krn::chrout
 	plp
 	lda asm::top+1
 	sbc asm::origin+1
-	jsr $ffd2
+	jsr krn::chrout
 
 	; write the CODE (binary data)
 :	ldxy @addr
 	jsr vmem::load
-	jsr $ffd2
+	jsr krn::chrout
 	incw @addr
 	ldxy @addr
 	cmpw asm::top
@@ -3179,11 +3180,11 @@ goto_buffer:
 
 	; write the .PRG header
 	tax
-	jsr $ffc9		; CHKOUT, file in .X is output
+	jsr krn::chkout		; CHKOUT, file in .X is output
 	lda asm::origin
-	jsr $ffd2
+	jsr krn::chrout
 	lda asm::origin+1
-	jsr $ffd2
+	jsr krn::chrout
 
 	jmp write_asm		; write the assembled program
 .endproc

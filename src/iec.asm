@@ -1,3 +1,4 @@
+.include "kernal.inc"
 .include "layout.inc"
 .include "macros.inc"
 .include "memory.inc"
@@ -20,13 +21,13 @@
 	tax
 	tay
 	sta @ch
-	jsr $ffbd	; SETNAM
+	jsr krn::setnam	; SETNAM
 
 	lda #$0f	; file number 15
 	ldx zp::device
 	tay		; secondary address 15 (error channel)
-	jsr $ffba	; SETLFS
-	jsr $ffc0	; OPEN
+	jsr krn::setlfs	; SETLFS
+	jsr krn::open	; OPEN
 	bcc @ok
 
 	cmp #$05		; DEVICE NOT PRESENT?
@@ -37,13 +38,13 @@
 	rts
 
 @ok:	ldx #$0f	; filenumber 15
-	jsr $ffc6	; CHKIN (file 15 now used as input)
+	jsr krn::chkin	; CHKIN (file 15 now used as input)
 
 	; read the error message to mem::drive_err
-@loop:	jsr $ffb7	; READST (read status byte)
+@loop:	jsr krn::readst	; READST (read status byte)
 	bne @eof	; either EOF or read error
 
-	jsr $ffcf	; CHRIN (get a byte from file)
+	jsr krn::chrin	; CHRIN (get a byte from file)
 	cmp #$0d
 	beq @eof
 	ldx @ch
@@ -59,8 +60,8 @@
 
 @done:	; close the command channel (file 15)
 	lda #15		; filenumber 15 (command channel)
-	jsr $ffc3	; CLOSE 15
-	jsr $ffcc	; CLRCHN
+	jsr krn::close	; CLOSE 15
+	jsr krn::clrchn	; CLRCHN
 
 	ldxy #mem::drive_err
 	jmp atoi

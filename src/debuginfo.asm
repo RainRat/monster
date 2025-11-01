@@ -6,6 +6,7 @@
 ; debug information
 ;*******************************************************************************
 .include "errors.inc"
+.include "kernal.inc"
 .include "linker.inc"
 .include "macros.inc"
 .include "memory.inc"
@@ -1465,7 +1466,7 @@ get_filename = get_filename_addr
 	; write the filename (with terminating 0) to the object file
 	ldy #$00
 :	LOADB_Y @name
-	jsr $ffd2
+	jsr krn::chrout
 	iny
 	cmp #$00
 	bne :-
@@ -1481,13 +1482,13 @@ get_filename = get_filename_addr
 
 @filesdone:
 	lda #$00
-	jsr $ffd2		; write 0 to terminate filename list
+	jsr krn::chrout		; write 0 to terminate filename list
 
 ;--------------------------------------
 ; dump the BLOCK headers
 	; write the number of blocks
 	lda numblocks
-	jsr $ffd2
+	jsr krn::chrout
 
 	ldxy #blockheaders
 	stxy @dbgi
@@ -1499,7 +1500,7 @@ get_filename = get_filename_addr
 	ldy #$00
 @headers:
 	LOADB_Y @dbgi
-	jsr $ffd2
+	jsr krn::chrout
 	iny
 	cpy #SIZEOF_BLOCK_HEADER_OBJ
 	bne @headers
@@ -1515,12 +1516,12 @@ get_filename = get_filename_addr
 	LOADB_Y @dbgi
 	sbc @progstart
 	php
-	jsr $ffd2		; write the LSB of the size
+	jsr krn::chrout		; write the LSB of the size
 	iny
 	LOADB_Y @dbgi
 	plp
 	sbc @progstart+1
-	jsr $ffd2		; write the MSB of the size
+	jsr krn::chrout		; write the MSB of the size
 
 	lda @dbgi
 	clc
@@ -1543,7 +1544,7 @@ get_filename = get_filename_addr
 
 :	ldy #$00
 	LOADB_Y @dbgi
-	jsr $ffd2
+	jsr krn::chrout
 	incw @dbgi
 @chk:	ldxy @dbgi
 	cmpw freeptr
@@ -1587,7 +1588,7 @@ get_filename = get_filename_addr
 @mapfile:
 	; read a filename
 	ldy #$00
-:	jsr $ffa5
+:	jsr krn::chrin
 	sta @filename,y
 	iny
 	cmp #$00
@@ -1605,7 +1606,7 @@ get_filename = get_filename_addr
 ;--------------------------------------
 ; load the BLOCK data
 @load_blocks:
-	jsr $ffa5		; read number of blocks
+	jsr krn::chrin		; read number of blocks
 	sta numblocks
 	cmp #$00
 	bne :+
@@ -1616,7 +1617,7 @@ get_filename = get_filename_addr
 @load_block:
 	; load the BLOCK header
 	ldy #$00
-:	jsr $ffa5
+:	jsr krn::chrin
 	sta blockstate,y
 	iny
 	cpy #SIZEOF_BLOCK_HEADER_OBJ
@@ -1628,12 +1629,12 @@ get_filename = get_filename_addr
 	sta progstart
 	lda freeptr+1
 	sta progstart+1
-	jsr $ffa5		; read size LSB
+	jsr krn::chrin		; read size LSB
 	clc
 	adc freeptr
 	sta progstop		; store stop address LSB
 	php
-	jsr $ffa5		; read size MSB
+	jsr krn::chrin		; read size MSB
 	plp
 	adc freeptr+1
 	sta progstop+1		; store stop address MSB
@@ -1709,7 +1710,7 @@ get_filename = get_filename_addr
 	ldxy freeptr
 	stxy @freeptr
 	ldy #$00
-:	jsr $ffa5		; load byte
+:	jsr krn::chrin		; load byte
 	STOREB_Y @freeptr	; store it
 	incw @freeptr
 

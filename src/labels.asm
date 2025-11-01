@@ -9,6 +9,7 @@
 
 .include "config.inc"
 .include "errors.inc"
+.include "kernal.inc"
 .include "ram.inc"
 .include "macros.inc"
 .include "zeropage.inc"
@@ -2089,10 +2090,10 @@ anon_addrs: .res MAX_ANON*2
 	; write the number of symbols
 	lda numlabels
 	sta @cnt
-	jsr $ffd2
+	jsr krn::chrout
 	lda numlabels+1
 	sta @cnt+1
-	jsr $ffd2
+	jsr krn::chrout
 	ora @cnt
 	beq @done			; no symbols
 
@@ -2103,7 +2104,7 @@ anon_addrs: .res MAX_ANON*2
 
 	; write the symbol name
 @l1:	LOADB_Y @sym
-	jsr $ffd2
+	jsr krn::chrout
 	iny
 	cmp #$00
 	bne @l1
@@ -2111,10 +2112,10 @@ anon_addrs: .res MAX_ANON*2
 	; write the address
 	ldy #$00
 	LOADB_Y @addr
-	jsr $ffd2
+	jsr krn::chrout
 	incw @addr
 	LOADB_Y @addr
-	jsr $ffd2
+	jsr krn::chrout
 	incw @addr
 
 	jsr next_sym
@@ -2138,10 +2139,10 @@ anon_addrs: .res MAX_ANON*2
 @cnt=r2
 @addr=r4
 	; load the number of symbols
-	jsr $ffa5
+	jsr krn::chrin
 	sta numlabels
 	sta @cnt
-	jsr $ffa5
+	jsr krn::chrin
 	sta numlabels+1
 	sta @cnt+1
 
@@ -2154,16 +2155,16 @@ anon_addrs: .res MAX_ANON*2
 	ldy #$00
 
 @l1:	; load the name
-	jsr $ffa5
+	jsr krn::chrin
 	STOREB_Y @sym
 	iny
 	cmp #$00
 	bne @l1
 
 	; load the address
-	jsr $ffa5
+	jsr krn::chrin
 	tax
-	jsr $ffa5
+	jsr krn::chrin
 	tay
 	STOREW @addr
 	incw @addr

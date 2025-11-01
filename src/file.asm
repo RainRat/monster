@@ -30,6 +30,7 @@
 
 .include "errors.inc"
 .include "io.inc"
+.include "kernal.inc"
 .include "macros.inc"
 .include "memory.inc"
 .include "source.inc"
@@ -129,10 +130,10 @@ __file_load_src:
 ;  - .A: if .C is set, the error code
 OSPROC load
 	tax
-	jsr $ffc6	; CHKIN (file in .X now used as input)
-@l0: 	jsr $ffb7	; call READST (read status byte)
+	jsr krn::chkin	; CHKIN (file in .X now used as input)
+@l0: 	jsr krn::readst	; call READST (read status byte)
 	bne @err_or_eof	; either EOF or read error
-	jsr $ffcf	; call CHRIN (get a byte from file)
+	jsr krn::chrin	; call CHRIN (get a byte from file)
 	jsr putb	; write the byte to source/memory
 	bcc @l0
 	rts		; failed to write byte return err
@@ -158,7 +159,7 @@ ENDOSPROC
 OSPROC __file_save_bin
 	stxy __file_save_address
 	tax
-	jsr $ffc9	; CHKOUT (file in .X now uesd as output)
+	jsr krn::chkout	; CHKOUT (file in .X now uesd as output)
 	lda #$01
 	sta isbin	; flag that we're saving binary
 	jmp dosave
@@ -175,7 +176,7 @@ ENDOSPROC
 .export __file_save_src
 OSPROC __file_save_src
 	tax
-	jsr $ffc9	; CHKOUT (file in .X now uesd as output)
+	jsr krn::chkout	; CHKOUT (file in .X now uesd as output)
 	ldx #$00
 	stx isbin	; not binary
 
@@ -196,12 +197,12 @@ OSPROC dosave
 	bne @save
 	jsr src::rewind	; if saving source, go back to the start of it
 
-@save:  jsr $ffb7       ; READST (read status byte)
+@save:  jsr krn::readst       ; READST (read status byte)
 	bne @error	; error
 
 @chout: jsr getb
 	bcs @done	; EOF or end of save range
-	jsr $ffd2	; write byte to file
+	jsr krn::chrout	; write byte to file
 	jmp @save
 
 @done:	lda #$00	; no error
@@ -221,9 +222,9 @@ ENDOSPROC
 OSPROC __file_readb
 	lda #$00
 	sta __file_eof
-	jsr $ffb7     ; call READST (read status byte)
-	bne @eof      ; either EOF or read error
-	jsr $ffcf     ; call CHRIN (get a byte from file)
+	jsr krn::readst	; call READST (read status byte)
+	bne @eof	; either EOF or read error
+	jsr krn::chrin	; call CHRIN (get a byte from file)
 	RETURN_OK
 
 ; read drive err chan and translate CBM DOS error code to ours if possible
@@ -250,7 +251,7 @@ ENDOSPROC
 OSPROC __file_getline
 	stxy __file_load_address
 	tax
-	jsr $ffc6     ; CHKIN (file in .X now used as input)
+	jsr krn::chkin	; CHKIN (file in .X now used as input)
 
 	ldy #$00
 @l0:	jsr __file_readb
@@ -394,13 +395,13 @@ OSPROC __file_open
 @found:
 	pla		; get length of filename
 	ldxy @filename
-	jsr $ffbd	; SETNAM
+	jsr krn::setnam	; SETNAM
 
 	lda @file		; file handle
 	ldx zp::device		; last used device number
 	ldy secondaryaddr	; SA
-	jsr $ffba 		; SETLFS
-	jsr $ffc0 		; call OPEN
+	jsr krn::setlfs 		; SETLFS
+	jsr krn::open 		; call OPEN
 	bcc @ok
 
 @getopenerr:
@@ -430,9 +431,9 @@ OSPROC __file_exists
 	bcs @done
 	sta @file
 	tax
-	jsr $ffc6		; CHKIN (file in .X now used as input)
+	jsr krn::chkin		; CHKIN (file in .X now used as input)
 	jsr __file_readb
-	jsr $ffb7		; call READST (read status byte)
+	jsr krn::readst		; call READST (read status byte)
 	pha
 	lda @file
 	jsr __file_close
@@ -452,9 +453,9 @@ ENDOSPROC
 .export __file_close
 OSPROC __file_close
 	pha
-	jsr $ffc3		; CLOSE
+	jsr krn::close		; CLOSE
 	pla
-	jmp $ffb7		; READST
+	jmp krn::readst		; READST
 ENDOSPROC
 
 ;*******************************************************************************
@@ -463,14 +464,14 @@ ENDOSPROC
 OSPROC init_drive
 	ldxy #@i
 	lda #1
-	jsr $ffbd	; SETNAM
+	jsr krn::setnam	; SETNAM
 	lda #15
 	ldx zp::device
 	ldy #15
-	jsr $ffba	; SETLFS
-	jsr $ffc0	; OPEN
+	jsr krn::setlfs	; SETLFS
+	jsr krn::open	; OPEN
 	lda #15
-	jmp $ffc3	; CLOSE
+	jmp krn::close	; CLOSE
 
 .PUSHSEG
 .RODATA

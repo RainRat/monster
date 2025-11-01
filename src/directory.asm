@@ -11,6 +11,7 @@
 .include "errors.inc"
 .include "file.inc"
 .include "irq.inc"
+.include "kernal.inc"
 .include "key.inc"
 .include "keycodes.inc"
 .include "layout.inc"
@@ -420,12 +421,12 @@
 	stxy @buff
 
 	ldy #8
-:	jsr $ffa5
+:	jsr krn::chrin
 	dey
 	bne :-
 
 	; read until the closing '"'
-:	jsr $ffa5
+:	jsr krn::chrin
 	cmp #'"'
 	beq @done
 	sta (@buff),y
@@ -436,7 +437,7 @@
 	sta (@buff),y
 
 	; read until $00
-:	jsr $ffa5
+:	jsr krn::chrin
 	cmp #$00
 	bne :-
 
@@ -491,9 +492,9 @@
 
 ;--------------------------------------
 getb:
-        jsr $ffb7      ; call READST
-        bne @eof       ; read error or end of file
-        jmp $ffcf      ; call chrin (read byte from directory)
+        jsr krn::readst	; call READST
+        bne @eof       	; read error or end of file
+        jmp krn::chrin	; call chrin (read byte from directory)
 @eof:	pla
 	pla
 	sec

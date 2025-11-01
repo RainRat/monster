@@ -8,6 +8,7 @@
 .include "errors.inc"
 .include "expr.inc"
 .include "file.inc"
+.include "kernal.inc"
 .include "labels.inc"
 .include "linker.inc"
 .include "macros.inc"
@@ -15,18 +16,7 @@
 .include "vmem.inc"
 .include "zeropage.inc"
 
-.export __obj_opcode  = r0
-.export __obj_operand = r1
-.export __obj_opsize  = r3
-.export __obj_symbol  = r4
-.export __obj_addend  = r6
-.export __obj_info    = r8
-
-;*******************************************************************************
-; RECORD TYPES
-RECORD_BYTES = $01
-RECORD_FILL  = $02
-RECORD_EXPR  = $03
+.macpack longbranch
 
 ;*******************************************************************************
 ; CONSTANTS
@@ -50,16 +40,74 @@ SYM_ABS_EXPORT_BYTE = 5
 SYM_ABS_EXPORT_WORD = 6
 
 ;*******************************************************************************
-.segment "OBJBSS"
-reloctop: .word 0	; pointer to top of relocation table being built
-
+; ZEROPAGE
 reloc = zp::link	; when linking, pointer to current relocation
+
+;*******************************************************************************
+; BSS
+.segment "OBJBSS"
 
 .export __obj_sections_sizelo
 .export __obj_sections_sizehi
 .export __obj_segments
 .export __obj_segments_sizelo
 .export __obj_segments_sizehi
+;*******************************************************************************
+; SYMBOL INDEX MAP
+; Each entry in this array contains the index that we will map the corresponding
+; label to (see labels.asm)
+; This lets us emit a more compact list of only symbols that are used
+; If the symbol is unused, we store $ff
+; The indexes in this array represent the id of the symbol at assembly time
+symbol_index_map: .res MAX_LABELS*2
+
+;*******************************************************************************
+; SYMBOL INFO
+; This table contains the fully resolved addresses for each symbol index used
+; in the object file.
+symbol_addresses: .res MAX_IMPORTS+MAX_EXPORTS
+
+;*******************************************************************************
+; RELOC TABLES
+; This buffer contains the relocation tables for the object file
+; sections_relocstartlo/hi contain the start address for each SECTION's
+; relocation table, and each table is sections_relocsizelo/hi bytes long
+; Calling obj::addreloc appends a relocation to this table
+reloc_tables:
+.ifdef vic20
+	.res $3000
+.else
+.endif
+reloc_tables_end=*
+
+;*******************************************************************************
+; VARIABLES
+.segment "OBJVARS"
+reloctop: .word 0	; pointer to top of relocation table being built
+
+.export __obj_numsections
+__obj_numsections:
+numsections: .byte 0	; number of sections in obj file being written/read
+
+.export __obj_filename
+__obj_filename: .word 0	; pointer to name of object file being loaded
+
+.export __obj_numsegments
+__obj_numsegments:
+numsegments: .byte 0	; number of SEGMENTs in obj file being written/read
+import_indexeshi:   .res MAX_EXPORTS	; MSBs for index (in symbol_index_map)
+import_indexeslo:   .res MAX_EXPORTS	; LSBs for index (in symbol_index_map)
+
+numexports: .byte 0
+numimports: .word 0
+
+;*******************************************************************************
+; NUM SYMBOLS MAPPED
+; The number of symbols to store to the symbol table.
+; Also the index that the next mapped symbol will be stored at
+num_symbols_mapped: .word 0
+
+num_reloctables_mapped: .byte 0
 
 ;*******************************************************************************
 ; SECTIONS
@@ -96,74 +144,14 @@ sections_relocsizehi:  .res MAX_SECTIONS
 segments_relocsizelo:  .res MAX_SEGMENTS
 segments_relocsizehi:  .res MAX_SEGMENTS
 
-.export __obj_numsections
-__obj_numsections:
-numsections: .byte 0	; number of sections in obj file being written/read
-
-.export __obj_filename
-__obj_filename: .word 0	; pointer to name of object file being loaded
-
-.export __obj_numsegments
-__obj_numsegments:
-numsegments: .byte 0	; number of SEGMENTs in obj file being written/read
-
-;*******************************************************************************
-; SYMBOL INDEX MAP
-; Each entry in this array contains the index that we will map the corresponding
-; label to (see labels.asm)
-; This lets us emit a more compact list of only symbols that are used
-; If the symbol is unused, we store $ff
-; The indexes in this array represent the id of the symbol at assembly time
-.export symbol_index_map
-symbol_index_map: .res MAX_LABELS*2
-
-;*******************************************************************************
-; NUM SYMBOLS MAPPED
-; The number of symbols to store to the symbol table.
-; Also the index that the next mapped symbol will be stored at
-num_symbols_mapped: .word 0
-
-num_reloctables_mapped: .byte 0
-
-;*******************************************************************************
-; SYMBOL INFO
-; This table contains the fully resolved addresses for each symbol index used
-; in the object file.
-symbol_addresses: .res MAX_IMPORTS+MAX_EXPORTS
-
 ;*******************************************************************************
 ; EXPORTS
 ; We store the id's for each export defined so that we can find its name when we
 ; dump the object file
-numexports: .byte 0
 export_label_idslo: .res MAX_EXPORTS	; LSB of label ID for exports
 export_label_idshi: .res MAX_EXPORTS	; MSB of label ID for exports
 
 ;*******************************************************************************
-; IMPORTS
-; We store the id's for each import defined so that we can find its name when we
-; dump the object file as well as the section in the symbol_index_map so that
-; we know how to use
-numimports: .word 0
-import_label_idslo: .res MAX_EXPORTS	; LSBs of label ID for imports
-import_label_idshi: .res MAX_EXPORTS	; MSBs of label ID for imports
-import_indexeslo:   .res MAX_EXPORTS	; LSBs for index (in symbol_index_map)
-import_indexeshi:   .res MAX_EXPORTS	; MSBs for index (in symbol_index_map)
-
-;*******************************************************************************
-; RELOC TABLES
-; This buffer contains the relocation tables for the object file
-; sections_relocstartlo/hi contain the start address for each SECTION's
-; relocation table, and each table is sections_relocsizelo/hi bytes long
-; Calling obj::addreloc appends a relocation to this table
-.export reloc_tables
-reloc_tables:
-.ifdef vic20
-	.res $3000
-.else
-.endif
-reloc_tables_end=*
-
 .RODATA
 
 .export __obj_init
@@ -486,19 +474,19 @@ __obj_close_section = close_section
 	ora #1<<1		; flag section based relocation
 
 :	ldy #$00
-	sta (@rel),y		; write info byte
 	pha			; save info byte
+	STOREB_Y @rel		; write info byte
 
 	; write offset in obj file (current "assembly" address)
 	iny			; .Y=1
 	lda zp::asmresult	; write offset LSB
 	clc
 	adc @offset
-	sta (@rel),y
+	STOREB_Y @rel
 	iny			; .Y=2
 	lda zp::asmresult+1
 	adc #$00
-	sta (@rel),y		; write offset MSB
+	STOREB_Y @rel		; write offset MSB
 	iny			; .Y=3
 
 	pla			; restore info byte
@@ -507,18 +495,18 @@ __obj_close_section = close_section
 
 @sec_based:
 	lda expr::segment
-	sta (@rel),y		; write symbol-id LSB
+	STOREB_Y @rel		; write symbol-id LSB
 	lda #$00		; MSB of section is always 0
 	iny			; .Y=4
-	sta (@rel),y		; write symbol-id MSB
+	STOREB_Y @rel		; write symbol-id MSB
 	bne @done		; branch always
 
 @sym_based:
 	lda expr::symbol
-	sta (@rel),y		; write symbol-id LSB
+	STOREB_Y @rel		; write symbol-id LSB
 	lda expr::symbol+1
 	iny			; .Y=4
-	sta (@rel),y		; write symbol-id MSB
+	STOREB_Y @rel		; write symbol-id MSB
 
 @done:  ; update reloctop
 	lda expr::postproc
@@ -556,7 +544,7 @@ __obj_close_section = close_section
 @init:	ldy #$00
 	sty @idx
 	sty @idx+1
-	sta (@symtab),y
+	STOREB_Y @symtab
 	incw @symtab
 	ldxy @symtab
 	cmpw #symbol_index_map+(MAX_LABELS*2)
@@ -564,53 +552,53 @@ __obj_close_section = close_section
 
 @l0:	ldy #$00
 	sty @symtab+1
-	lda (@reltab),y
+	LOADB_Y @reltab
 	pha			; save info byte
 
 	and #$02		; mask mode bit
 	bne @next		; if 1-> not a symbol-based relocation
 
 	; get position of symbol (symbol_index_map + id*2)
-	lda (@reltab),y		; get symbol ID (LSB)
+	LOADB_Y @reltab		; get symbol ID (LSB)
 	asl
 	rol @symtab+1
 	adc #<symbol_index_map
 	sta @symtab
 	iny
-	lda (@reltab),y		; symbol ID (MSB)
+	LOADB_Y @reltab		; symbol ID (MSB)
 	adc #>symbol_index_map
 	sta @symtab+1
 
 	; check if symbol is already mapped
 	ldy #$00
-	lda (@symtab),y
+	LOADB_Y @symtab
 	cmp #$ff
 	bne @update_rel		; not $ffff (already mapped) -> update table
 	iny
-	lda (@symtab),y
+	LOADB_Y @symtab
 	cmp #$ff
 	bne @update_rel		; not $ffff (already mapped) -> update table
 
 	; not mapped, assign this symbol the next available index
 	lda @idx
 	dey			; .Y=0
-	sta (@symtab),y
+	STOREB_Y @symtab
 	iny
 	lda @idx+1
-	sta (@symtab),y
+	STOREB_Y @symtab
 	incw @idx
 	incw num_symbols_mapped
 
 @update_rel:
 	; rewrite the relocation table's stored index with the mapped index
 	ldy #$00
-	lda (@symtab),y
+	LOADB_Y @symtab
 	ldy #$03
-	sta (@reltab),y
+	STOREB_Y @reltab
 	ldy #$01
-	lda (@symtab),y
+	LOADB_Y @symtab
 	ldy #$04
-	sta (@reltab),y
+	STOREB_Y @reltab
 
 @next:	pla			; restore info byte
 	and #$0c		; mask postproc bits (2, 3)
@@ -623,7 +611,7 @@ __obj_close_section = close_section
 	inc @reltab+1
 :	ldy @reltab+1
 	cmpw reloctop
-	bcc @l0
+	jcc @l0
 @done:	rts
 .endproc
 
@@ -658,7 +646,7 @@ __obj_close_section = close_section
 	; write out the name
 	ldy #$00
 :	lda @buff,y
-	jsr $ffd2
+	jsr krn::chrout
 	cmp #$00
 	beq @cont
 	iny
@@ -666,9 +654,9 @@ __obj_close_section = close_section
 
 @cont:	; write the object-local index for the import
 	lda @idx	; restore index LSB
-	jsr $ffd2	; and write it
+	jsr krn::chrout	; and write it
 	ldy @idx	; and MSB
-	jsr $ffd2
+	jsr krn::chrout
 
 	; next symbol
 	incw @i
@@ -708,7 +696,7 @@ __obj_close_section = close_section
 	; write out the name
 	ldy #$00
 :	lda @buff,y
-	jsr $ffd2
+	jsr krn::chrout
 	cmp #$00
 	beq @cont
 	iny
@@ -717,7 +705,7 @@ __obj_close_section = close_section
 @cont:	; write the SEGMENT id
 	ldxy @id
 	CALLMAIN lbl::getsegment	; get SEGMENT id
-	jsr $ffd2				; dump the SEGMENT id
+	jsr krn::chrout				; dump the SEGMENT id
 
 	; write the SEGMENT offset
 	; TODO: this is currently writing the SECTION offset
@@ -725,9 +713,9 @@ __obj_close_section = close_section
 	ldxy @id
 	CALLMAIN lbl::getaddr
 	txa
-	jsr $ffd2				; write offset LSB
+	jsr krn::chrout				; write offset LSB
 	tya
-	jsr $ffd2				; write offset MSB
+	jsr krn::chrout				; write offset MSB
 
 	inc @i
 	lda @i
@@ -806,7 +794,7 @@ __obj_close_section = close_section
 	; write the name of the SEGMENT
 	ldy #$00
 :	lda (@name),y
-	jsr $ffd2
+	jsr krn::chrout
 	iny
 	cpy #$08
 	bne :-
@@ -814,9 +802,9 @@ __obj_close_section = close_section
 	; write the number of bytes used for this SEGMENT (2 bytes)
 	ldx @i
 	lda __obj_segments_sizelo,x
-	jsr $ffd2
+	jsr krn::chrout
 	lda __obj_segments_sizehi,x
-	jsr $ffd2
+	jsr krn::chrout
 
 	; next SEGMENT
 	inc @i
@@ -850,19 +838,19 @@ __obj_close_section = close_section
 
 	; write the INFO byte
 	lda segments_info,x
-	jsr $ffd2
+	jsr krn::chrout
 
 	; write the size of the SEGMENT
 	lda __obj_segments_sizelo,x
-	jsr $ffd2
+	jsr krn::chrout
 	lda __obj_segments_sizehi,x
-	jsr $ffd2
+	jsr krn::chrout
 
 	; write the size of the relocation table
 	lda segments_relocsizelo,x
-	jsr $ffd2
+	jsr krn::chrout
 	lda segments_relocsizehi,x
-	jsr $ffd2
+	jsr krn::chrout
 
 @l1:	ldx @sec_idx
 
@@ -892,7 +880,7 @@ __obj_close_section = close_section
 	; dump the object code for the section
 	ldxy @sec		; address to load
 	jsr vmem_load		; load a byte of object code
-	jsr $ffd2		; and dump it
+	jsr krn::chrout		; and dump it
 	incw @sec
 	decw @sz
 	iszero @sz
@@ -913,8 +901,8 @@ __obj_close_section = close_section
 
 	ldy #$00
 @relocloop:
-	lda (@sec),y
-	jsr $ffd2
+	LOADB_Y @sec
+	jsr krn::chrout
 	incw @sec
 	decw @sz
 	iszero @sz
@@ -953,13 +941,13 @@ __obj_close_section = close_section
 	jsr build_symbol_index_map
 
 	lda numsegments			; # of segments
-	jsr $ffd2
+	jsr krn::chrout
 	lda numexports			; # of EXPORTS
-	jsr $ffd2
+	jsr krn::chrout
 	lda numimports			; # of IMPORTS (LSB)
-	jsr $ffd2
+	jsr krn::chrout
 	lda numimports+1		; # of IMPORTS (MSB)
-	jsr $ffd2
+	jsr krn::chrout
 
 	; write the SEGMENTS used (names and sizes)
 	jsr dump_segments
@@ -1013,7 +1001,7 @@ __obj_close_section = close_section
 @section_loop:
 	; read a record from the RELOCATION table
 	ldy #$00
-:	jsr $ffcf	; read a byte
+:	jsr krn::chrin	; read a byte
 	sta @rec,y
 	iny
 	cpy #$05	; sizeof(relocation_record)
@@ -1047,10 +1035,10 @@ __obj_close_section = close_section
 	adc #>symbol_addresses
 	sta @symbol_addr+1
 	ldy #$00
-	lda (@symbol_addr),y
+	LOADB_Y @symbol_addr
 	tax
 	iny
-	lda (@symbol_addr),y
+	LOADB_Y @symbol_addr
 	tay
 	jmp @add_offset		; continue to calculate target address
 
@@ -1111,7 +1099,7 @@ __obj_close_section = close_section
 
 @postproc:
 	php			; save carry from LSB addition
-	jsr $ffcf		; read another byte to get the MSB of addend
+	jsr krn::chrin		; read another byte to get the MSB of addend
 	plp			; restore .C
 	adc @tmp+1		; add with operand MSB
 	sta @tmp+1
@@ -1500,10 +1488,10 @@ __obj_close_section = close_section
 	; store the resolved address for this symbol's index
 	ldy #$00
 	lda @addr
-	sta (@symaddr),y
+	STOREB_Y @symaddr
 	iny
 	lda @addr
-	sta (@symaddr),y
+	STOREB_Y @symaddr
 
 	incw @i
 	ldxy @i
@@ -1618,9 +1606,9 @@ __obj_close_section = close_section
 ;   - .A: the byte read or error code (0=eof)
 ;   - .C: set on error/eof
 .proc readb
-	jsr $ffb7     ; call READST (read status byte)
+	jsr krn::readst     ; call READST (read status byte)
 	bne @eof      ; either EOF or read error
-	jsr $ffa5     ; call CHRIN (get a byte from file)
+	jsr krn::chrin     ; call CHRIN (get a byte from file)
 	RETURN_OK
 
 ; read drive err chan and translate CBM DOS error code to ours if possible
