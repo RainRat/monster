@@ -134,4 +134,17 @@ FINAL_BANK_FASTTEXT  = $a0|$e
 	rts
 .endmacro
 
+;******************************************************************************
+; JUMPMAIN
+; equivalent to JUMP FINAL_BANK_MAIN, proc
+; params:
+;  bank: the bank of the procedure to jump to
+;  proc: the procedure to jump to
+.macro JUMPMAIN  proc
+	jsr __ram_call
+	.byte FINAL_BANK_MAIN
+	.word proc
+	rts
+.endmacro
+
 .endif

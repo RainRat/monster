@@ -1252,14 +1252,7 @@ operands: .res $100
 ; OUT:
 ;  - .Z: set if if the character in .A is whitespace
 .proc is_whitespace
-	cmp #$0d	; newline
-	beq :+
-	cmp #$09	; TAB
-	beq :+
-	cmp #$0a	; POSIX newline
-	beq :+
-	cmp #' '
-:	rts
+	.include "inline/is_ws.asm"
 .endproc
 
 ;*******************************************************************************

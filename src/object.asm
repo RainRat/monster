@@ -80,8 +80,8 @@ __obj_segments:
 segments: .res MAX_SEGMENT_NAME_LEN*MAX_SECTIONS ; name of target SEG
 
 ; link-time start addresses of each SEGMENT
-segments_startlo: .res MAX_SECTIONS
-segments_starthi: .res MAX_SECTIONS
+segments_startlo:      .res MAX_SECTIONS
+segments_starthi:      .res MAX_SECTIONS
 segments_relocstartlo: .res MAX_SECTIONS
 segments_relocstarthi: .res MAX_SECTIONS
 
@@ -166,20 +166,27 @@ reloc_tables_end=*
 
 .RODATA
 
-;*******************************************************************************
 .export __obj_init
+.export __obj_add_reloc
+.export __obj_close_section
+
+.ifdef vic20
+;*******************************************************************************
 __obj_init:
 	JUMP FINAL_BANK_LINKER, init
 
 ;*******************************************************************************
-.export __obj_add_reloc
 __obj_add_reloc:
 	JUMP FINAL_BANK_LINKER, add_reloc
 
 ;*******************************************************************************
-.export __obj_close_section
 __obj_close_section:
 	JUMP FINAL_BANK_LINKER, close_section
+.else
+__obj_init          = init
+__obj_add_reloc     = add_reloc
+__obj_close_section = close_section
+.endif
 
 .segment "OBJCODE"
 
@@ -1342,7 +1349,7 @@ __obj_close_section:
 	; error: address mode doesn't match
 	RETURN_ERR ERR_ADDRMODE_MISMATCH	; conflicting import/exports
 
-:	JUMP FINAL_BANK_MAIN, lbl::add
+:	JUMPMAIN lbl::add
 @ok:	clc
 @ret:
 :	rts
@@ -1409,7 +1416,7 @@ __obj_close_section:
 	RETURN_ERR ERR_ADDRMODE_MISMATCH	; conflicting addr modes
 
 @add:	ldxy #@namebuff
-	JUMP FINAL_BANK_MAIN, lbl::add
+	JUMPMAIN lbl::add
 .endproc
 
 ;*******************************************************************************
@@ -1622,7 +1629,7 @@ __obj_close_section:
 	lda #$00	; EOF
 	RETURN_OK
 
-@err:	JUMP FINAL_BANK_MAIN, file::geterr
+@err:	JUMPMAIN file::geterr
 .endproc
 
 ;******************************************************************************
@@ -1720,33 +1727,21 @@ __obj_close_section:
 .endproc
 
 ;*******************************************************************************
-; IS WS
-; Checks if the given character is a whitespace character
-; IN:
-;  - .A: the character to test
-; OUT:
-;  - .Z: set if if the character in .A is whitespace
-.proc is_ws
-	cmp #$0d	; newline
-	beq :+
-	cmp #$09	; TAB
-	beq :+
-	cmp #$0a	; UNIX newline
-	beq :+
-	cmp #' '
-:	rts
-.endproc
-
-;*******************************************************************************
 ; VMEM LOAD
 ; Calls vmem::load
 .proc vmem_load
-	JUMP FINAL_BANK_MAIN, vmem::load
+	JUMPMAIN vmem::load
 .endproc
 
 ;*******************************************************************************
 ; VMEM STORE
 ; Calls vmem::store
 .proc vmem_store
-	JUMP FINAL_BANK_MAIN, vmem::store
+	JUMPMAIN vmem::store
+.endproc
+
+;*******************************************************************************
+; INLINE HELPERS
+.proc is_ws
+	.include "inline/is_ws.asm"
 .endproc

@@ -189,10 +189,10 @@ main:	jsr key::getch
 
 :	jsr __edit_handle_key
 
-	; TODO: delete
-	.ifdef c64
-	jsr c64::dbg
-	.endif
+;	; TODO: delete
+;	.ifdef c64
+;	jsr c64::dbg
+;	.endif
 
 @done:	jsr text::update
 	bne main	; branch always (continue main loop)

@@ -1044,7 +1044,6 @@ get_filename = get_filename_addr
 	lda #FINAL_BANK_MAIN			; source bank
 	CALLMAIN ram::copybanked
 .else
-	dey
 :	lda (@filename),y
 	sta (@dst),y
 	dey

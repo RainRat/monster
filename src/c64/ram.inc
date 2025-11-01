@@ -48,6 +48,10 @@ FINAL_BANK_MONITOR = $12
 	rts
 .endmacro
 
+.macro JUMPMAIN proc
+	jmp proc
+.endmacro
+
 ;******************************************************************************
 ; LDA24
 ; Loads the value from the given 24 bit address and returns it in .A

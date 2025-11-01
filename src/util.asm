@@ -415,14 +415,7 @@ result=mem::spare
 ;  - .Z: set if if the character in .A is whitespace
 .export __util_is_whitespace
 .proc __util_is_whitespace
-	cmp #$0d	; newline
-	beq :+
-	cmp #$09	; TAB
-	beq :+
-	cmp #$0a	; POSIX newline
-	beq :+
-	cmp #' '
-:	rts
+	.include "inline/is_ws.asm"
 .endproc
 
 ;*******************************************************************************
