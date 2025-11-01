@@ -384,7 +384,8 @@ flags: .res MAX_SOURCES		; flags for each source buffer
 	lda #>__src_names
 	adc #$00
 	tay
-	RETURN_OK
+	;clc
+	rts
 .endproc
 
 ;*******************************************************************************

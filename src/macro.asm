@@ -231,6 +231,7 @@ macros:          .res $1400
 	stxy zp::bankaddr0
 	ldxy #@tmplabel
 	stxy zp::bankaddr1
+	lda #FINAL_BANK_MAIN
 	CALLMAIN ram::copyline
 	ldxy #@tmplabel
 	CALLMAIN lbl::set

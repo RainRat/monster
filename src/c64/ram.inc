@@ -3,7 +3,6 @@ C64_RAM_INC = 1
 
 .include "reu.inc"
 
-.import __ram_copyline
 .import __ram_call
 
 ;******************************************************************************

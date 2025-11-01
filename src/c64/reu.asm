@@ -470,6 +470,7 @@ __reu_move_size=zp::bank+6
 	jsr inline::setup_done
 
 	jsr __reu_load1
+	sta savea
 
 	ldx savex
 	ldy savey
@@ -478,9 +479,11 @@ __reu_move_size=zp::bank+6
 	cmp #$00
 	php
 	pla
-	and #$7f
+	and #$fe
 	ora savep	; restore .C bit
 	pha
+
+	lda savea
 
 	; restore flags register
 	plp
@@ -505,26 +508,26 @@ __reu_move_size=zp::bank+6
 	sta savep
 
 	jsr inline::setup
-	jsr inline::setup
 	jsr inline::getarg_zp_ind_off
 	stx __reu_reu_addr
 	sta __reu_reu_addr+1
 	jsr inline::setup_done
 
 	jsr __reu_load1
+	sta savea
 
 	ldx savex
 	ldy savey
 
 	; set flags
-	cmp #$00
+	cmp #$00	; set .N and .Z
 	php
 	pla
-	and #$7f
+	and #$fe	; mask .C bit
 	ora savep	; restore .C bit
-	pha
+	pha		; save .N, .Z, and .C
+	lda savea
 	plp
-
 	rts
 .endproc
 

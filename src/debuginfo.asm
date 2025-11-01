@@ -1034,6 +1034,7 @@ get_filename = get_filename_addr
 	ldxy @filename		; restore filename
 	CALLMAIN str::len
 
+.ifdef vic20
 	; bytes to copy = strlen(@filename)+1
 	tax
 	inx
@@ -1042,7 +1043,13 @@ get_filename = get_filename_addr
 	sta r7
 	lda #FINAL_BANK_MAIN			; source bank
 	CALLMAIN ram::copybanked
-
+.else
+	dey
+:	lda (@filename),y
+	sta (@dst),y
+	dey
+	bpl :-
+.endif
 	lda numfiles	; get ID of new file
 	inc numfiles
 	RETURN_OK

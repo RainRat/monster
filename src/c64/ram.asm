@@ -4,6 +4,8 @@
 .include "../macros.inc"
 .include "../zeropage.inc"
 
+FINAL_BANK_MAIN = $00
+
 ;*******************************************************************************
 .CODE
 
@@ -85,24 +87,43 @@
 .endproc
 
 ;*******************************************************************************
+; COPY LINE MAIN
+; Copies RAM within the C64's internal RAM
+; This is called by __ram_copy_line when the bank is "MAIN"
+.proc copy_line_main
+	ldy #$00
+:	lda (zp::bankaddr0),y
+	sta (zp::bankaddr1),y
+	beq @done
+	cmp #$0d
+	beq @done
+	iny
+	cpy #LINESIZE
+	bcc :-
+@done:	rts
+.endproc
+
+;*******************************************************************************
 ; COPY LINE
 ; Copies up to LINESIZE bytes from zp::bankaddr0 to zp::bankaddr1 stopping at
 ; the first $0d or $00
 ; IN:
 ;  - .A:            the bank to perform the copy within
 ;  - zp::bankaddr0: the source address to copy from
-;  - zp::bankaddr1: the destination address to copy to
+;  - zp::bankaddr1: the destination address to copy to (in C64 RAM)
 ; OUT:
 ;  - .Y: the number of bytes copied
 ;  - .A: the last byte copied
 .export	__ram_copy_line
 .proc __ram_copy_line
-	ldy #$00
+	cmp #FINAL_BANK_MAIN
+	beq copy_line_main
+
 	sta reu::reuaddr+2
+	ldy #$00
 :	jsr reu::loadb_off
 	.byte zp::bankaddr0
-	jsr reu::storeb_off
-	.byte zp::bankaddr1
+	sta (zp::bankaddr1),y
 	beq @done
 	cmp #$0d
 	beq @done

@@ -142,7 +142,6 @@ data: .res BUFFER_SIZE
 ;  - r1:  the destination to copy to
 ; OUT:
 ;  - (.XY): a line of text from the cursor position
-.export __src_copy_line
 .proc __src_copy_line
 @src=zp::bankaddr0
 @target=zp::bankaddr1
