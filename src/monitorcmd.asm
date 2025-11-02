@@ -720,10 +720,11 @@ CMD_BUFF = $101
 	bcs @ret
 
 @l0:	lda mon::int
-	bne @done		; SIGINT, quit
+	bne @done			; SIGINT, quit
 	ldxy #@buff
 	stxy r0
 	ldxy @addr
+	lda #$00			; disassemble to string
 	CALLMAIN asm::disassemble
 	bcc @ok
 
@@ -1404,6 +1405,7 @@ CMD_BUFF = $101
 	sta r0
 	lda #>$100
 	sta r0+1
+	lda #$00		; disassemble to string
 	CALLMAIN asm::disassemble
 
 	; print the disassembled instruction of ??? if we couldn't disassemble

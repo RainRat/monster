@@ -2202,8 +2202,9 @@ __asm_include:
 ; DISASSEMBLE
 ; disassembles the given instruction
 ; IN:
+;  - .A:  0=disassemble to string, !0=don't disassemble to string
 ;  - .XY: the address of the instruction to disassemble
-;  - r0:  the address of the buffer to disassemble to
+;  - r0:  the address of the buffer to disassemble to (if A != 0)
 ; OUT:
 ;  - .A:   the size of the instruction that was disassembled
 ;  - .X:   the address modes for the instruction
@@ -2225,8 +2226,9 @@ __asm_include:
 @modes=r7
 
 @bbb=r8
-@aaa=r9
+@nostr=r9
 @opaddr=ra
+	sta @nostr
 	stxy @opaddr		; opcode
 	jsr vmem::load
 	sta @op
@@ -2256,33 +2258,27 @@ __asm_include:
 	asl
 	adc @op
 	tax
-	ldy #$00
+
+	ldy #3
 :	lda opcode_singles_strings,x
-	sta (@dst),y
+	jsr @appendch
 	inx
-	iny
-	cpy #$03
+	dey
 	bne :-
 	pla
 	cmp #$20	; JSR
 	bne @implied_
 
 	lda #' '
-	sta (@dst),y
+	jsr @appendch
 
-	lda @dst
-	clc
-	adc #$04
-	sta @dst
-	bcc :+
-	inc @dst+1
-:	lda #MODE_ABS
+	lda #MODE_ABS
 	sta @modes
 	jmp @absolute
 
 @implied_:
 	lda #$00
-	sta (@dst),y		; 0-terminate
+	jsr @appendch		; 0-terminate
 	lda #$01
 	ldx @modes
 	clc			; ok
@@ -2322,7 +2318,7 @@ __asm_include:
 	ldy #$02
 :	dex
 	lda opcode_branches,x
-	sta (@dst),y
+	jsr @appendch
 	dey
 	bpl :-
 
@@ -2400,19 +2396,11 @@ __asm_include:
 	sta @optab+1
 
 	; write the opcode (optab),aaa to the destination
-	ldy #$02
+	ldy #$03
 :	lda (@optab),y
-	sta (@dst),y
+	jsr @appendch
 	dey
-	bpl :-
-
-	; update @dst to after the opcode
-	lda @dst
-	clc
-	adc #$03
-	sta @dst
-	bcc @get_addrmode
-	inc @dst+1
+	bne :-
 
 @get_addrmode:
 	; get bbb and find the addressing mode for the instruction
@@ -2442,17 +2430,14 @@ __asm_include:
 	beq @cont	; if not implied, go on
 @implied:
 	lda #$00
-	tay
-	sta (@dst),y	; 0-terminate
+	jsr @appendch	; 0-terminate
 	lda #$01	; 1 byte in size
 	ldx @modes
 	RETURN_OK
 
 @cont:  ; add a space before operand
-	ldy #$00
 	lda #' '
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
 
 	; draw the opcode
 	ldy #$00
@@ -2462,33 +2447,28 @@ __asm_include:
 	beq :+
 @indirect:
 	lda #'('
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
 
 :	lda @modes
 	and #MODE_IMMEDIATE
 	beq :+
 @immediate:
 	lda #'#'
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
 
 :	lda @modes
 	and #MODE_ZP
 	beq :+
 @zeropage:
 	lda #'$'
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
+
 	lda @operand
 	jsr util::hextostr
 	tya
-	ldy #$00
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
 	txa
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
 
 :	lda @modes
 	and #MODE_ABS
@@ -2496,29 +2476,21 @@ __asm_include:
 
 @absolute:
 	lda #'$'
-	ldy #$00
-	sta (@dst),y
+	jsr @appendch
 
-	incw @dst
 	lda @operand+1
 	jsr util::hextostr
 	tya
-	ldy #$00
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
 	txa
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
 
 	lda @operand
 	jsr util::hextostr
 	tya
-	ldy #$00
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
 	txa
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
 
 @chkindexed:
 	lda @modes
@@ -2526,30 +2498,25 @@ __asm_include:
 	beq :+
 @xindexed:
 	lda #','
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
 	lda #'x'
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
 
 :	lda @modes
 	and #MODE_INDIRECT
 	beq :+
 @indirect2:
 	lda #')'
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
 
 :	lda @modes
 	and #MODE_Y_INDEXED
 	beq @done
 @yindexed:
 	lda #','
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
 	lda #'y'
-	sta (@dst),y
-	incw @dst
+	jsr @appendch
 
 @done:  ldx #$02
 	lda @modes
@@ -2557,12 +2524,24 @@ __asm_include:
 	bne :+
 	inx
 :	lda #$00
-	tay
-	sta (@dst),y
+	jsr @appendch
 
 	txa			; .A = size
 	ldx @modes		; .X = address modes
 	RETURN_OK
+;--------------------------------------
+; APPEND CH
+; Appends a character to the disassembled instruction
+@appendch:
+	sty @savey
+	ldy @nostr
+	bne :+
+	sta (@dst),y
+	incw @dst
+:
+@savey=*+1
+	ldy #$00
+	rts
 .endproc
 
 ;*******************************************************************************

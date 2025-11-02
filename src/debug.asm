@@ -351,9 +351,9 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	; check if an interrupt occurred inside the interrupt handler
 	; if it did, just RTI
 	cmp #$80
-	bcs :+
+	bcs @enter
 	cmp #$7f
-	bcc :+
+	bcc @enter
 	tax
 	lda sim::reg_p
 	pha
@@ -366,9 +366,14 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	lda sim::reg_a
 	rti
 
-:	lda #$7f
+@enter: ; disable anything that could steal control
+	.if .def(vic20)
+	lda #$7f
 	sta $911e	; disable all NMI's
 	sta $911d
+	.elseif .def(c64)
+
+	.endif
 
 	tsx
 	stx sim::reg_sp
@@ -869,9 +874,8 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	lda #$00
 	sta sim::illegal
 
-	ldxy #$f00d		; use ROM address because we don't need string
-	stxy r0
 	ldxy sim::pc		; get address of next instruction
+	lda #$01		; don't disassemble to string
 	jsr asm::disassemble	; disassemble it to get its size (BRK offset)
 	stx sim::op_mode
 	bcc @ok
@@ -1464,6 +1468,7 @@ __debug_remove_breakpoint:
 	; we couldn't find the line #; display 6ke address of the BRK
 
 	ldxy sim::pc
+	lda #$00		; disassemble to string
 	jsr asm::disassemble
 	bcc :+
 
