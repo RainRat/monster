@@ -13,6 +13,8 @@
 .import __src_mark_dirty
 .import __src_on_last_line
 
+.macpack longbranch
+
 buffstate   = zp::srccur
 cursorzp    = zp::srccur
 poststartzp = zp::srccur2
@@ -251,7 +253,7 @@ PAGESIZE    = $100	; size of data "page" (amount stored in c64 RAM)
 	bne @cont
 	ldx poststartzp+1
 	cpx end+1
-	beq @done
+	jeq @done
 
 @cont: ; move one byte from the end of the gap to the start
 	lda24 __src_bank, poststartzp

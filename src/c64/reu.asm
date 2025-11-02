@@ -7,10 +7,7 @@
 .export __reu_reu_addr
 .export __reu_txlen
 
-__reu_c64_addr = $df02
-__reu_reu_addr = $df04
-__reu_txlen    = $df07
-
+.include "macros.inc"
 .include "../errors.inc"
 .include "../inline.inc"
 .include "../macros.inc"
@@ -36,6 +33,12 @@ savep = zp::bankaddr0+1
 tmp   = zp::bankaddr0+2
 
 .BSS
+
+;*******************************************************************************
+__reu_c64_addr: .word 0	; -> $df02
+__reu_reu_addr: .res 3	; -> $df04 (3 bytes)
+__reu_txlen:    .word 0 ; -> $df07
+
 ;*******************************************************************************
 ; TABLE STATE
 ; These parameters contain the properties of the table usedb by the
@@ -47,11 +50,39 @@ tab_num_elements: .word 0
 .CODE
 
 ;*******************************************************************************
+; MAPREU
+; Copies the virtual registers to their physical ones.
+; I/O must be enabled before calling this (IO_BEGIN)
+.proc mapreu
+	lda __reu_c64_addr
+	sta $df02
+	lda __reu_c64_addr+1
+	sta $df02+1
+
+	lda __reu_reu_addr
+	sta $df04
+	lda __reu_reu_addr+1
+	sta $df04+1
+	lda __reu_reu_addr+2
+	sta $df04+2
+
+	lda __reu_txlen
+	sta $df07
+	lda __reu_txlen+1
+	sta $df07+1
+	rts
+.endproc
+
+;*******************************************************************************
 ; INIT
 .export __reu_init
 .proc __reu_init
+	IO_BEGIN
+	jsr mapreu
 	lda #$00
 	sta $df0a	; count UP
+	IO_DONE
+
 	rts
 .endproc
 
@@ -66,6 +97,8 @@ tab_num_elements: .word 0
 @tmp=tmp
 	sta @tmp
 
+	IO_BEGIN
+	jsr mapreu
 	lda #@tmp
 	sta __reu_c64_addr
 
@@ -79,6 +112,8 @@ tab_num_elements: .word 0
 
 	lda #$90	; transfer from c64 -> REU with immediate execution
 	sta $df01	; execute
+	IO_DONE
+
 	lda @tmp	; restore .A
 	rts
 .endproc
@@ -92,10 +127,14 @@ tab_num_elements: .word 0
 ;   - reu::len:      the number of bytes to copy (16-bit)
 .export __reu_store
 .proc __reu_store
+	IO_BEGIN
+	jsr mapreu
 	lda #$00
 	sta $df0a
 	lda #$90	; transfer from c64 -> REU with immediate execution
 	sta $df01	; execute
+	IO_DONE
+
 	rts
 .endproc
 
@@ -109,6 +148,8 @@ tab_num_elements: .word 0
 .export __reu_load1
 .proc __reu_load1
 @tmp=tmp
+	IO_BEGIN
+	jsr mapreu
 	lda #@tmp
 	sta __reu_c64_addr
 
@@ -122,6 +163,7 @@ tab_num_elements: .word 0
 
 	lda #$91	; transfer from REU -> c64 with immediate execution
 	sta $df01	; execute
+	IO_DONE
 	lda @tmp	; read the byte we loaded
 	rts
 .endproc
@@ -136,10 +178,13 @@ tab_num_elements: .word 0
 ;   - reu::len:      the number of bytes to copy (16-bit)
 .export __reu_load
 .proc __reu_load
+	IO_BEGIN
+	jsr mapreu
 	lda #$00
 	sta $df0a
 	lda #$91	; transfer from REU -> c64 with immediate execution
 	sta $df01	; execute
+	IO_DONE
 	rts
 .endproc
 
@@ -150,10 +195,15 @@ tab_num_elements: .word 0
 ;   .Z: set if there are no differences
 .export __reu_compare
 .proc __reu_compare
+	IO_BEGIN
+	jsr mapreu
 	lda $df00	; read status to clear fault bit
 	lda #$93|$20	; compare C64 <-> REU
 	sta $df01	; execute
-	lda $df00
+	ldx $df00
+	IO_DONE
+
+	txa
 	and #$20	; check fault bit (set if differences found)
 	rts
 .endproc
@@ -164,8 +214,11 @@ tab_num_elements: .word 0
 ; in the C64 at reu::c64addr.
 .export __reu_swap
 .proc __reu_swap
+	IO_BEGIN
+	jsr mapreu
 	lda #$92	; swap c64 <-> REU with immediate execution
 	sta $df01	; execute
+	IO_DONE
 	rts
 .endproc
 
@@ -174,6 +227,8 @@ tab_num_elements: .word 0
 ; Zeroes out the number of bytes in txlen at reu::move_dst
 .export __reu_zero
 .proc __reu_zero
+	IO_BEGIN
+	jsr mapreu
 	ldxy #@zero
 	stxy __reu_c64_addr
 	lda #$80
@@ -185,6 +240,8 @@ tab_num_elements: .word 0
 @zero=*+1			; zero byte
 	lda #$00
 	sta $df0a		; unfix c64 address
+	IO_DONE
+	rts
 .endproc
 
 ;*******************************************************************************
@@ -591,5 +648,6 @@ __reu_move_size=zp::bank+6
 
 	ldx savex
 	ldy savey
+
 	rts
 .endproc

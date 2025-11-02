@@ -491,7 +491,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 
 @runcmd:
 	lda #$4c		; JMP
-	sta $00
+	sta zp::jmpaddr
 	lda command_vectorslo,x	; vector LSB
 	sta zp::jmpvec
 	lda command_vectorshi,x	; vector MSB

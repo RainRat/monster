@@ -1,9 +1,8 @@
-.include "../zeropage.inc"
-
 ;*******************************************************************************
-; SCREEN23.ASM
+; SCREEN.ASM
 ;*******************************************************************************
 
+.include "macros.inc"
 .include "../config.inc"
 .include "../macros.inc"
 .include "../memory.inc"
@@ -34,11 +33,14 @@
 ;*******************************************************************************
 .export __screen_init
 .proc __screen_init
+	IO_BEGIN
 	lda #$16	; lowercase chars / screen @ $0400
 	sta $d018
 	lda #$00
 	sta $d020
 	sta $d021
+	IO_DONE
+
 	rts
 .endproc
 

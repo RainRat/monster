@@ -1,6 +1,7 @@
 .ifndef C64_RAM_INC
 C64_RAM_INC = 1
 
+.include "macros.inc"
 .include "reu.inc"
 
 .import __ram_call
@@ -57,6 +58,7 @@ FINAL_BANK_MONITOR = $12
 ; Loads the value from the given 24 bit address and returns it in .A
 .macro lda24 bank, addr
 	; set REU (load) address
+	IO_BEGIN
 	lda bank
 	sta $df06	; MSB of REU address
 	lda addr+1
@@ -80,6 +82,7 @@ FINAL_BANK_MONITOR = $12
 	; execute the REU command
 	lda #$91	; load 1 byte from REU -> C64
 	sta $df01
+	IO_DONE
 
 	; read the loaded data
 	lda zp::banktmp
@@ -92,6 +95,7 @@ FINAL_BANK_MONITOR = $12
 ;  zp::banktmp
 .macro sta24 bank, addr
 	sta zp::banktmp
+	IO_BEGIN
 
 	ldx #$00
 
@@ -116,6 +120,8 @@ FINAL_BANK_MONITOR = $12
 	; execute the REU command
 	lda #$90	; store 1 byte from C64 -> REU
 	sta $df01
+	IO_DONE
+
 	lda zp::banktmp	; restore byte that we stored
 .endmacro
 
