@@ -12,13 +12,14 @@
 .include "kernal.inc"
 .include "ram.inc"
 .include "macros.inc"
+.include "target.inc"
 .include "zeropage.inc"
 
 ;*******************************************************************************
 ; CONSTANTS
-MAX_ANON      = 650	; max number of anonymous labels
-SCOPE_LEN     = 8	; max len of namespace (scope)
-MAX_LABELS    = 732
+MAX_ANON   = 650	; max number of anonymous labels
+SCOPE_LEN  = 8		; max len of namespace (scope)
+MAX_LABELS = 732
 
 MAX_LABEL_NAME_LEN = 32
 
@@ -165,7 +166,7 @@ __label_load: LBLJUMP proc_ids::LOAD
 	ldx @savex
 	pla
 	jsr __ram_call
-	.byte FINAL_BANK_SYMBOLS
+	.byte "SYMBOLS"
 @vec:	.word $f00d
 	rts
 .endproc
@@ -254,6 +255,7 @@ anon_addrs: .res MAX_ANON*2
 ;  - .XY: the address of the scope string to set as the current scope
 .proc set_scope
 @scope=zp::labels
+	SELECT_BANK "SYMBOLS"
 	stxy @scope
 	ldy #$00
 :	LOADB_Y @scope
@@ -292,7 +294,7 @@ anon_addrs: .res MAX_ANON*2
 	bne @l0
 
 :	ldy #$00
-@l1:	LOADB_Y @lbl
+@l1:	lda (@lbl),y
 	jsr isseparator
 	beq @done
 	sta @buff,x
@@ -332,6 +334,7 @@ anon_addrs: .res MAX_ANON*2
 @search=zp::labels+3
 @label=zp::labels+5
 @tmp=r0
+	SELECT_BANK "SYMBOLS"
 	stxy @label
 
 	; check (and flag) if the label is local. if it is, we will start
@@ -440,6 +443,7 @@ anon_addrs: .res MAX_ANON*2
 ;   - zp::value: the value to set the symbol's address to
 .proc setaddr
 @addr=zp::labels
+	SELECT_BANK "SYMBOLS"
 	jsr by_id 		; get the address of the label
 
 	; overwrite the current value for the label with zp::value
@@ -503,6 +507,7 @@ anon_addrs: .res MAX_ANON*2
 @mode=r8
 @tmp=ra
 @segid=re
+	SELECT_BANK "SYMBOLS"
 	sta allow_overwrite	; set overwrite flag (SET) or clear (ADD)
 
 	stxy @name
@@ -740,7 +745,7 @@ anon_addrs: .res MAX_ANON*2
 @storelabel:
 	ldy #$00
 	; write the label
-:	LOADB_Y @name
+:	lda (@name),y
 	beq @storeaddr
 	jsr is_definition_separator
 	beq @storeaddr
@@ -786,6 +791,7 @@ anon_addrs: .res MAX_ANON*2
 @dst=r2
 @addr=r6
 @src=r8
+	SELECT_BANK "SYMBOLS"
 	stxy @addr
 	lda numanon+1
 	cmp #>MAX_ANON
@@ -875,6 +881,7 @@ anon_addrs: .res MAX_ANON*2
 @cnt=r0
 @seek=r2
 @addr=r4
+	SELECT_BANK "SYMBOLS"
 	stxy @addr
 	ldxy #anon_addrs
 
@@ -946,6 +953,7 @@ anon_addrs: .res MAX_ANON*2
 @fcnt=r2
 @addr=r4
 @seek=r6
+	SELECT_BANK "SYMBOLS"
 	stxy @addr
 	sta @fcnt
 
@@ -1011,6 +1019,7 @@ anon_addrs: .res MAX_ANON*2
 @bcnt=r8
 @addr=r4
 @seek=r6
+	SELECT_BANK "SYMBOLS"
 	stxy @addr
 	sta @bcnt
 
@@ -1076,6 +1085,7 @@ anon_addrs: .res MAX_ANON*2
 ;  - .C:  clear to indicate success
 .proc get_anon_retval
 @seek=r6
+	SELECT_BANK "SYMBOLS"
 	ldy #$00
 	LOADB_Y @seek		; get LSB of anonymous label address
 	tax
@@ -1095,6 +1105,7 @@ anon_addrs: .res MAX_ANON*2
 ;  - .A: the segment ID for the label
 .proc get_segment
 @sec=zp::labels
+	SELECT_BANK "SYMBOLS"
 	txa
 	clc
 	adc #<segment_ids
@@ -1139,6 +1150,7 @@ anon_addrs: .res MAX_ANON*2
 @id=zp::labels+4
 @addr=zp::labels+6
 @mode=zp::labels+8
+	SELECT_BANK "SYMBOLS"
 	stxy @id
 	jsr by_id	; get address of label
 	stxy @table
@@ -1181,6 +1193,7 @@ anon_addrs: .res MAX_ANON*2
 @tmp2=r9
 @mode=ra
 @stop=rb
+	SELECT_BANK "SYMBOLS"
 	stxy @name
 	jsr find
 	bcs :-		; -> rts (not found)
@@ -1421,6 +1434,7 @@ anon_addrs: .res MAX_ANON*2
 @ub=re
 @m=zp::tmp10
 @top=zp::tmp12
+	SELECT_BANK "SYMBOLS"
 	stxy @addr
 
 	lda numlabels
@@ -1477,11 +1491,11 @@ anon_addrs: .res MAX_ANON*2
 	jmp @loop
 
 @chklsb:
-	dey			; set index to LSB (0)
+	dey		; set index to LSB (0)
 	LOADB_Y @m	; compare LSB
-	cmp @addr		; load target value LSB
+	cmp @addr	; load target value LSB
 	beq @done
-	bcc @modlow		; A[mid] < value
+	bcc @modlow	; A[mid] < value
 
 @modhigh:		; A[mid] > value
 	lda @m		; high = mid - element size
@@ -1582,6 +1596,7 @@ anon_addrs: .res MAX_ANON*2
 ;   - .XY: the id of the nth label (in sorted order)
 .proc id_by_addr_index
 @tmp=rc
+	SELECT_BANK "SYMBOLS"
 	txa
 	asl
 	sta @tmp
@@ -1645,7 +1660,7 @@ anon_addrs: .res MAX_ANON*2
 	ldy #$00
 
 ; first character must be a letter or '@'
-@l0:	LOADB_Y @name
+@l0:	lda (@name),y
 	iny
 	jsr iswhitespace
 	beq @l0
@@ -1668,7 +1683,7 @@ anon_addrs: .res MAX_ANON*2
 @l1:	inx
 	cpx #(MAX_LABEL_LEN/2)+1
 	bcs @toolong
-	LOADB_Y @name
+	lda (@name),y
 	jsr isseparator
 	beq @done
 	cmp #'0'
@@ -1696,6 +1711,7 @@ anon_addrs: .res MAX_ANON*2
 .proc get_name
 @dst=r0
 @src=zp::labels
+	SELECT_BANK "SYMBOLS"
 	jsr name_by_id
 	stx @src
 	sta @src+1
@@ -1723,6 +1739,7 @@ anon_addrs: .res MAX_ANON*2
 ;  - .XY: the address of the label
 .proc getaddr
 @src=zp::labels
+	SELECT_BANK "SYMBOLS"
 	jsr by_id
 	stxy @src
 
@@ -1889,6 +1906,7 @@ anon_addrs: .res MAX_ANON*2
 @num = rc
 @idi = zp::tmp10
 @idj = zp::tmp12
+	SELECT_BANK "SYMBOLS"
 	lda numlabels
 	ora numlabels+1
 	bne @setup
@@ -2087,6 +2105,7 @@ anon_addrs: .res MAX_ANON*2
 @sym=r0
 @cnt=r2
 @addr=r4
+	SELECT_BANK "SYMBOLS"
 	; write the number of symbols
 	lda numlabels
 	sta @cnt
@@ -2138,6 +2157,7 @@ anon_addrs: .res MAX_ANON*2
 @sym=r0
 @cnt=r2
 @addr=r4
+	SELECT_BANK "SYMBOLS"
 	; load the number of symbols
 	jsr krn::chrin
 	sta numlabels

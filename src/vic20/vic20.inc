@@ -13,3 +13,6 @@
 .macro ENDOSPROC fn
 .endproc
 .endmacro
+
+.macro SELECT_BANK bank
+.endmacro

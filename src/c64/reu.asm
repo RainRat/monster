@@ -19,10 +19,6 @@
 .exportzp __reu_move_size
 
 REU_TMP_ADDR            = $ff0000
-REU_VMEM_ADDR           = $fe0000
-REU_SYMTABLE_ADDRS_ADDR = $fd0000	; label addresses
-REU_SYMTABLE_NAMES_ADDR = $fc0000	; label names
-REU_SYMTABLE_ANONS_ADDR = $fb0000	; anonymous label addresses
 
 savex = zp::inline
 savey = zp::inline+1
@@ -36,7 +32,7 @@ tmp   = zp::bankaddr0+2
 
 ;*******************************************************************************
 __reu_c64_addr: .word 0	; -> $df02
-__reu_reu_addr: .res 3	; -> $df04 (3 bytes)
+__reu_reu_addr: .res  3	; -> $df04
 __reu_txlen:    .word 0 ; -> $df07
 
 ;*******************************************************************************
@@ -100,14 +96,14 @@ tab_num_elements: .word 0
 	IO_BEGIN
 	jsr mapreu
 	lda #@tmp
-	sta __reu_c64_addr
+	sta $df02	; c64addr
 
 	lda #$01
-	sta __reu_txlen
+	sta $df07	; txlen
 
 	lda #$00
-	sta __reu_c64_addr
-	sta __reu_txlen+1
+	sta $df02+1	; c64addr+1
+	sta $df07+1	; txlen+1
 	sta $df0a
 
 	lda #$90	; transfer from c64 -> REU with immediate execution
@@ -151,14 +147,14 @@ tab_num_elements: .word 0
 	IO_BEGIN
 	jsr mapreu
 	lda #@tmp
-	sta __reu_c64_addr
+	sta $df02	; c64addr
 
 	lda #$01
-	sta __reu_txlen
+	sta $df07	; txlen
 
 	lda #$00
-	sta __reu_c64_addr
-	sta __reu_txlen+1
+	sta $df02+1	; c64addr+1
+	sta $df07+1	; txlen+1
 	sta $df0a
 
 	lda #$91	; transfer from REU -> c64 with immediate execution

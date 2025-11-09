@@ -187,7 +187,6 @@ main:	jsr key::getch
 	jsr cur::off
 	pla
 
-
 :	jsr __edit_handle_key
 
 ;	; TODO: delete

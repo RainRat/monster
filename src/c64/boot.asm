@@ -105,10 +105,6 @@ start:
 	lda #$4c
 	sta zp::jmpaddr
 
-	; disable BASIC and KERNAL
-	lda #$36		; make KERNAL ($e000-$ffff) available
-	sta $01
-
 	lda #DEFAULT_DEVICE
 	sta zp::device
 

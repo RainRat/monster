@@ -1,3 +1,5 @@
+.import select_bank_symbols
+
 .import __screen_rowslo
 .import __screen_rowshi
 .import __c64_dbg
@@ -15,4 +17,10 @@
 
 .macro ENDOSPROC fn
 .endproc
+.endmacro
+
+.macro SELECT_BANK bank
+.if .match ("SYMBOLS", bank)
+	jsr select_bank_symbols
+.endif
 .endmacro

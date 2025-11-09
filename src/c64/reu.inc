@@ -16,6 +16,7 @@ C64_REU_INC = 1
 .import __reu_reu_addr
 .import __reu_swap
 .import __reu_store
+.import __reu_store1
 .import	__reu_storeb
 .import __reu_storeb_off
 .import	__reu_storew
@@ -26,15 +27,11 @@ C64_REU_INC = 1
 .importzp __reu_move_dst
 .importzp __reu_move_size
 
+; address of virtual memory state
+REU_VMEM_ADDR           = $fe0000
+
 ; address in the REU to save/restore C64 data to
 REU_TMP_ADDR            = $ff0000
-REU_VMEM_ADDR           = $fe0000
-REU_SYMTABLE_ADDRS_ADDR = $fd0000	; label addresses
-REU_SYMTABLE_NAMES_ADDR = $fc0000	; label names
-REU_SYMTABLE_ANONS_ADDR = $fb0000	; anonymous label addresses
-REU_DBGINFO_PROG        = $fa0000
-REU_DBGINFO_HEADERS     = $f90000
-REU_COPYBUFF_ADDR       = $f80000
 
 .scope reu
 	c64addr        = __reu_c64_addr
@@ -50,6 +47,7 @@ REU_COPYBUFF_ADDR       = $f80000
 	move           = __reu_move
 	reuaddr        = __reu_reu_addr
 	store          = __reu_store
+	store1         = __reu_store1
 	storeb         = __reu_storeb
 	storeb_off     = __reu_storeb_off
 	storew         = __reu_storew
@@ -172,16 +170,4 @@ REU_COPYBUFF_ADDR       = $f80000
 		sta __reu_txlen+1
 	.endif
 .endmacro
-
-;*******************************************************************************
-; LOAD
-; Loads size16 bytes from the REU to the C64
-.macro LOAD dst24, src16, size16
-	.if .match( .left( 1, {dst24} ), # )
-		COPY16 #^(.right( .tcount( {dst24} )-1, {dst24} )), #(.right( .tcount( {dst24} )-1, {dst24} ) & $ffff), src16, size16
-	.else
-		COPY16 ^dst24, dst24 & $ffff, src16, size16
-	.endif
-.endmacro
-
 .endif

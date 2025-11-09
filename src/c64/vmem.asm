@@ -29,15 +29,11 @@ savexy: .word 0
 ;  - .A: the byte at the physical address
 .export __vmem_load
 .proc __vmem_load
-@tmp=zp::banktmp
 	stxy reu::reuaddr
-	ldx #^REU_VMEM_ADDR
-	stx reu::reuaddr+2
-	ldxy #@tmp
-	stxy reu::c64addr
-	jsr reu::load
-	lda @tmp
-	ldxy reu::reuaddr
+	lda #^REU_VMEM_ADDR
+	sta reu::reuaddr+2
+	jsr reu::load1
+	ldxy savexy
 	rts
 .endproc
 
@@ -76,15 +72,11 @@ savexy: .word 0
 .export __vmem_store
 .proc __vmem_store
 @tmp=zp::banktmp
-	sta @tmp
 	stxy reu::reuaddr
 	ldx #^REU_VMEM_ADDR
 	stx reu::reuaddr+2
-	ldxy #@tmp
-	stxy reu::c64addr
-	jsr reu::store
-	lda @tmp
-	ldxy reu::reuaddr
+	jsr reu::store1
+	ldxy reu::reuaddr	; restore .XY
 	rts
 .endproc
 

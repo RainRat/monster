@@ -53,12 +53,16 @@
 ; This is the main IRQ for this program. It handles updating the beeper.
 ; It is relocated to a place where it may be called from any bank
 .proc sys_update
+	lda $01
+	pha
+
 	lda #$36	; make KERNAL ($e000-$ffff) available
 	sta $01
+
 	jsr $ea87	; scan the keyboard
 	lda $dc0d	; ack interrupts
 
-	lda #$34	; make all RAM available
+	pla
 	sta $01
 
 	pla

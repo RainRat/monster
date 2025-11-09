@@ -168,6 +168,7 @@ tmp    = zp::inline+3
 
 	; get the indirect operand + .Y
 	tya
+	clc
 @addr0=*+1
 	adc $f0
 	tax
