@@ -596,7 +596,8 @@ __reu_move_size=zp::bank+6
 .proc	__reu_loadw
 @dst=tmp
 	jsr inline::setup
-	jsr inline::getarg_w
+
+	jsr inline::getarg_zp_ind_off
 	stx __reu_reu_addr
 	sta __reu_reu_addr+1
 	jsr inline::setup_done

@@ -171,12 +171,12 @@ FINAL_BANK_MONITOR = $12
 ; LOADW
 ; Read a word from the given address
 ; IN:
-;   - addr: source address
+;   - addr: the zeropage address to load from
 ; OUT:
 ;   - .XY: the value that was read
 .macro LOADW addr
 	jsr reu::loadw
-	.word addr
+	.byte addr
 .endmacro
 
 ;*******************************************************************************
