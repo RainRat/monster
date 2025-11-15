@@ -29,17 +29,16 @@ macro_addresses: .res MAX_MACROS * 2
 macros:          .res $1400
 
 ;*******************************************************************************
-; MACRO FORMAT
-;    -------------------------------------
-;    | size  |  description              |
-;    |-----------------------------------|
-;    |  0-16 | macro name                |
-;    |   1   | number of parameters      |
-;    |  0-16 | parameter 0 name          |
-;    |  ...  | parameter n name          |
-;    | 0-255 | macro definition          |
-;    |   1   | terminating 0             |
-;    -------------------------------------
+; MACRO FORMAT:
+;
+;    | size (bytes)  |  description              |
+;    |-------------------------------------------|
+;    |      0-16     | macro name                |
+;    |       1       | number of parameters      |
+;    |      0-16     | parameter 0 name          |
+;    |      ...      | parameter n name          |
+;    |     0-255     | macro definition          |
+;    |       1       | terminating 0             |
 
 .segment "MACROCODE"
 

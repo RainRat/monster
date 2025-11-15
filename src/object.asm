@@ -1653,7 +1653,8 @@ __obj_close_section = close_section
 	lda @seg
 	adc #>(segments-(1*MAX_SEGMENT_NAME_LEN))
 	tay
-	RETURN_OK
+	;clc
+	rts
 .endproc
 
 ;******************************************************************************
@@ -1698,7 +1699,8 @@ __obj_close_section = close_section
 @found: lda @cnt
 	clc
 	adc #$01		; get 1-based id
-	RETURN_OK
+	;clc
+	rts
 .endproc
 
 ;*******************************************************************************

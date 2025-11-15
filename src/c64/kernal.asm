@@ -7,16 +7,12 @@
 .include "../inline.inc"
 .include "../zeropage.inc"
 
-
 ;*******************************************************************************
 ; OSCALL
 ; Makes the KERNAL ($e000-$ffff) available and calls the procedure
 .proc oscall
 @a=zp::banktmp+1
 @x=zp::banktmp+2
-	php
-	pha
-
 	stx @x
 	sta @a
 
