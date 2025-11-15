@@ -166,7 +166,7 @@ __label_load: LBLJUMP proc_ids::LOAD
 	ldx @savex
 	pla
 	jsr __ram_call
-	.byte "SYMBOLS"
+	.byte FINAL_BANK_SYMBOLS
 @vec:	.word $f00d
 	rts
 .endproc
