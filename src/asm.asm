@@ -2309,25 +2309,17 @@ __asm_include:
 	rol
 	rol
 	and #$07
-	clc
-	adc #$01
 	sta @xxy
 	asl
 	adc @xxy
 	tax
 	ldy #$02
-:	dex
-	lda opcode_branches,x
+:	lda opcode_branches,x
 	jsr @appendch
+	inx
 	dey
 	bpl :-
 
-	lda @dst
-	clc
-	adc #$03
-	sta @dst
-	bcc @get_branch_target
-	inc @dst+1
 
 @get_branch_target:
 	; calculate target address PC+2+operand
@@ -2396,10 +2388,11 @@ __asm_include:
 	sta @optab+1
 
 	; write the opcode (optab),aaa to the destination
-	ldy #$03
+	ldy #$00
 :	lda (@optab),y
 	jsr @appendch
-	dey
+	iny
+	cpy #$03
 	bne :-
 
 @get_addrmode:
@@ -2529,6 +2522,7 @@ __asm_include:
 	txa			; .A = size
 	ldx @modes		; .X = address modes
 	RETURN_OK
+
 ;--------------------------------------
 ; APPEND CH
 ; Appends a character to the disassembled instruction
@@ -2536,6 +2530,7 @@ __asm_include:
 	sty @savey
 	ldy @nostr
 	bne :+
+	;ldy #$00
 	sta (@dst),y
 	incw @dst
 :

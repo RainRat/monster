@@ -2201,6 +2201,9 @@ anon_addrs: .res MAX_ANON*2
 
 ;******************************************************************************
 ; NEXT SYM
+; Advances the "@sym" pointer to the next symbol (label)
+; OUT:
+;   r0: increased by MAX_LABEL_NAME_LEN
 .proc next_sym
 @sym=r0
 	lda @sym
