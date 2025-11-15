@@ -2,6 +2,7 @@
 .include "errors.inc"
 .include "labels.inc"
 .include "macros.inc"
+.include "string.inc"
 .include "zeropage.inc"
 
 .include "ram.inc"
@@ -19,12 +20,12 @@ MAX_MACROS = 128
 
 ;*******************************************************************************
 nummacros:       .byte 0
+macro_addresses: .res MAX_MACROS * 2
 
 ;*******************************************************************************
 ; BSS
 .segment "MACROBSS"
 
-macro_addresses: .res MAX_MACROS * 2
 macros:          .res $1400
 
 ;*******************************************************************************
@@ -63,7 +64,7 @@ macros:          .res $1400
 ;  - .XY: pointer to the macro definition
 ;     This will not contain the .MAC but does end with .ENDMAC)
 ;  - .A: number of parameters
-;  -  r0: pointer to parameters as a sequence of 0-terminated strings
+;  - r0: pointer to parameters as a sequence of 0-terminated strings
 .export __mac_add
 .proc __mac_add
 @src=zp::macros
@@ -93,7 +94,7 @@ macros:          .res $1400
 	dey
 @copyname:
 	lda (@params),y
-	sta (@dst),y
+	STOREB_Y @dst
 	php
 	incw @dst
 	incw @params
@@ -111,7 +112,7 @@ macros:          .res $1400
 	beq @paramsdone
 @copyparams:
 	lda (@params),y
-	sta (@dst),y
+	STOREB_Y @dst
 	php
 	incw @dst
 	incw @params
@@ -134,18 +135,17 @@ macros:          .res $1400
 	jsr strcmp
 	beq @done
 
-@next:	sta (@dst),y
+@next:	STOREB_Y @dst
 	incw @src
 	incw @dst
 	bne @l0
 
-@done:
-	; 0-terminate the macro definition
+@done:  ; 0-terminate the macro definition
 	lda #$00
 	tay
-	sta (@dst),y
+	STOREB_Y @dst
 	incw @dst
-	sta (@dst),y
+	STOREB_Y @dst
 
 	; done copying use the end address as the start address for the next macro
 	inc nummacros
@@ -169,8 +169,8 @@ macros:          .res $1400
 ; ASM
 ; Expands the given macro using the provided parameters and assembles it.
 ; IN:
+;  - .A:                id of the macro
 ;  - zp::mac0-zp::mac4: the macro parameters
-;  - .A: the id of the macro
 .export __mac_asm
 .proc __mac_asm
 @params=zp::macros
@@ -208,6 +208,7 @@ macros:          .res $1400
 	beq @paramsdone
 	asl
 	tax
+
 	; get the value to set the parameter to
 	lda @params,x
 	sta zp::label_value
@@ -215,9 +216,9 @@ macros:          .res $1400
 	sta zp::label_value+1
 
 	; get the name of the parameter to set the value for
-	ldy #$00
 	ldx @macro
 	ldy @macro+1
+
 	; save the label name for later removal
 	txa
 	pha
@@ -228,23 +229,20 @@ macros:          .res $1400
 	; set the parameter to its value
 	; (copy the param name to a temp buffer so that it can be
 	; seen in the label bank first)
-	stxy zp::bankaddr0
-	ldxy #@tmplabel
-	stxy zp::bankaddr1
-	lda #FINAL_BANK_MAIN
-	CALLMAIN ram::copyline
+	ldy #$00
+	ldx #$ff		; -1
+:	incw @macro
+	inx
+	LOADB_Y @macro
+	sta @tmplabel,x
+	bne :-
+	incw @macro
+
 	ldxy #@tmplabel
 	CALLMAIN lbl::set
 	bcs @cleanup
 
-	; read past the param name
-	ldy #$00
-:	incw @macro
-	lda (@macro),y
-	bne :-
-	incw @macro
-
-	jmp @setparams	; repeat for all params
+	jmp @setparams		; repeat for all params
 
 @paramsdone:
 	; assemble the macro line by line
@@ -279,17 +277,19 @@ macros:          .res $1400
 @ok:	; move to the next line
 	ldy #$00
 :	incw @macro
-	lda (@macro),y
+	LOADB_Y @macro
 	bne :-
 
 	incw @macro
-	lda (@macro),y		; at the end?
+	LOADB_Y @macro		; at the end of the macro? (two 0's)
 	bne @asm		; no, continue
 
 @cleanup:
 	lda @cnt
 	beq @done
+
 @cleanuploop:
+	; restore the label name for the parameter
 	pla
 	tay
 	pla
@@ -297,9 +297,9 @@ macros:          .res $1400
 	CALLMAIN lbl::del
 
 	dec @cnt
-	bne @cleanuploop
+	bne @cleanuploop	; repeat until all params deleted
 
-@done:	lsr @err	; set .C if error occurred
+@done:	lsr @err		; set .C if error occurred
 	lda @errcode
 	rts
 .endproc
@@ -318,6 +318,7 @@ macros:          .res $1400
 @addr=r2
 @name=r4
 @cnt=r6
+@tmp=r7
 	stxy @tofind
 	lda #<macro_addresses
 	sta @addr
@@ -328,7 +329,8 @@ macros:          .res $1400
 	cmp nummacros
 	beq @notfound
 
-@find:	ldy #$00
+@find:	; get the address of the macro (its name)
+	ldy #$00
 	lda (@addr),y
 	sta @name
 	iny
@@ -337,21 +339,24 @@ macros:          .res $1400
 	dey
 
 @compare:
+	LOADB_Y @name
+	sta @tmp
+
 	lda (@tofind),y
 	beq :+		; end of the string we're trying to find
 	cmp #' '
 	beq :+
 	cmp #$09
 	beq :+
-	cmp (@name),y
+	cmp @tmp
 	bne @next
 	iny
 	bne @compare
 
-:	lda (@name),y	; make sure the name length matches
+:	LOADB_Y @name	; make sure the name length matches
 	beq @found
-@next:
-	incw @addr
+
+@next:	incw @addr
 	incw @addr
 	inc @cnt
 	ldx @cnt
@@ -360,8 +365,8 @@ macros:          .res $1400
 @notfound:
 	sec		; not found
 	rts
-@found:
-	ldy #$00
+
+@found: ldy #$00
 	lda @cnt
 	RETURN_OK
 .endproc
@@ -376,18 +381,21 @@ macros:          .res $1400
 ; OUT:
 ;  .Z: set if the strings are equal
 .proc strcmp
+.ifdef vic20
 	tay		; is length 0?
 	dey
 	bmi @match	; if 0-length comparison, it's a match by default
 
 @l0:	lda (zp::str0),y
 	cmp (zp::str2),y
-	beq :+
-	rts
-:	dey
+	bne @ret
+	dey
 	bpl @l0
 @match:	lda #$00
-	rts
+@ret:	rts
+.else
+strcmp = str::compare
+.endif
 .endproc
 
 endmac:	.byte ".endmac",0

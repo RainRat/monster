@@ -13,6 +13,7 @@
 .include "object.inc"
 .include "string.inc"
 .include "ram.inc"
+.include "target.inc"
 .include "zeropage.inc"
 .macpack longbranch
 
@@ -334,6 +335,7 @@ blockaddresseshi: .res MAX_FILES
 ;   - .C: set if an error occurred
 .proc new_block
 @tmp=r0
+	SELECT_BANK "DEBUGINFO"
 	stxy addr		; init addr pointer
 
 	lda block_open		; is there a block already open?
@@ -436,6 +438,7 @@ blockaddresseshi: .res MAX_FILES
 ;   - .XY: the address to end the block at
 .proc end_block
 @numlines=debugtmp
+	SELECT_BANK "DEBUGINFO"
 	lda numblocks
 	beq @done	; no blocks exist, nothing to "end"
 
@@ -514,6 +517,7 @@ blockaddresseshi: .res MAX_FILES
 @dline=r4
 @daddr=r6
 @isize=r8
+	SELECT_BANK "DEBUGINFO"
 	stxy @line
 
 	; get the line and address delta for our new line (dline = new - prev)
@@ -753,6 +757,7 @@ blockaddresseshi: .res MAX_FILES
 .proc addr2line
 @addr=r2
 @cnt=r4
+	SELECT_BANK "DEBUGINFO"
 	stxy @addr
 	lda #$00
 	sta @cnt
@@ -823,6 +828,7 @@ blockaddresseshi: .res MAX_FILES
 @cnt=r4
 @file=r5
 @closest=r7		; nearest line < the one we're looking for
+	SELECT_BANK "DEBUGINFO"
 	sta @file
 	stxy @line
 	lda #$00
@@ -899,6 +905,7 @@ blockaddresseshi: .res MAX_FILES
 @filename=zp::str2
 @buff=$120
 @cnt=debugtmp
+	SELECT_BANK "DEBUGINFO"
 	stxy @filename
 
 	; copy the filename to compare to a temp buffer

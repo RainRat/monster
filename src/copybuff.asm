@@ -1,6 +1,7 @@
 .include "errors.inc"
 .include "macros.inc"
 .include "ram.inc"
+.include "target.inc"
 
 ;*******************************************************************************
 .import __COPYBUFF_BSS_SIZE__
@@ -132,6 +133,7 @@ copybuff:
 ;  - .C: set if the buffer is full (couldn't add char)
 .proc putch
 @buff=r0
+	SELECT_BANK "COPYBUFF"
 	ldxy buffptr
 	stxy @buff
 	cmpw #copybuff+MAX_COPY_SIZE	; buffer is full
@@ -158,6 +160,7 @@ copybuff:
 ;  - .C: set if the buffer is empty
 .proc getch
 @buff=rb
+	SELECT_BANK "COPYBUFF"
 	ldxy buffptr
 	stxy @buff
 	cmpw #copybuff
@@ -187,6 +190,7 @@ copybuff:
 .proc lastline
 @buff=r9
 @dst=rb
+	SELECT_BANK "COPYBUFF"
 	stxy @dst
 
 	jsr push	; save the buffer pointers
@@ -234,6 +238,7 @@ copybuff:
 .proc getline
 @dst=r9
 @i=r4
+	SELECT_BANK "COPYBUFF"
 	stxy @dst
 	lda #$00
 	tay
@@ -342,6 +347,7 @@ copybuff:
 .proc reverse
 @left=r0
 @right=r2
+	SELECT_BANK "COPYBUFF"
 	ldxy buffptr
 	stxy @right
 	decw @right

@@ -1,4 +1,7 @@
 .import select_bank_symbols
+.import select_bank_debuginfo
+.import select_bank_debuginfo
+.import select_bank_copybuff
 
 .import __screen_rowslo
 .import __screen_rowshi
@@ -22,5 +25,11 @@
 .macro SELECT_BANK bank
 .if .match ("SYMBOLS", bank)
 	jsr select_bank_symbols
+.elseif .match("DEBUGINFO", bank)
+	jsr select_bank_debuginfo
+.elseif .match("LINKER", bank)
+	jsr select_bank_linker
+.elseif .match("COPYBUFF", bank)
+	jsr select_bank_copybuff
 .endif
 .endmacro
