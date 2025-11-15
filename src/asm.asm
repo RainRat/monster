@@ -1658,6 +1658,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	beq definebyte
 	jsr util::is_whitespace
 	beq @commaorws
+
 	; unexpected character
 @err:	RETURN_ERR ERR_SYNTAX_ERROR
 @done:	clc

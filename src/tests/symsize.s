@@ -1,0 +1,20 @@
+.eq j $3000
+.eq a 1
+.eq b 2
+.eq c 3
+.eq d $1000
+.eq e 4
+.eq f 5
+.eq g $2000
+
+.eq r 14
+.eq h 6
+.eq i 7
+.eq k 8
+.eq l 9
+.eq m $4000
+.eq n 10
+.eq o 11
+.eq p 12
+.eq q 13
+.eq s 15

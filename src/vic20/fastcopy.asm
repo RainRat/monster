@@ -269,6 +269,7 @@ copytabhi: .hibytes copytab
 	sta @addr+1
 	lda #$10
 	sta @addr2+1		; start from $1000
+
 :
 @addr=*+1
 	lda dbg1000,x
