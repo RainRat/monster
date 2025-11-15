@@ -228,7 +228,7 @@ screen: .res 40*24
 	lda line
 	inc line
 	ldxy @msg
-	JUMP FINAL_BANK_MAIN, text::print
+	JUMPMAIN text::print
 .endproc
 
 ;******************************************************************************
@@ -431,7 +431,7 @@ screen: .res 40*24
 	sta zp::cury
 
 	; debug interface changed back to GUI, refresh editor
-	JUMP FINAL_BANK_MAIN, edit::refresh
+	JUMPMAIN edit::refresh
 .endproc
 
 ;*******************************************************************************

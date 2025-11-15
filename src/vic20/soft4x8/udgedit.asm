@@ -157,7 +157,7 @@ linebuffer = $0400
 .proc refresh_status
 	CALLMAIN ui::update_statusline
 	lda #23
-	JUMP FINAL_BANK_MAIN, text::status
+	JUMPMAIN text::status
 .endproc
 
 ;*******************************************************************************

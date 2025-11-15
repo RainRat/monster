@@ -1759,7 +1759,7 @@ __link_get_segment_by_name:
 	bne @symloop
 
 @done:	pla					; restore file handle
-	JUMP FINAL_BANK_MAIN, file::close
+	JUMPMAIN file::close
 
 @seglist_title:  .byte "segments",$0d,0
 @seglist_header: .byte "name     addr   size",$0d,0

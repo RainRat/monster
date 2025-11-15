@@ -985,7 +985,7 @@ CMD_BUFF = $101
 ; GO
 ; Continues program execution at the current PC
 .proc go
-	JUMP FINAL_BANK_MAIN, run::go
+	JUMPMAIN run::go
 .endproc
 
 ;*******************************************************************************
@@ -1450,35 +1450,35 @@ CMD_BUFF = $101
 ;  - .C:       clear on success or set on failure
 ;  - zp::line: updated to point beyond the parsed expression
 .proc eval
-	JUMP FINAL_BANK_MAIN, expr::eval
+	JUMPMAIN expr::eval
 .endproc
 
 ;*******************************************************************************
 ; VMEM_LOAD
 ; Calls vmem::load
 .proc vmem_load
-	JUMP FINAL_BANK_MAIN, vmem::load
+	JUMPMAIN vmem::load
 .endproc
 
 ;*******************************************************************************
 ; VMEM STORE
 ; Calls vmem::store
 .proc vmem_store
-	JUMP FINAL_BANK_MAIN, vmem::store
+	JUMPMAIN vmem::store
 .endproc
 
 ;*******************************************************************************
 ; GETB
 ; Calls "ram::get_byte"
 .proc getb
-	JUMP FINAL_BANK_MAIN, ram::get_byte
+	JUMPMAIN ram::get_byte
 .endproc
 
 ;*******************************************************************************
 ; PROCESS_WS
 ; Calls "line::process_ws" in the MAIN bank
 .proc process_ws
-	JUMP FINAL_BANK_MAIN, line::process_ws
+	JUMPMAIN line::process_ws
 .endproc
 
 ;*******************************************************************************

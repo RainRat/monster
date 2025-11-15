@@ -283,7 +283,7 @@ copytabhi: .hibytes copytab
 	bne :-			; loop until we are
 
 	; reinit the bitmap and return
-	JUMP FINAL_BANK_MAIN, scr::init
+	JUMPMAIN scr::init
 .endproc
 
 ;******************************************************************************

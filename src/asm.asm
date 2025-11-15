@@ -1805,10 +1805,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	; end current BLOCK of debug info (if one is open)
 	ldxy zp::virtualpc	; current address
 	jsr dbgi::endblock	; end the current block
-
-
-
-	jsr dbgi::set_seg_id		; and set it for debug info too
+	jsr dbgi::set_seg_id	; and set it for debug info too
 
 	; create a new BLOCK of debug info at zp::virtualpc
 	jsr dbgi::newblock	; start new block for included file
@@ -2319,7 +2316,6 @@ __asm_include:
 	inx
 	dey
 	bpl :-
-
 
 @get_branch_target:
 	; calculate target address PC+2+operand
