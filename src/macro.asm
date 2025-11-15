@@ -229,20 +229,23 @@ macros:          .res $1400
 	; set the parameter to its value
 	; (copy the param name to a temp buffer so that it can be
 	; seen in the label bank first)
-	ldy #$00
-	ldx #$ff		; -1
-:	incw @macro
-	inx
+	ldy #$ff		; -1
+:	iny
 	LOADB_Y @macro
-	sta @tmplabel,x
+	sta @tmplabel,y
 	bne :-
-	incw @macro
 
-	ldxy #@tmplabel
+	tya
+	sec		; +1
+	adc @macro
+	sta @macro
+	bcc :+
+	inc @macro+1
+
+:	ldxy #@tmplabel
 	CALLMAIN lbl::set
 	bcs @cleanup
-
-	jmp @setparams		; repeat for all params
+	bcc @setparams		; repeat for all params
 
 @paramsdone:
 	; assemble the macro line by line
