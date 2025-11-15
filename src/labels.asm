@@ -23,10 +23,6 @@ MAX_LABELS = 732
 
 MAX_LABEL_NAME_LEN = 32
 
-;*******************************************************************************
-; ZEROPAGE
-allow_overwrite = zp::labels+4	; when !0, addlabel will overwrite existing
-
 .export __label_clr
 .export __label_add
 .export __label_find
@@ -492,7 +488,6 @@ anon_addrs: .res MAX_ANON*2
 ;  - .XY:             the name of the label to add
 ;  - zp::label_value: the value to assign to the given label name
 ;  - zp::label_mode:  the "mode" of the label to add (0=ZP, 1=ABS)
-;  - allow_overwrite: if !0, will not error if label already exists
 ; OUT:
 ;  - .XY: the ID of the label added
 ;  - .C:  set on error or clear if the label was successfully added
@@ -507,8 +502,10 @@ anon_addrs: .res MAX_ANON*2
 @mode=r8
 @tmp=ra
 @segid=re
+@allow_overwrite=rf
+	sta @allow_overwrite	; set overwrite flag (SET) or clear (ADD)
+
 	SELECT_BANK "SYMBOLS"
-	sta allow_overwrite	; set overwrite flag (SET) or clear (ADD)
 
 	stxy @name
 	jsr is_valid
@@ -527,7 +524,7 @@ anon_addrs: .res MAX_ANON*2
 	jsr find
 	bcs @insert
 
-	lda allow_overwrite
+	lda @allow_overwrite
 	bne :+
 	RETURN_ERR ERR_LABEL_ALREADY_DEFINED
 

@@ -288,7 +288,7 @@ main:	jsr key::getch
 	bcc :+
 	rts			; address not found
 :	stxy zp::jmpvec
-	jmp zp::jmpaddr
+	jmp (zp::jmpvec)
 .endproc
 
 ;******************************************************************************
