@@ -33,6 +33,7 @@
 .include "kernal.inc"
 .include "macros.inc"
 .include "memory.inc"
+.include "ram.inc"
 .include "source.inc"
 .include "string.inc"
 .include "strings.inc"
@@ -40,8 +41,6 @@
 .include "target.inc"
 .include "vmem.inc"
 .include "zeropage.inc"
-
-.include "ram.inc"
 
 ;*******************************************************************************
 ; CONSTANTS
@@ -298,6 +297,7 @@ OSPROC __file_scratch
 
 @err:   jsr @close
 	RETURN_ERR ERR_IO_ERROR
+
 .PUSHSEG
 .RODATA
 @s_colon:
