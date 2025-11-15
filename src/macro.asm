@@ -233,9 +233,11 @@ macros:          .res $1400
 :	iny
 	LOADB_Y @macro
 	sta @tmplabel,y
+	beq :+
+	cmp #$0d
 	bne :-
 
-	tya
+:	tya
 	sec		; +1
 	adc @macro
 	sta @macro
