@@ -3034,7 +3034,7 @@ goto_buffer:
 
 ;******************************************************************************
 ; COMMAND LOADDBG
-; :D <filename>
+; :L <filename>
 ; Loads the given DEBUG file (program binary, global symbol table, and debug
 ; information)
 ; IN:
@@ -3052,7 +3052,7 @@ goto_buffer:
 	jmp report_drive_error
 
 :	ldxy @file
-	jsr file::open_r	; open the output filename
+	jsr file::open_r	; open the file
 	bcs @err
 
 	sta @file

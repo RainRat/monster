@@ -2207,7 +2207,7 @@ __asm_include:
 ;  - .A:   the size of the instruction that was disassembled
 ;  - .X:   the address modes for the instruction
 ;  - .C:   clear if instruction was successfully disassembled
-;  - (r0): the (0-terminated) disassembled instruction string
+;  - (r0): the (0-terminated) disassembled instruction string (if A IN=0)
 .export __asm_disassemble
 .proc __asm_disassemble
 @dst=r0

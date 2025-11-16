@@ -137,12 +137,12 @@ VIC20_RAM_INC = 1
 ;   - .XY:  value to write
 ;   - addr: address to store to
 .macro STOREW addr
-	txa
-	sta (addr),y
-	iny
 	tya
+	ldy #$01
 	sta (addr),y
+	txa
 	dey
+	sta (addr),y
 .endmacro
 
 ;*******************************************************************************
