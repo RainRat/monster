@@ -2,7 +2,7 @@ TARGET ?= vic20
 REGION ?= NTSC
 
 # default device # (for cart image)
-DEFAULT_DEVICE=10
+DEFAULT_DEVICE=8
 
 # emulators
 XVIC=xvic
@@ -125,11 +125,11 @@ install.d81: installer.prg $(CART_IMAGE)
 start-cart: $(CART_IMAGE) test.d81
 	# test the cartridge binary
 	$(C1541) -format disk,1 d81 empty.d81
-	$(XVIC) -default -kernal $(KERNAL) +warp -sound -cartfe $(CART_IMAGE) -memory all $(EMU_REGION) -drive10type 1581 -10 test.d81 -drive8type 1581 -dos1581 JiffyDOS_1581.bin -8 empty.d81 -moncommands moncommands
+	$(XVIC) -default -kernal $(KERNAL) +warp -sound -cartfe $(CART_IMAGE) -memory all $(EMU_REGION) -drive10type 1581 -8 test.d81 -drive8type 1581 -dos1581 JiffyDOS_1581.bin -8 empty.d81 -moncommands moncommands
 
 start-cart-jiffy: $(CART_IMAGE) test.d81
 	$(C1541) -format disk,1 d81 empty.d81
-	$(XVIC) +warp -kernal $(KERNAL_JIFFY) -sound -cartfe $(CART_IMAGE) -memory all $(EMU_REGION) -drive10type 1581 -10 test.d81 -drive8type 1581 -dos1581 JiffyDOS_1581.bin -8 empty.d81 -moncommands moncommands
+	$(XVIC) +warp -kernal $(KERNAL_JIFFY) -sound -cartfe $(CART_IMAGE) -memory all $(EMU_REGION) -drive10type 1581 -8 test.d81 -drive8type 1581 -dos1581 JiffyDOS_1581.bin -8 empty.d81 -moncommands moncommands
 
 start-disk: test.d81
 	$(XVIC) -default $(EMU_REGION) -kernal kernal.901486-06.bin -memory all -cartfe $(FE3BIN) -sound +warp -drive8type 1581 -8 test.d81 -moncommands moncommands
@@ -139,7 +139,7 @@ start-disk-jiffy20: test.d81
 	$(XVIC) +warp -kernal JiffyDOS_VIC-20_6.01_NTSC.bin -sound -cartfe $(FE3BIN) -memory all $(EMU_REGION) -drive8type 1581 -dos1581 JiffyDOS_1581.bin -8 test.d81 -moncommands moncommands
 
 start-disk-jiffy64: test.d81
-	$(X64) +warp -kernal JiffyDOS_C64.bin -sound $(EMU_REGION) -drive8type 1581 -dos1581 JiffyDOS_1581.bin -reu -reusize 16384  -moncommands moncommands -8 test.d81
+	$(X64) -default +warp -kernal JiffyDOS_C64.bin -sound $(EMU_REGION) -drive8type 1581 -dos1581 JiffyDOS_1581.bin -reu -reusize 16384  -moncommands moncommands -8 test.d81
 
 
 start-install: install.d81
@@ -147,10 +147,10 @@ start-install: install.d81
 	$(XVIC) +warp -sound -cartfe fw-test.bin -fewriteback -memory all $(EMU_REGION) -drive8type 1581 -8 install.d81
 
 start-test: $(TEST_IMAGE) test.d81
-	$(XVIC) +warp -sound -cartfe $(TEST_IMAGE) -memory all $(EMU_REGION) -drive10type 1581 -10 test.d81 -moncommands moncommands
+	$(XVIC) +warp -sound -cartfe $(TEST_IMAGE) -memory all $(EMU_REGION) -drive10type 1581 -8 test.d81 -moncommands moncommands
 
 vstart:
-	$(XVIC) +warp -default -cartfe $(FE3BIN) -memory all $(EMU_REGION) +drive10truedrive -virtualdev10 -10 test.d81
+	$(XVIC) +warp -default -cartfe $(FE3BIN) -memory all $(EMU_REGION) +drive10truedrive -virtualdev10 -8 test.d81
 
 clean:
 	rm -f *.prg *.o test.d81 $(CART_IMAGE) monster.d81

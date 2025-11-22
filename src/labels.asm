@@ -532,7 +532,7 @@ anon_addrs: .res MAX_ANON*2
 	jsr by_id 		; get the address of the label
 	ldxy zp::label_value
 	STOREW @addr
-	clc		; ok
+	clc			; ok
 @ret:	rts
 
 @insert:

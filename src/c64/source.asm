@@ -87,19 +87,22 @@ PAGESIZE    = $100	; size of data "page" (amount stored in c64 RAM)
 	ldx #$00
 	stx @skip_insert_logic
 
-	cmp #$0d
-	beq :+
 	cmp #$0a
-	beq :+
-	cmp #$09
-	beq :+
-	cmp #$20
-	bcs :+
-	cmp #$80
-	bcc :+
-	jmp @done	; not displayable
+	bne :+
+	lda #$0d
+:	cmp #$0d
+	bne :+
+	incw lines
+	bne @store		; branch always
 
-:	pha
+:	cmp #$09
+	beq @store
+	cmp #$20
+	jcc @done
+	cmp #$80
+	jcs @done		; not displayable, don't insert
+
+@store:	pha
 	jsr __src_mark_dirty
 	jsr gaplen
 	cmpw #0		; is gap closed?

@@ -20,7 +20,7 @@
 	sta $01
 	jsr inline::setup
 
-	jsr inline::getarg_w
+	jsr inline::getarg_w	; get procedure address
 	stx zp::bankjmpvec
 	sta zp::bankjmpvec+1
 	jsr inline::setup_done
