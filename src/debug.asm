@@ -23,6 +23,7 @@
 .include "layout.inc"
 .include "macros.inc"
 .include "memory.inc"
+.include "memview.inc"
 .include "screen.inc"
 .include "settings.inc"
 .include "sim6502.inc"
@@ -33,7 +34,6 @@
 .include "util.inc"
 .include "watches.inc"
 .include "ui.inc"
-.include "view.inc"
 .include "vmem.inc"
 .include "zeropage.inc"
 

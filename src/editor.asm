@@ -36,6 +36,7 @@
 .include "linker.inc"
 .include "macros.inc"
 .include "memory.inc"
+.include "memview.inc"
 .include "monitor.inc"
 .include "object.inc"
 .include "prefs.inc"
@@ -51,7 +52,6 @@
 .include "symview.inc"
 .include "text.inc"
 .include "util.inc"
-.include "view.inc"
 .include "vmem.inc"
 .include "zeropage.inc"
 
