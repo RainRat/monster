@@ -110,22 +110,18 @@ PAGESIZE    = $100	; size of data "page" (amount stored in c64 RAM)
 .proc __src_insert
 @src=r2
 @dst=r4
+	cmp #$0d
+	beq :+
 	cmp #$0a
-	bne :+
-	lda #$0d
-:	cmp #$0d
-	bne :+
-	incw lines
-	bne @store		; branch always
-
-:	cmp #$09
-	beq @store
+	beq :+
+	cmp #$09
+	beq :+
 	cmp #$20
-	jcc @done
+	bcc @done
 	cmp #$80
-	jcs @done		; not displayable, don't insert
+	bcs @done	; not displayable
 
-@store:	pha
+:	pha
 	jsr __src_mark_dirty
 	jsr gaplen
 	cmpw #0			; is gap closed?
@@ -147,13 +143,9 @@ PAGESIZE    = $100	; size of data "page" (amount stored in c64 RAM)
 	sta reu::move_src+2
 	sta reu::move_dst+2
 
+	; source address
 	ldxy cursorzp
 	stxy reu::move_src
-
-	; set the C64 address where the RAM will be intermediately
-	; stored
-	ldxy #@done		; address of the end of this procedure
-	stxy reu::c64addr
 
 	; get number of bytes to copy
 	ldxy end
@@ -174,6 +166,8 @@ PAGESIZE    = $100	; size of data "page" (amount stored in c64 RAM)
 	bmi @done	; out of range
 
 	; write the character to insert
+	ldy __src_bank
+	sty reu::reuaddr+2
 	STOREB cursorzp
 
 	cmp #$0d
@@ -237,6 +231,9 @@ PAGESIZE    = $100	; size of data "page" (amount stored in c64 RAM)
 	decw poststartzp
 
 	; move one byte from the start of the gap to the end
+	lda __src_bank
+	sta reu::reuaddr+2
+
 	LOADB cursorzp
 	STOREB poststartzp
 

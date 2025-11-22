@@ -50,7 +50,6 @@ data: .res BUFFER_SIZE
 	rts
 .endproc
 
-
 ;*******************************************************************************
 ; INSERT
 ; Adds the character in .A to the buffer at the gap position (gap).
@@ -64,12 +63,8 @@ data: .res BUFFER_SIZE
 ;  - $120-$130: may be clobbered if newline is inserted
 .export __src_insert
 .proc __src_insert
-@skip_insert_logic=r0
 @src=r2
 @dst=r4
-	ldx #$00
-	stx @skip_insert_logic
-
 	cmp #$0d
 	beq :+
 	cmp #$0a
@@ -124,10 +119,8 @@ data: .res BUFFER_SIZE
 	cmp #$0d
 	bne @insdone
 	incw line
-	lda @skip_insert_logic
-	bne :+
 	jsr on_line_inserted
-:	incw lines
+	incw lines
 @insdone:
 	incw cursorzp
 @done:	RETURN_OK
