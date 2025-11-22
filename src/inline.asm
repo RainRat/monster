@@ -16,7 +16,6 @@
 savex  = zp::inline
 savey  = zp::inline+1
 params = zp::inline+2
-tmp    = zp::inline+3
 
 .segment "BANKCODE2"
 

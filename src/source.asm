@@ -29,7 +29,6 @@
 .import __src_atcursor
 .import __src_insert
 .import __src_init_buff
-.import __src_copy_line
 .import __src_next
 .import __src_prev
 .import __src_start
@@ -57,12 +56,12 @@ stack:	.res POS_STACK_SIZE	; stack for source positions
 ; buffer is copied to these zeropage locations.
 ; The values for the buffer that is being deactivated are copied to the
 ; "savestate" array
-buffstate   = zp::srccur
-cursorzp    = zp::srccur
-poststartzp = zp::srccur2
-line        = zp::srcline
-lines       = zp::srclines
-end         = zp::srcend
+buffstate      = zp::srccur
+cursorzp       = zp::srccur
+poststartzp    = zp::srccur2
+line           = zp::srcline
+lines          = zp::srclines
+end            = zp::srcend
 SAVESTATE_SIZE = 10		; space used by above zeropage addresses
 
 .exportzp __src_line
@@ -258,8 +257,6 @@ flags: .res MAX_SOURCES		; flags for each source buffer
 	dex
 	bne :-
 
-	jsr __src_init_buff
-
 	; init line and lines to 1
 	inc line
 	inc lines
@@ -286,6 +283,7 @@ flags: .res MAX_SOURCES		; flags for each source buffer
 
 	jsr find_bank
 	sta bank
+	jsr __src_init_buff
 
 	rts
 .endproc
@@ -1078,7 +1076,47 @@ flags: .res MAX_SOURCES		; flags for each source buffer
 .export __src_get
 .proc __src_get
 	ldxy #mem::linebuffer
-	jmp __src_copy_line
+
+	; fall through to copy_line
+.endproc
+
+;*******************************************************************************
+; COPY LINE
+; Returns the text at the current cursor position and stores it to the given
+; target location
+; IN:
+;  - .XY: the destination to copy to
+;  - r1:  the destination to copy to
+; OUT:
+;  - (.XY): a line of text from the cursor position
+.proc copy_line
+@src=zp::bankaddr0
+@target=zp::bankaddr1
+	stxy @target		; dest
+	ldxy poststartzp
+	stxy @src		; source
+
+	jsr __src_on_last_line	; on last line already?
+	bne :+
+	ldxy end
+	sub16 poststartzp	; bytes to copy
+	txa
+	pha
+	tay			; .Y = bytes to copy
+	dey
+	lda __src_bank
+	jsr ram::copyline	; may copy garbage
+
+	pla			; restore end of line index
+	tay
+	jmp @done
+
+:	lda __src_bank
+	jsr ram::copyline
+
+@done:	lda #$00
+	sta (@target),y
+	RETURN_OK
 .endproc
 
 ;*******************************************************************************

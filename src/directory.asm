@@ -45,7 +45,7 @@
 	sta @ext
 	stxy @resultptr
 
-	jsr open_dir	; open the directory "file"
+	jsr open_dir		; open the directory "file"
 	sta @file
 	bcs @ret
 

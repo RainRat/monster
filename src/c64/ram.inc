@@ -198,8 +198,8 @@ FINAL_BANK_MONITOR = $12
 ;   - .A:   value to store
 ;   - addr: target address
 .macro STOREB addr
-	jsr reu::store
-	.word addr
+	jsr reu::storeb
+	.byte addr
 .endmacro
 
 ;*******************************************************************************

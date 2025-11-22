@@ -24,9 +24,9 @@ savex = zp::inline
 savey = zp::inline+1
 
 ;*******************************************************************************
-savea = zp::bankaddr0
-savep = zp::bankaddr0+1
-tmp   = zp::bankaddr0+2
+savea = zp::str0
+savep = zp::str0+1
+tmp   = zp::str0+2
 
 .BSS
 
@@ -224,9 +224,11 @@ tab_num_elements: .word 0
 .export __reu_zero
 .proc __reu_zero
 	IO_BEGIN
-	jsr mapreu
 	ldxy #@zero
 	stxy __reu_c64_addr
+
+	jsr mapreu
+
 	lda #$80
 	sta $df0a		; fix c64 address
 
@@ -408,19 +410,33 @@ __reu_move_size=zp::bank+6
 .export	__reu_storeb
 .proc __reu_storeb
 @dst=zp::banktmp
-	pha
+	sta savea
+
+	; save flags register
+	php
+	pla
+	sta savep
 
 	jsr inline::setup
-	jsr inline::getarg_w
+
+	; read the address to load from
+	jsr inline::getarg_zp_ind
 	stx __reu_reu_addr
 	sta __reu_reu_addr+1
 	jsr inline::setup_done
 
-	pla
+	lda savea
 	jsr __reu_store1
 
 	ldx savex
 	ldy savey
+
+	; restore flags register
+	lda savep
+	pha
+	lda savea
+	plp
+
 	rts
 .endproc
 
@@ -514,9 +530,9 @@ __reu_move_size=zp::bank+6
 	pla
 	and #$01		; mask .C bit
 	sta savep
-	jsr inline::setup
 
 	; read the address to load from
+	jsr inline::setup
 	jsr inline::getarg_zp_ind
 	stx __reu_reu_addr
 	sta __reu_reu_addr+1
@@ -560,6 +576,7 @@ __reu_move_size=zp::bank+6
 	and #$01		; mask .C bit
 	sta savep
 
+	; read the address to load from
 	jsr inline::setup
 	jsr inline::getarg_zp_ind_off
 	stx __reu_reu_addr
@@ -579,7 +596,10 @@ __reu_move_size=zp::bank+6
 	and #$fe	; mask .C bit
 	ora savep	; restore .C bit
 	pha		; save .N, .Z, and .C
+
 	lda savea
+
+	; restore flags register
 	plp
 	rts
 .endproc

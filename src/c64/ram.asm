@@ -82,13 +82,6 @@ FINAL_BANK_MAIN = $00
 .endproc
 
 ;*******************************************************************************
-.export	__ram_copy
-.proc __ram_copy
-	; TODO:
-	rts
-.endproc
-
-;*******************************************************************************
 ; COPY LINE MAIN
 ; Copies RAM within the C64's internal RAM
 ; This is called by __ram_copy_line when the bank is "MAIN"
@@ -118,20 +111,22 @@ FINAL_BANK_MAIN = $00
 ;  - .A: the last byte copied
 .export	__ram_copy_line
 .proc __ram_copy_line
+@src=zp::bankaddr0
+@dst=zp::bankaddr1
 	cmp #FINAL_BANK_MAIN
 	beq copy_line_main
-
 	sta reu::reuaddr+2
+
 	ldy #$00
 :	jsr reu::loadb_off
-	.byte zp::bankaddr0
-	sta (zp::bankaddr1),y
+	.byte @src
+	sta (@dst),y
 	beq @done
 	cmp #$0d
 	beq @done
 	iny
 	cpy #LINESIZE
-	bcc :-
+	bne :-
 @done:	rts
 .endproc
 
