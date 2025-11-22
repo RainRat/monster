@@ -407,7 +407,7 @@
 	ldxy #strings::dir
 	jsr file::open_r_prg
 	tax
-	jmp $ffc6		; CHKIN
+	jmp krn::chkin
 .endproc
 
 ;******************************************************************************
