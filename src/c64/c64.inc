@@ -3,6 +3,8 @@
 .import select_bank_debuginfo
 .import select_bank_copybuff
 
+.import __screen_crowslo
+.import __screen_crowshi
 .import __screen_rowslo
 .import __screen_rowshi
 .import __c64_dbg
@@ -10,6 +12,8 @@
 .scope c64
 	rowslo = __screen_rowslo
 	rowshi = __screen_rowshi
+	crowslo = __screen_crowslo
+	crowshi = __screen_crowshi
 
 	dbg    = __c64_dbg
 .endscope

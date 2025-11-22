@@ -507,8 +507,39 @@ __text_puts:
 	SCREEN_ADDR+$370, \
 	SCREEN_ADDR+$398, \
 	SCREEN_ADDR+$3c0
-.linecont -
 .export __screen_rowslo
 .export __screen_rowshi
 __screen_rowslo: .lobytes rows
 __screen_rowshi: .hibytes rows
+
+.define crows \
+	COLMEM_ADDR+$00, \
+	COLMEM_ADDR+$28, \
+	COLMEM_ADDR+$50, \
+	COLMEM_ADDR+$78, \
+	COLMEM_ADDR+$a0, \
+	COLMEM_ADDR+$c8, \
+	COLMEM_ADDR+$f0, \
+	COLMEM_ADDR+$118, \
+	COLMEM_ADDR+$140, \
+	COLMEM_ADDR+$168, \
+	COLMEM_ADDR+$190, \
+	COLMEM_ADDR+$1b8, \
+	COLMEM_ADDR+$1e0, \
+	COLMEM_ADDR+$208, \
+	COLMEM_ADDR+$230, \
+	COLMEM_ADDR+$258, \
+	COLMEM_ADDR+$280, \
+	COLMEM_ADDR+$2a8, \
+	COLMEM_ADDR+$2d0, \
+	COLMEM_ADDR+$2f8, \
+	COLMEM_ADDR+$320, \
+	COLMEM_ADDR+$348, \
+	COLMEM_ADDR+$370, \
+	COLMEM_ADDR+$398, \
+	COLMEM_ADDR+$3c0
+.linecont -
+.export __screen_crowslo
+.export __screen_crowshi
+__screen_crowslo: .lobytes crows
+__screen_crowshi: .hibytes crows

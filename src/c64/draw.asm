@@ -1,3 +1,6 @@
+.include "c64.inc"
+.include "layout.inc"
+.include "macros.inc"
 .include "settings.inc"
 .include "../macros.inc"
 .include "../memory.inc"
@@ -9,16 +12,17 @@
 ; HILINE
 .export __draw_hiline
 .proc __draw_hiline
-	; TODO
-	rts
+	lda #$55
+	jmp __draw_hline
 .endproc
 
 ;******************************************************************************
 ; RESETLINE
 .export __draw_resetline
 .proc __draw_resetline
-	; TODO
-	rts
+	lda #$11
+
+	; fall through
 .endproc
 
 ;******************************************************************************
@@ -30,7 +34,17 @@
 .export __draw_hline
 .proc __draw_hline
 @dst=r0
-	; TODO
+	IO_BEGIN
+	ldy c64::crowslo,x
+	sty @dst
+	ldy c64::crowshi,x
+	sty @dst+1
+
+	ldy #SCREEN_WIDTH-1
+:	sta (@dst),y
+	dey
+	bpl :-
+	IO_DONE
 	rts
 .endproc
 
