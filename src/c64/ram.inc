@@ -250,8 +250,8 @@ FINAL_BANK_MONITOR = $12
 .macro COPY_Y src, dst
 .local size
 	jsr reu::copy_y
-	.word src
-	.word dst
+	.byte src
+	.byte dst
 .endmacro
 
 ;*******************************************************************************

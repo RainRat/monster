@@ -259,11 +259,10 @@ __reu_move_size=zp::bank+6
 @src=__reu_move_src
 @dst=__reu_move_dst
 @size=__reu_move_size
-@move:	lda @size+2
-	beq :+
-	jmp *		; oversized move
+	lda __reu_reu_addr+2
+	pha				; save current "bank"
 
-:	lda @size
+	lda @size
 	sta __reu_txlen
 	lda @size+1
 	sta __reu_txlen+1
@@ -322,7 +321,11 @@ __reu_move_size=zp::bank+6
 	stxy __reu_reu_addr
 	lda #^REU_TMP_ADDR
 	sta __reu_reu_addr+2
-	jmp __reu_swap
+	jsr __reu_swap
+
+	pla
+	sta __reu_reu_addr+2	; restore "bank"
+	rts
 @end=*
 .endproc
 
@@ -646,17 +649,20 @@ __reu_move_size=zp::bank+6
 ;  - .A, .P
 .export __reu_copy_y
 .proc __reu_copy_y
-	jsr inline::setup
-
 	sty __reu_move_size
 	lda #$00
 	sta __reu_move_size+1
+	lda __reu_reu_addr+2
+	sta __reu_move_src+2
+	sta __reu_move_dst+2
+
+	jsr inline::setup
 
 	; get source and destination addresses
-	jsr inline::getarg_w
+	jsr inline::getarg_zp_ind
 	stx __reu_move_src
 	sta __reu_move_src+1
-	jsr inline::getarg_w
+	jsr inline::getarg_zp_ind
 	stx __reu_move_dst
 	sta __reu_move_dst+1
 	jsr inline::setup_done

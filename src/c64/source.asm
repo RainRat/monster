@@ -150,7 +150,7 @@ PAGESIZE    = $100	; size of data "page" (amount stored in c64 RAM)
 	; get number of bytes to copy
 	ldxy end
 	sub16 poststartzp
-	stxy reu::txlen
+	stxy reu::move_size
 
 	; calculate the new destination in the REU to store the data
 	inc poststartzp+1

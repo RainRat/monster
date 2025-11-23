@@ -29,6 +29,7 @@ savexy: .word 0
 ;  - .A: the byte at the physical address
 .export __vmem_load
 .proc __vmem_load
+	stxy savexy
 	stxy reu::reuaddr
 	lda #^REU_VMEM_ADDR
 	sta reu::reuaddr+2
@@ -72,11 +73,12 @@ savexy: .word 0
 .export __vmem_store
 .proc __vmem_store
 @tmp=zp::banktmp
+	stxy savexy
 	stxy reu::reuaddr
 	ldx #^REU_VMEM_ADDR
 	stx reu::reuaddr+2
 	jsr reu::store1
-	ldxy reu::reuaddr	; restore .XY
+	ldxy savexy		; restore .XY
 	rts
 .endproc
 
@@ -99,7 +101,8 @@ savexy: .word 0
 	tax
 	bcc :+
 	iny
-:	jsr __vmem_store
+:	lda zp::bankval
+	jsr __vmem_store
 	ldxy savexy
 	rts
 .endproc

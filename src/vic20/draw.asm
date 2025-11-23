@@ -25,7 +25,6 @@ COLOR_SELECT  = 6
 	jmp __draw_hline
 .endproc
 
-
 ;******************************************************************************
 ; RESETLINE
 ; Resets the given line by setting its color to the default one

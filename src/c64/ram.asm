@@ -236,7 +236,7 @@ __ram_copy_banked:
 @bankdst=r7
 	sta reu::move_src+2
 	sta reu::move_dst+2
-	stxy reu::txlen
+	stxy reu::move_size
 	ldxy @src
 	stxy reu::move_src
 	ldxy @dst

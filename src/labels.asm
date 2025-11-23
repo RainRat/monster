@@ -413,6 +413,7 @@ anon_addrs: .res MAX_ANON*2
 ;   - .A: the address mode (0=ZP, 1=ABS)
 .proc addrmode
 @tmp=zp::labels
+	SELECT_BANK "SYMBOLS"
 	sty @tmp		; save MSB
 	txa			; .A=LSB
 	pha
@@ -503,10 +504,9 @@ anon_addrs: .res MAX_ANON*2
 @tmp=ra
 @segid=re
 @allow_overwrite=rf
-	sta @allow_overwrite	; set overwrite flag (SET) or clear (ADD)
-
 	SELECT_BANK "SYMBOLS"
 
+	sta @allow_overwrite	; set overwrite flag (SET) or clear (ADD)
 	stxy @name
 	jsr is_valid
 	bcs @ret		; return err
@@ -1367,7 +1367,8 @@ anon_addrs: .res MAX_ANON*2
 
 ;******************************************************************************
 ; IS LOCAL
-; Returns with .Z set if the given label is a local label (begins with '@')
+; Returns with .Z set if the given label name represents a
+; "local" label (begins with '@')
 ; IN:
 ;  - .XY: the label to test
 ; OUT:
