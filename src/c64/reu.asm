@@ -652,6 +652,7 @@ __reu_move_size=zp::bank+6
 	sty __reu_move_size
 	lda #$00
 	sta __reu_move_size+1
+
 	lda __reu_reu_addr+2
 	sta __reu_move_src+2
 	sta __reu_move_dst+2

@@ -22,7 +22,8 @@ SCREEN_W=40
 	lda #FINAL_BANK_SYMBOLS
 	;lda #FINAL_BANK_SOURCE0
 	sta reu::reuaddr+2
-	ldxy #(labels)
+	;ldxy #(labels)
+	ldxy #$0000
 	stxy reu::reuaddr
 
 	ldxy #$500

@@ -629,7 +629,7 @@ anon_addrs: .res MAX_ANON*2
 	COPY_Y @src, @dst
 
 ; shift segment id
-	iny			; .Y=0
+	ldy #$00
 	LOADB_Y @segid
 	iny			; .Y=1
 	STOREB_Y @segid
@@ -1904,6 +1904,8 @@ anon_addrs: .res MAX_ANON*2
 @num = rc
 @idi = zp::tmp10
 @idj = zp::tmp12
+	RETURN_OK
+
 	SELECT_BANK "SYMBOLS"
 	lda numlabels
 	ora numlabels+1
