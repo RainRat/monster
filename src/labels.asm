@@ -1716,7 +1716,7 @@ anon_addrs: .res MAX_ANON*2
 
 	ldy #$00
 @l0:	LOADB_Y @src
-	STOREB_Y @dst
+	sta (@dst),y
 	beq @done
 	iny
 	cpy #MAX_LABEL_LEN
@@ -1860,7 +1860,7 @@ anon_addrs: .res MAX_ANON*2
 	lda @cnt+1
 	bne @l0
 
-@cont:	; init the unsorted ids array to the pattern 1, 2, 3, ...
+@cont:	; init the unsorted ids array to the pattern 0, 1, 2, 3, ...
 	ldxy #label_addresses_sorted_ids
 	stxy @dst
 
@@ -1904,9 +1904,8 @@ anon_addrs: .res MAX_ANON*2
 @num = rc
 @idi = zp::tmp10
 @idj = zp::tmp12
-	RETURN_OK
-
 	SELECT_BANK "SYMBOLS"
+
 	lda numlabels
 	ora numlabels+1
 	bne @setup
@@ -2027,8 +2026,7 @@ anon_addrs: .res MAX_ANON*2
 	bcc @qs_l8
 
 @qs_l6:	setptrs
-	SWAPB_Y @i, @j	; swap array[@i] and array[@j]
-
+	SWAPB_Y @i, @j		; swap array[@i] and array[@j]
 	SWAPB_Y @idi, @idj	; swap ids[@i] and ids[@j]
 
 	dey
