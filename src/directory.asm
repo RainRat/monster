@@ -116,7 +116,7 @@
 	jsr open_dir
 	sta @file
 	bcc :+
-@err:	rts
+@err:	jmp irq::on
 
 	; load the directory into dirbuff
 :	ldxy #@dirbuff
