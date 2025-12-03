@@ -59,7 +59,22 @@
 	lda #$36	; make KERNAL ($e000-$ffff) available
 	sta $01
 
+	; save $f5-$f6
+        lda $f5
+	sta @savef5
+        lda $f6
+	sta @savef6
+
 	jsr $ea87	; scan the keyboard
+
+@keydone:
+@savef5=*+1
+	lda #$00
+        sta $f5
+@savef6=*+1
+	lda #$00
+        sta $f6
+
 	lda $dc0d	; ack interrupts
 
 	pla

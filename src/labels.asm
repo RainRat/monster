@@ -251,17 +251,19 @@ anon_addrs: .res MAX_ANON*2
 ;  - .XY: the address of the scope string to set as the current scope
 .proc set_scope
 @scope=zp::labels
-	SELECT_BANK "SYMBOLS"
 	stxy @scope
 	ldy #$00
-:	LOADB_Y @scope
+:	lda (@scope),y
 	jsr isseparator
 	beq @done
 	sta scope,y
 	iny
 	cpy #SCOPE_LEN
 	bne :-
-@done:  rts
+
+@done:  lda #$00
+	sta scope,y	; terminate
+	rts
 .endproc
 
 ;******************************************************************************
@@ -942,7 +944,7 @@ anon_addrs: .res MAX_ANON*2
 ;  - .XY: the address relative to the anonymous label to get
 ;  - .A:  how many anonymous labels forward to look
 ; OUT:
-;  - .A:  the size of the address
+;  - .A:  the size of the address (or error code if none)
 ;  - .XY: the nth anonymous label whose address is > than the given address
 ;  - .C:  set if there is not an nth forward anonymous label
 .proc get_fanon

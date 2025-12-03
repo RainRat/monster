@@ -130,10 +130,10 @@
 
 	ldx #$01
 	stx @select
+	stx @row
 	dex			; .X=0
 	stx @scroll
 	stx @cnt
-	stx @row
 
 	; highlight disk name row
 	jsr draw::hiline
@@ -154,6 +154,11 @@
 	; read the disk name into the name buffer
 	ldxy #@namebuff+@dirmsglen-1
 	jsr read_disk_name
+
+	; draw the disk name
+	ldxy #@namebuff
+	lda #$00
+	jsr text::print
 
 ;--------------------------------------
 ; parse filenames and render initial view
