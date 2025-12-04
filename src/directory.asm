@@ -129,9 +129,9 @@
 	stxy @line
 
 	ldx #$01
-	stx @select
 	stx @row
 	dex			; .X=0
+	stx @select
 	stx @scroll
 	stx @cnt
 
@@ -202,10 +202,12 @@
 	jsr file::close
 	jsr irq::on
 
+	dec @row
+
 	; max a user can scroll is (# of files - SCREEN_HEIGHT-1)
 	ldx #$00
 	lda @cnt
-	cmp #SCREEN_HEIGHT-1
+	cmp #SCREEN_HEIGHT-2
 	bcc :+
 	sbc #SCREEN_HEIGHT-1
 	tax
@@ -264,8 +266,8 @@
 @rowup:
 	jsr unhighlight_selection
 	dec @select
-	bne @hiselection
-	inc @select		; lowest selectable row is 1
+	bpl @hiselection
+	inc @select		; lowest valid select value is 0
 	lda @scroll
 	beq @hiselection	; if nothing to scroll, continue
 
@@ -306,9 +308,8 @@
 
 	jsr unhighlight_selection
 
-	ldx #$01
+	ldx #$00
 	stx @select
-	dex			; .X=0
 	stx @scroll
 	beq @redraw		; branch always
 
@@ -323,11 +324,11 @@
 	lda @scrollmax
 	sta @scroll
 
-	; set selection (row) to min(SCREEN_HEIGHT-1, @cnt)
+	; set selection (row) to min(SCREEN_HEIGHT-2, @cnt)
 	ldx @cnt
-	cpx #SCREEN_HEIGHT-1
+	cpx #SCREEN_HEIGHT-2
 	bcc :+
-	ldx #SCREEN_HEIGHT-1
+	ldx #SCREEN_HEIGHT-2
 :	dex
 	stx @select
 @redraw:
@@ -359,8 +360,8 @@
 	adc @scroll
 	asl
 	tax
-	ldy @fptrs+1,x
-	lda @fptrs,x
+	ldy @fptrs-1,x
+	lda @fptrs-2,x
 	tax
 	lda @i
 	jsr text::print
@@ -391,6 +392,7 @@
 .proc unhighlight_selection
 @select=rb
 	ldx @select
+	inx
 	jmp draw::resetline	; deselect the current selection
 .endproc
 
@@ -402,6 +404,7 @@
 .proc highlight_selection
 @select=rb
 	ldx @select
+	inx
 	jmp draw::hiline	; select the current selection
 .endproc
 
