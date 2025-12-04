@@ -538,7 +538,7 @@ stephandler:
 	sta STEP_RESTORE_A
 
 	pla			; get status flags
-	and #$04		; set I flag
+	ora #$04		; set I flag
 	pha			; push altered status
 
 	lda #$00		; SMC - restore A

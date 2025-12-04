@@ -1,9 +1,9 @@
-;;******************************************************************************
+;*******************************************************************************
 ; DIRECTORY.ASM
 ; This file contains the code to list the directory of a disk and provide a
 ; menu for selecting a file to load as well as supporting routines for getting
 ; file names from the disk's directory.
-;******************************************************************************
+;*******************************************************************************
 
 .include "config.inc"
 .include "draw.inc"
@@ -26,7 +26,7 @@
 
 .CODE
 
-;******************************************************************************
+;*******************************************************************************
 ; GET BY TYPE
 ; Returns all files that contain the provided extension
 ; IN:
@@ -91,7 +91,7 @@
 @ret:	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; DIR VIEW
 ; Enters the directory viewer
 ; NOTE: this routine is limited to 128 files
@@ -408,7 +408,7 @@
 	jmp draw::hiline	; select the current selection
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; OPEN DIR
 ; Opens the directory "file" for loading
 .proc open_dir
@@ -418,7 +418,7 @@
 	jmp krn::chkin
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; READ DISK NAME
 ; Reads the name of the disk.  Assumes the directory file is open and
 ; is at the start.
@@ -452,7 +452,7 @@
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; READ FILENAME
 ; Reads one filename from the directory file (assumed to be open)
 ; IN:
