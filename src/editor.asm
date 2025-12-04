@@ -5373,6 +5373,14 @@ __edit_gotoline:
 .endproc
 
 ;******************************************************************************
+; DIRVIEW
+; Enters the directory viewer
+.proc dirview
+	jsr dir::view
+	jmp krn::clall
+.endproc
+
+;******************************************************************************
 commands:
 rw_commands:
 	.byte $49		; I (insert start of line)
@@ -5438,7 +5446,7 @@ numcommands=*-commands
 	paste_below, paste_above, delete_char, \
 	open_line_above, open_line_below, join_line, comment_out, \
 	enter_visual, enter_visual_line, command_yank, sub_char, sub_line, \
-	dir::view, gui::reenter, ccleft, ccright, ccup, ccdown, endofword, \
+	dirview, gui::reenter, ccleft, ccright, ccup, ccdown, endofword, \
 	beginword, word_advance, home_col, last_line, \
 	home_line, ccdel, ccright, goto_end, goto_start, find_next, find_prev, \
 	end_of_line, prev_empty_line, next_empty_line, begin_next_line, \
