@@ -968,9 +968,9 @@ side_effects_tab:
 .byte OP_STORE 		        ; $96 STX zpg,y
 .byte $00			; ---
 .byte OP_REG_A              	; $98 TYA
-.byte $00			; ---
 .byte OP_STORE                	; $99 STA abs,Y
 .byte OP_STACK			; $9a TXS
+.byte $00			; ---
 .byte $00			; ---
 .byte OP_STORE			; $9d STA abs,x
 .byte OP_STORE			; ---
