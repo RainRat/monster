@@ -1,4 +1,4 @@
-name: Build 6502 Project
+name: Build Monster
 
 on:
   push:
@@ -24,7 +24,7 @@ jobs:
           apt-get update
           apt-get install -y build-essential git
           git clone https://bitbucket.org/magli143/exomizer.git
-          cd exomizer
+          cd exomizer/src
           make
           cp exomizer /usr/local/bin/
 
