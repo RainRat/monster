@@ -14,10 +14,10 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Install cc65
+      - name: Install deps
         run: |
           apt-get update
-          apt-get install -y cc65 make nodejs
+          apt-get install -y cc65 make nodejs python3
 
       - name: Build
         run: |
