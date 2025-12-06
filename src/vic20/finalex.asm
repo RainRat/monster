@@ -55,7 +55,6 @@ bankcode:
 	ldxy @dst
 	rts
 .endproc
-final_store_size=*-__ram_store_byte
 
 ;*******************************************************************************
 ; READ_BYTE

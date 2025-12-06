@@ -1616,9 +1616,9 @@ __obj_close_section = close_section
 ;   - .A: the byte read or error code (0=eof)
 ;   - .C: set on error/eof
 .proc readb
-	jsr krn::readst     ; call READST (read status byte)
-	bne @eof      ; either EOF or read error
-	jsr krn::chrin     ; call CHRIN (get a byte from file)
+	jsr krn::readst		; call READST (read status byte)
+	bne @eof		; either EOF or read error
+	jsr krn::chrin		; call CHRIN (get a byte from file)
 	RETURN_OK
 
 ; read drive err chan and translate CBM DOS error code to ours if possible

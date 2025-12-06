@@ -21,7 +21,7 @@ file_id: .byte 0
 .export __log_new
 .proc __log_new
 	ldxy #@filename
-	jsr file::open
+	jsr file::open_w
 	rts
 
 .PUSHSEG

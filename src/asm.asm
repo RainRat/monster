@@ -1837,12 +1837,14 @@ __asm_tokenize_pass1 = __asm_tokenize
 
 	ldxy #@filename
 	jsr file::exists
-	bcc :+
+	bcc @exists
+@erropen:
 	RETURN_ERR ERR_FAILED_OPEN_INCLUDE
 
-:	ldxy #@filename
-	jsr file::open
-	bcs @ret
+@exists:
+	ldxy #@filename
+	jsr file::open_r
+	bcs @erropen
 	pha		; save file handle
 	tax
 	jsr krn::chkin	; CHKIN (use file as input)
@@ -1850,22 +1852,22 @@ __asm_tokenize_pass1 = __asm_tokenize
 @l0:	; read the binary file contents byte-by-byte
 	jsr file::readb
 	bcs @err
-	ldx file::eof
+	ldy file::eof
 	bne @eof	; loop until EOF
 
-	ldy #$00	; no offset
+	;ldy #$00
 	jsr writeb	; write the byte
 	bcs @err
 	jsr incpc
 	jmp @l0
 
-@eof:	clc		; return without err
-@err:	pla		; restore file handle
-	php		; save success status flag
-	jsr file::close	; cleanup (close the file)
-	plp		; restore success flag
-@ret:	lda #ASM_DIRECTIVE
-	rts
+@eof:	clc			; return without err
+@err:	pla			; restore file handle
+	php			; save success status flag
+	jsr file::close		; cleanup (close the file)
+	plp			; restore success flag
+	lda #ASM_DIRECTIVE
+@ret:	rts
 .endproc
 
 ;*******************************************************************************
@@ -1912,7 +1914,7 @@ __asm_include:
 	rts
 
 :	ldxy @fname
-	jsr file::open	; open the file we are including
+	jsr file::open_r	; open the file we are including
 	bcs @reterr
 
 	pha		; save the id of the file we're working on (for closing)

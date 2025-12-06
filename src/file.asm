@@ -224,13 +224,13 @@ OSPROC __file_readb
 	jsr krn::readst	; call READST (read status byte)
 	bne @eof	; either EOF or read error
 	jsr krn::chrin	; call CHRIN (get a byte from file)
-	RETURN_OK
+	bcc @ok
 
 ; read drive err chan and translate CBM DOS error code to ours if possible
 @eof:  	and #$40
 	beq @err
 	inc __file_eof
-	RETURN_OK
+@ok:	RETURN_OK
 
 @err:	jmp __file_geterr
 ENDOSPROC
@@ -320,8 +320,8 @@ ENDOSPROC
 	lda #>@p_w
 	sta r0+1
 	jsr str::cat	; filename + ",p,w"
-	lda #$03	; SA
-	bne __file_open
+
+	; fall through to __file_open_r
 .PUSHSEG
 .RODATA
 @p_w:	.byte ",p,w",0
@@ -338,7 +338,7 @@ ENDOSPROC
 ;  - .C: set on error
 .export __file_open_r
 .proc __file_open_r
-	lda #$03	; SA
+	lda #$ff	; flag use file handle as SA
 	skw
 
 	; fall through to __file_open
@@ -392,15 +392,20 @@ OSPROC __file_open
 	bne @l1		; check all entries
 	beq @l0		; if file ID matches another entry, try a new ID
 
-@found:
-	pla		; get length of filename
+@found:	lda secondaryaddr
+	bpl :+
+	; if secondaryaddr < 0, use file handle as SA
+	lda @file
+	sta secondaryaddr
+
+:	pla		; get length of filename
 	ldxy @filename
 	jsr krn::setnam	; SETNAM
 
 	lda @file		; file handle
 	ldx zp::device		; last used device number
 	ldy secondaryaddr	; SA
-	jsr krn::setlfs 		; SETLFS
+	jsr krn::setlfs 	; SETLFS
 	jsr krn::open 		; call OPEN
 	bcc @ok
 
