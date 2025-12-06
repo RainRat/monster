@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/actions/runner:latest
+      image: ubuntu:22.04
 
     steps:
       - name: Checkout source
@@ -17,7 +17,7 @@ jobs:
       - name: Install cc65
         run: |
           apt-get update
-          apt-get install -y cc65 make
+          apt-get install -y cc65 make nodejs
 
       - name: Build
         run: |
