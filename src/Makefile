@@ -74,7 +74,10 @@ TEST_FILES=$(TESTS) $(TEST_INCS) $(TEST_TXTS) tests/link tests/hello.o tests/exp
 
 all: test.d81
 
-disk: monster-disk.prg test.d81
+disk: boot.prg monster-disk.prg
+	$(C1541) -format test,1 d81 test.d81 -attach test.d81 -write boot.prg -write masm.prg
+
+test-disk: monster-disk.prg test.d81
 
 cart: monster.bin
 
