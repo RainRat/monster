@@ -439,15 +439,31 @@ blockaddresseshi: .res MAX_FILES
 .proc end_block
 @numlines=debugtmp
 	SELECT_BANK "DEBUGINFO"
+
 	lda numblocks
 	beq @done	; no blocks exist, nothing to "end"
 
 	lda block_open	; is there an open block?
 	beq @done	; if not, nothing to "end"
 
-	stxy addr
+	; check if block was empty (start address == end address), if so, just
+	; delete it
+	lda blockstart
+	cmp blockstop
+	bne :+
+	lda blockstart+1
+	cmp blockstop+1
+	bne :+
 
-	; write updated address end
+	; delete the block (decrement block count and reset freeptr)
+	dec numblocks
+	lda progstart
+	sta freeptr
+	lda progstart+1
+	sta freeptr+1
+	jmp @close
+
+:	; write updated address end
 	ldy #BLOCK_STOP_ADDR
 	lda addr
 	STOREB_Y block
@@ -768,7 +784,7 @@ blockaddresseshi: .res MAX_FILES
 	bcc @checkstop
 	RETURN_ERR ERR_LINE_NOT_FOUND	; no next block, address isn't mapped
 
-; is the address we're looking for in the range [blockstart, blockstop)?
+; is the address we're looking for in the range [blockstart, blockstop]?
 @checkstop:
 	lda @addr+1
 	cmp blockstop+1
@@ -777,7 +793,8 @@ blockaddresseshi: .res MAX_FILES
 	bcs @next	; addr > blockstop, skip to next block
 :	lda @addr
 	cmp blockstop
-	bcs @next	; if addr >= blockstop, skip to next block
+	beq @checkstart
+	bcs @next	; if addr > blockstop, skip to next block
 
 @checkstart:
 	lda @addr+1

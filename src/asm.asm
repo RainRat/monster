@@ -1882,7 +1882,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 .proc includefile
 @filename=$100
 	jsr util::parse_enquoted_line
-	bcs :+				; failed to parse filename
+	bcs :+				; -> rts (failed to parse filename)
 
 	ldxy #@filename
 
@@ -1936,8 +1936,8 @@ __asm_include:
 	; end current file's block and start a new one at the current address
 	ldxy zp::virtualpc	; current address
 	jsr dbgi::endblock	; end the current block
-	ldxy zp::virtualpc	; current address
-	jsr dbgi::newblock	; start new block for included file
+	;ldxy zp::virtualpc	; current address
+	;jsr dbgi::newblock	; start new block for included file
 
 ; read a line from file
 @doline:
@@ -1984,7 +1984,10 @@ __asm_include:
 
 	ldxy zp::virtualpc
 	jsr dbgi::endblock	; end the block for the included file
-	; restore the file we included from
+
+	; create new block in file we included from (if PC is set)
+	lda pcset
+	beq @done
 	ldxy zp::virtualpc
 	jsr dbgi::newblock	; start a new block in original file
 @done:
