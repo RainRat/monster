@@ -1938,8 +1938,8 @@ __asm_include:
 	beq @doline
 	ldxy zp::virtualpc	; current address
 	jsr dbgi::endblock	; end the current block
-	ldxy zp::virtualpc	; current address
-	jsr dbgi::newblock	; start new block for included file
+	;ldxy zp::virtualpc	; current address
+	;jsr dbgi::newblock	; start new block for included file
 
 ; read a line from file
 @doline:
