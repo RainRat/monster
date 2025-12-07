@@ -1882,9 +1882,9 @@ __asm_tokenize_pass1 = __asm_tokenize
 .proc includefile
 @filename=$100
 	jsr util::parse_enquoted_line
-	bcc :+
-	rts			; failed to parse filename
-:	ldxy #@filename
+	bcs :+				; failed to parse filename
+
+	ldxy #@filename
 
 ; entry point for assembling a given file
 .export __asm_include
@@ -1894,11 +1894,12 @@ __asm_include:
 	stxy @fname
 
 	lda state::verify
-	beq :+
+	beq @inc
 	lda #ASM_DIRECTIVE	; format type
-	RETURN_OK		; don't include a file when verifying
+	clc			; don't include a file when verifying
+:	rts
 
-:	sta @err
+@inc:	sta @err		; @err = 0
 
 	; save current file
 	lda dbgi::file
@@ -1973,8 +1974,8 @@ __asm_include:
 
 @close: pla			; get the file ID for the include file to close
 	jsr file::close		; close the file
-	pla
 
+	pla			; restore debug file ID
 	sta dbgi::file
 
 	lda zp::pass
