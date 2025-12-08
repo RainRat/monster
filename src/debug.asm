@@ -30,6 +30,7 @@
 .include "source.inc"
 .include "string.inc"
 .include "strings.inc"
+.include "target.inc"
 .include "text.inc"
 .include "util.inc"
 .include "watches.inc"
@@ -608,8 +609,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	jsr __debug_step	; run one STEP
 	bcs @done		; stop tracing if STEP OUT says we should
 
-	lda #$82
-	sta $911e		; reenable NMIs
+	TRACE_ON		; enable tracing to catch user interrupt
 
 	lda sim::op		; get opcode we just ran
 	cmp #$20		; did we run a JSR?
@@ -622,6 +622,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 :	dec step_out_depth
 	bpl @trace		; continue trace until depth is negative
 	clc			; ok
+
 @done:	php
 	jsr irq::on
 	plp
@@ -655,8 +656,8 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	ldxy #STOP_TRACING_NMI
 	stxy $0318
 
-	lda #$82
-	sta $911e	; enable CA1 (RESTORE key) NMIs while in debugger
+	TRACE_ON
+
 	rts
 .endproc
 
@@ -685,8 +686,9 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	bne @done
 	jsr __debug_step
 	bcs @done
-	lda #$82
-	sta $911e		; reenable NMIs
+
+	TRACE_ON
+
 	lda sim::at_brk
 	beq @trace
 
@@ -850,11 +852,10 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 .proc step
 	jsr irq::off
 
-	; disable NMIs
-	lda #$7f
-	sta $911e
+	TRACE_OFF
 
 	jsr __debug_step
+
 	php
 	jsr irq::on
 	plp
@@ -887,6 +888,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	; clear watch flags
 	ldx watch::num
 	beq @step
+
 :	lda #$ff^WATCH_DIRTY
 	and watch::flags-1,x
 	sta watch::flags-1,x

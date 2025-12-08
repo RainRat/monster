@@ -147,7 +147,7 @@ rowcnt: .byte 0
 	sta $9125
 
 	; enable T2 interrupts
-	lda #$80|$c0
+	lda #$80|$40
 	sta $912e
 
 	cli

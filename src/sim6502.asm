@@ -99,11 +99,11 @@ save_sp: .byte 0
 	sty __sim_reg_y
 
 	lda __sim_reg_p
-	and #$04
+	and #$04		; get .I flag
 	sta @old_i
-	pla
+	pla			; get status register
 @old_i=*+1
-	ora #$00
+	ora #$00		; OR real .I value
 	sta __sim_reg_p
 
 	tsx
