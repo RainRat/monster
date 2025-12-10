@@ -220,8 +220,11 @@ VSCREEN_WIDTH = 80	; virtual screen size (in 8-pixel characters)
 	asl
 	asl
 	asl
+	cpx #40
+	bcc :+
+	ldx #40
 
-	; swap Y and X if (X < Y)
+:	; swap Y and X if (X < Y)
 	sty @start
 	cpx @start
 	pha		; save character row

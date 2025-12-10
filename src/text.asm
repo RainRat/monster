@@ -617,6 +617,8 @@ tempbuff: .res LINESIZE
 	ldy #$ff
 @l0:	iny
 	inx
+	cpy #LINESIZE
+	beq @done
 	lda mem::linebuffer,y
 	beq @done
 	cmp #$09
