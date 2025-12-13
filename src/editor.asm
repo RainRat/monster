@@ -1159,6 +1159,7 @@ main:	jsr key::getch
 	pha
 	jsr src::replace
 	bcc :+
+	; failed to replace char
 	pla			; clean stack
 	rts
 

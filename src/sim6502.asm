@@ -795,8 +795,8 @@ msave=*+1
 ; between steps.
 ; If a value in internal memory is accessed (OP_LOAD/OP_STORE) the user
 ; value for that memory must be swapped in before executing the instruction
-; $0-
 side_effects_tab:
+; $0-
 .byte $00			; $00 BRK
 .byte OP_REG_A|OP_LOAD		; $01 ORA x,ind
 .byte $00			; ---
@@ -976,7 +976,7 @@ side_effects_tab:
 .byte $00			; ---
 .byte $00			; ---
 
-; $a-
+; $A-
 .byte OP_REG_Y			; $a0 LDY #
 .byte OP_LOAD|OP_REG_A		; $a1 LDA x,ind
 .byte OP_REG_X			; $a2 LDX #
@@ -994,7 +994,7 @@ side_effects_tab:
 .byte OP_LOAD|OP_REG_X		; $ae LDX abs
 .byte $00			; ---
 
-; $b-
+; $B-
 .byte OP_PC                     ; $b0 BCS rel
 .byte OP_LOAD|OP_REG_A		; $b1 LDA ind,y
 .byte $00			; ---
@@ -1012,7 +1012,7 @@ side_effects_tab:
 .byte OP_LOAD|OP_REG_X		; $be LDX abs,y
 .byte $00			; ---
 
-; $c-
+; $C-
 .byte OP_FLAG                   ; $c0 CPY #
 .byte OP_LOAD|OP_FLAG           ; $c1 CMP x,ind
 .byte $00			; ---
@@ -1030,7 +1030,7 @@ side_effects_tab:
 .byte OP_LOAD|OP_STORE		; $ce DEC abs
 .byte $00			; ---
 
-; $d-
+; $D-
 .byte OP_PC                     ; $d0 BNE rel
 .byte OP_LOAD|OP_FLAG 		; $d1 CMP ind,y
 .byte $00			; ---
@@ -1048,7 +1048,7 @@ side_effects_tab:
 .byte OP_LOAD|OP_STORE|OP_FLAG	; $de DEC abs,y
 .byte $00			; ---
 
-; $e-
+; $E-
 .byte OP_FLAG                   ; $e0 CPX #
 .byte OP_LOAD|OP_FLAG|OP_REG_A  ; $e1 SBC x,ind
 .byte $00			; ---
@@ -1066,7 +1066,7 @@ side_effects_tab:
 .byte OP_LOAD|OP_STORE|OP_FLAG	; $ee INC abs
 .byte $00			; ---
 
-; $f-
+; $F-
 .byte OP_PC                     ; $f0 BEQ rel
 .byte OP_LOAD|OP_FLAG 		; $f1 SBC ind,y
 .byte $00			; ---
