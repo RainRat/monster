@@ -917,7 +917,8 @@ flags: .res MAX_SOURCES		; flags for each source buffer
 	pla
 	bcs @ret
 	jsr __src_insert
-	jmp __src_left
+	jsr __src_left
+	clc
 @ret:	rts
 .endproc
 
@@ -931,7 +932,6 @@ flags: .res MAX_SOURCES		; flags for each source buffer
 	sub16 cursorzp
 	rts
 .endproc
-
 
 ;*******************************************************************************
 ; BEFORE_NEWL

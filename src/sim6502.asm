@@ -166,7 +166,8 @@ msave=*+1
 	bcc @ok
 	rts
 
-@ok:	stxy __sim_next_pc
+@ok:	; check if opcode uses indexed/indrect addressing
+	stxy __sim_next_pc
 	lda __sim_op_mode
 	cmp #(MODE_ZP | MODE_X_INDEXED | MODE_INDIRECT)	; x, ind?
 	beq @translate_ind
@@ -201,7 +202,7 @@ msave=*+1
 :	sta zp::bankval
 	ldxy #STEP_EXEC_BUFFER
 	lda @cnt
-	jsr vmem::store_off
+	jsr vmem::store_off	; write the instruction to the buffer
 	inc @cnt
 	lda @cnt
 	cmp #$03
@@ -214,7 +215,7 @@ msave=*+1
 
 	ldxy __sim_effective_addr
 	jsr is_internal_address
-	bne :+
+	bne :+			; not internal, no need to swap address
 
 	; swap the debugger/user bytes
 	; save the value at the effective address and replace it with the user
@@ -241,9 +242,13 @@ msave=*+1
 	ldx __sim_reg_x
 	ldy __sim_reg_y
 
-	; perform the instruction
+	; execute the instruction
 	jmp STEP_HANDLER_ADDR
 
+;---------------------------------------
+; GETNEXTPC
+; Returns the next PC value given the current state of the simulator
+; Also updates simulator flags based on that next instruction
 @getnextpc:
 	lda #$00
 	sta __sim_branch_taken 	; clear branch taken flag
@@ -263,7 +268,7 @@ msave=*+1
 	sta @operand
 	sta __sim_operand
 
-	; operand MSB
+	; operand operand MSB
 	ldxy @op
 	lda #$02
 	jsr vmem::load_off
@@ -273,13 +278,13 @@ msave=*+1
 	lda @opcode
 @chkjam:
 	jsr @isjam
-	bne :+
-	inc __sim_jammed
-	ldxy __sim_pc	; return same PC
-	sec
+	bne @nojam
+@jam:	inc __sim_jammed
+	ldxy __sim_pc		; return original PC (processor jammed)
+	sec			; flag error
 	rts
 
-:	cmp #$20	; JSR?
+@nojam:	cmp #$20		; JSR?
 	bne :+
 @jsr:	; fully simulate JSR
 	; "push" the return address-1 and then set the PC to the operand
@@ -290,8 +295,8 @@ msave=*+1
 	sta prog00+$100-1,y	; store LSB of return address
 	lda __sim_pc+1
 	adc #$00
-	sta prog00+$100,y		; store MSB of return address
-	decw __sim_reg_sp		; SP -= 2
+	sta prog00+$100,y	; store MSB of return address
+	decw __sim_reg_sp	; SP -= 2
 	decw __sim_reg_sp
 	lda @operand
 	sta __sim_pc
@@ -344,7 +349,7 @@ msave=*+1
 :	cmp #$40
 	bne :+
 
-@rti:	; fully simulate the RTI:
+@rti:	; fully simulate RTI:
 	; "pull" status then return address
 	; TODO: check this
 	ldy __sim_reg_sp
@@ -361,6 +366,8 @@ msave=*+1
 	jmp @step_handled
 
 :	; check if opcode is CLI/SEI
+	; we allow these to set the virtual .I flag, but this flag is always
+	; SET during simulation to keep processor control
 	cmp #$58		; CLI
 	bne :+
 	lda __sim_reg_p
@@ -376,7 +383,7 @@ msave=*+1
 :	cmp #$00		; BRK?
 	bne :+
 
-	; BRK is not executed, we use this to return to the debugger
+	; BRK is never executed/simulated, we use this to return to the debugger
 	inc __sim_at_brk
 	sec
 	rts
@@ -387,6 +394,7 @@ msave=*+1
 	beq @branch
 
 ; not a simulated instruction: just add the size of the instruction to the PC
+; we will execute the instruction in an execution buffer directly
 @regular:
 	lda __sim_pc
 	clc
@@ -477,15 +485,14 @@ msave=*+1
 	beq @done	; if JAM, return
 	dex
 	bpl :-
+	; .Z = 0
 @done:	rts
-
 .PUSHSEG
 .RODATA
 @jamops:
 .byte $02, $12, $22, $32, $42, $52, $62, $72, $92, $B2, $D2, $F2
 @numjams=*-@jamops
 .POPSEG
-
 .endproc
 
 ;*******************************************************************************
