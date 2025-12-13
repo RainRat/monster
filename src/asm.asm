@@ -2791,7 +2791,9 @@ __asm_include:
 	bne @l0
 
 @cont:	jsr line::process_ws	; eat whitespace
+	inc zp::pass		; require label predefinition for constants
 	jsr expr::eval		; get constant value
+	dec zp::pass		; set pass back to correct value
 	bcc @ok
 
 	; clean the stack and return error
