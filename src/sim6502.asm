@@ -870,7 +870,7 @@ side_effects_tab:
 
 ; $4-
 .byte OP_STACK|OP_PC|OP_LOAD|OP_FLAG	; $40 RTI
-.byte OP_REG_A|OP_LOAD			; $42 EOR x, ind
+.byte OP_REG_A|OP_LOAD			; $41 EOR x, ind
 .byte $00				; ---
 .byte $00				; ---
 .byte $00				; ---
@@ -917,7 +917,7 @@ side_effects_tab:
 .byte OP_REG_A|OP_LOAD    	; $69 ADC #
 .byte OP_REG_A                  ; $6a ROR A
 .byte $00			; ---
-.byte OP_PC			; $4c JMP ind
+.byte OP_PC|OP_LOAD		; $4c JMP (ind)
 .byte OP_LOAD|OP_REG_A		; $4d ADC abs
 .byte OP_LOAD|OP_STORE	        ; $4e ROR abs
 .byte $00			; ---
@@ -928,16 +928,16 @@ side_effects_tab:
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
-.byte OP_REG_A|OP_LOAD		; $55 ADC zpg,x
-.byte OP_LOAD|OP_STORE 		; $56 ROR zpg,x
+.byte OP_REG_A|OP_LOAD		; $75 ADC zpg,x
+.byte OP_LOAD|OP_STORE 		; $76 ROR zpg,x
 .byte $00			; ---
-.byte OP_FLAG			; $58 SEI
-.byte OP_REG_A|OP_LOAD    	; $59 ADC abs,y
+.byte OP_FLAG			; $78 SEI
+.byte OP_REG_A|OP_LOAD    	; $79 ADC abs,y
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
-.byte OP_LOAD|OP_REG_A		; $5d ADC abs,x
-.byte OP_LOAD|OP_STORE  	; $5e ROR abs,x
+.byte OP_LOAD|OP_REG_A		; $7d ADC abs,x
+.byte OP_LOAD|OP_STORE  	; $7e ROR abs,x
 .byte $00			; ---
 
 ; $8-
@@ -949,7 +949,7 @@ side_effects_tab:
 .byte OP_STORE   		; $85 STA zpg
 .byte OP_STORE 		        ; $86 STX zpg
 .byte $00			; ---
-.byte OP_REG_Y              	; $98 DEY
+.byte OP_REG_Y              	; $88 DEY
 .byte $00			; ---
 .byte OP_REG_A                  ; $8a TXA
 .byte $00			; ---
@@ -973,7 +973,7 @@ side_effects_tab:
 .byte $00			; ---
 .byte $00			; ---
 .byte OP_STORE			; $9d STA abs,x
-.byte OP_STORE			; ---
+.byte $00			; ---
 .byte $00			; ---
 
 ; $a-
@@ -1008,8 +1008,8 @@ side_effects_tab:
 .byte OP_REG_X                  ; $ba TSX
 .byte $00			; ---
 .byte OP_LOAD|OP_REG_Y		; $bc LDY abs,y
-.byte OP_LOAD|OP_REG_A		; $ad LDA abs,x
-.byte OP_LOAD|OP_REG_X		; $ae LDX abs,y
+.byte OP_LOAD|OP_REG_A		; $bd LDA abs,x
+.byte OP_LOAD|OP_REG_X		; $be LDX abs,y
 .byte $00			; ---
 
 ; $c-
@@ -1031,13 +1031,13 @@ side_effects_tab:
 .byte $00			; ---
 
 ; $d-
-.byte OP_PC                     ; $b0 BNE rel
-.byte OP_LOAD|OP_FLAG 		; $b1 CMP ind,y
+.byte OP_PC                     ; $d0 BNE rel
+.byte OP_LOAD|OP_FLAG 		; $d1 CMP ind,y
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
 .byte OP_LOAD|OP_FLAG  		; $d5 CMP zpg,x
-.byte OP_LOAD|OP_STORE	        ; $d6 DEC zpg,y
+.byte OP_LOAD|OP_STORE	        ; $d6 DEC zpg,x
 .byte $00			; ---
 .byte OP_FLAG               	; $d8 CLD
 .byte OP_REG_A|OP_STORE|OP_FLAG	; $d9 CMP abs,y
@@ -1066,14 +1066,14 @@ side_effects_tab:
 .byte OP_LOAD|OP_STORE|OP_FLAG	; $ee INC abs
 .byte $00			; ---
 
-; $e-
+; $f-
 .byte OP_PC                     ; $f0 BEQ rel
 .byte OP_LOAD|OP_FLAG 		; $f1 SBC ind,y
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
 .byte OP_LOAD|OP_FLAG|OP_REG_A 	; $f5 SBC zpg,x
-.byte OP_LOAD|OP_STORE	        ; $e6 INC zpg,x
+.byte OP_LOAD|OP_STORE	        ; $f6 INC zpg,x
 .byte $00			; ---
 .byte OP_FLAG               	; $f8 SED
 .byte OP_REG_A|OP_FLAG|OP_LOAD  ; $f9 SBC abs,y
