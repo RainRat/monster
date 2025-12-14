@@ -9,6 +9,8 @@
 .import __screen_rowshi
 .import __c64_dbg
 
+.include "debug.inc"
+
 .scope c64
 	rowslo = __screen_rowslo
 	rowshi = __screen_rowshi

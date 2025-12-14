@@ -104,6 +104,7 @@ __fmt_enable: .byte 0	; flag to enable (!0) or disable (0) formatting
 @left_aligned:
 	lda @linecontent 	; get the type of line we're formatting
 	and #ASM_LABEL		; if formatting includes label, do __fmt_label
+
 @label: beq @notlabel
 	jmp label
 

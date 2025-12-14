@@ -2182,7 +2182,9 @@ __asm_include:
 .proc create_macro
 	lda zp::pass
 	cmp #$02
-	bcs @done	; done, macros are defined in pass 1
+	bcs @done		; done, macros are defined in pass 1
+	lda state::verify
+	bne @done		; and only when NOT verifying
 
 	; copy .ENDMAC to the context
 	ldxy #asmbuffer
@@ -2205,7 +2207,9 @@ __asm_include:
 @done:	; done with this context, disable it
 	lda #$00
 	jsr set_ctx_type
-	jmp ctx::pop	; cleanup; pop the context
+	jsr ctx::pop		; cleanup; pop the context
+	lda #ASM_DIRECTIVE
+	RETURN_OK
 .endproc
 
 ;*******************************************************************************
@@ -2768,6 +2772,7 @@ __asm_include:
 	lda zp::pass
 	cmp #$01
 	beq :+
+	lda #ASM_DIRECTIVE
 	RETURN_OK
 
 :	ldxy zp::line
@@ -2822,7 +2827,9 @@ __asm_include:
 :	jsr add_label
 	pla			; restore section ID
 	sta __asm_segmentid
-	rts
+
+	lda #ASM_DIRECTIVE
+	RETURN_OK
 .endproc
 
 ;*******************************************************************************
