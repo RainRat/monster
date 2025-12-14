@@ -83,13 +83,14 @@
 	lda #FINAL_BANK_MAIN
 	rts
 
-:	cpy #>$1000
+:	; TODO: this needs to be virtualized ($400-$1000)
+	cpy #>$1000
 	bcc @done
 
 	cpy #>$2000
 	bcs :+
 
-@1000:	; $1000-$1100 is stored in the prog1000 buffer
+@1000:	; $1000-$2000 is stored in the prog1000 buffer
 	add16 #(prog1000-$1000)
 	lda #FINAL_BANK_FASTCOPY
 	rts

@@ -2294,7 +2294,7 @@ __asm_include:
 	lda #$00
 	jsr @appendch		; 0-terminate
 	lda #$01
-	ldx @modes
+	ldx #MODE_IMPLIED
 	clc			; ok
 @ret:	rts
 

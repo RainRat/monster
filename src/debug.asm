@@ -644,7 +644,11 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	sta $911e
 	sta $911d
 	sta $912d
+	sta $912e
 
+	; write the following ISR:
+	;	inc stop_tracing
+	;	rti
 	lda #$ee		; INC abs
 	sta STOP_TRACING_NMI
 	lda #<stop_tracing
@@ -655,8 +659,6 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	sta STOP_TRACING_NMI+3
 	ldxy #STOP_TRACING_NMI
 	stxy $0318
-
-	TRACE_ON
 
 	rts
 .endproc
@@ -682,15 +684,18 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 
 	jsr print_tracing
 
-@trace: lda stop_tracing
+@trace: ; step until a watch/breakpoint triggers or the user interrupts the
+	; trace
+	lda stop_tracing	; check if user interrupted trace
 	bne @done
-	jsr __debug_step
+
+	jsr __debug_step	; run the next STEP
 	bcs @done
 
-	TRACE_ON
+	TRACE_ON		; reinstall user interrupt
 
-	lda sim::at_brk
-	beq @trace
+	lda sim::at_brk		; check if at a BRKpoint
+	beq @trace		; if not, continue tracing
 
 @done:  jsr uninstall_breakpoints
 @ret:	php
