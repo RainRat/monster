@@ -876,6 +876,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 ;   - .C: set if we should stop tracing (e.g. if a watch was activated)
 .export __debug_step
 .proc __debug_step
+@cnt=r0
 	lda #$00
 	sta sim::illegal
 
@@ -894,11 +895,25 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	ldx watch::num
 	beq @step
 
+	stx @cnt
+@l0:	lda watch::flags-1,x
+	and #WATCH_DIRTY
+	beq :+
+
+	; watch was dirty, store its value as the previous one
+	stx @cnt
+	lda watch::los-1,x
+	ldy watch::his-1,x
+	tax
+	jsr vmem::load
+	ldx @cnt
+	sta watch::prevs-1,x
+
 :	lda #$ff^WATCH_DIRTY
 	and watch::flags-1,x
 	sta watch::flags-1,x
 	dex
-	bne :-
+	bne @l0
 
 ; perform the step
 @step:	pla			; get instruction size

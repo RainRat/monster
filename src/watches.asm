@@ -46,9 +46,12 @@ __watches_num:  .byte 0		    ; number of active watches
 
 NUM_WATCH_TABLES=7
 watch_data:
+.export __watches_watcheslo
 __watches_watcheslo:   .res MAX_WATCHPOINTS   ; addresses of the set watchpoints
+.export __watches_watcheshi
 __watches_watcheshi:   .res MAX_WATCHPOINTS   ; addresses of the set watchpoints
 __watches_watch_vals:  .res MAX_WATCHPOINTS   ; values of the set watchpoints
+.export __watches_watch_prevs
 __watches_watch_prevs: .res MAX_WATCHPOINTS   ; previous values of watches
 __watches_watch_flags: .res MAX_WATCHPOINTS   ; flags for watches (e.g. DIRTY)
 
@@ -168,8 +171,10 @@ __watches_watches_stophi:    .res MAX_WATCHPOINTS ; end address of watch range
 
 ;*******************************************************************************
 ; MARK
-; Marks the watch for the given address (if there is one) as DIRTY. Even if
+; Marks the watch(es) for the given address (if there is one) as DIRTY. Even if
 ; its value has not changed.
+; If there is no watch at the given address, sets the "previous" value for that
+; watch to the current value
 ; IN:
 ;  - .XY: the address to mark dirty (if a watch exists for it)
 ;  - .A:  the mode to mark dirty: WATCH_LOAD, WATCH_STORE, or WATCH_LOAD_STORE
@@ -202,8 +207,8 @@ __watches_watches_stophi:    .res MAX_WATCHPOINTS ; end address of watch range
 @l0:	lda @cnt
 	ldxy @addr
 	jsr in_range		; is the address in range for this watch?
-	bcs @next
 	ldx @cnt
+	bcs @next
 
 	lda @mode
 	and __watches_watch_flags,x
