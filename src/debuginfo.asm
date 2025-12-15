@@ -85,10 +85,10 @@ dbgi_procs_hi: .hibytes dbgi_procs
 ; Debug info pointers
 ; active line data, these represent the HEAD state of the line program
 ; state machine
-addr    = zp::debug	; address of next line/addr to store
-srcline = zp::debug+2	; address of current source line
-line    = zp::debug+4	; address of current line program instruction
-block   = zp::debug+6	; address of current block pointer
+addr    = zp::debug		; address of next line/addr to store
+srcline = zp::debug+2		; address of current source line
+line    = zp::debug+4		; address of current line program instruction
+block   = zp::debug+6		; address of current block pointer
 
 ; the offsets of these state variables correspond to the offsets
 ; of the BLOCK_ constants. e.g. BLOCK_START_ADDR -> blockstart
@@ -342,19 +342,10 @@ blockaddresseshi: .res MAX_FILES
 	beq @cont		; continue to create new block if not
 	jsr end_block		; end the open block if there is one
 
-@cont:	; get offset to block header ((BLOCK_HEADER_SIZE * numblocks)
+@cont:	; get offset to block header (BLOCK_HEADER_SIZE * numblocks)
 	lda numblocks
-	asl			; *2
-	asl			; *4
-	sta @tmp
-	asl			; *8
-	adc @tmp		; *12
-	adc numblocks		; *13
-	adc #<blockheaders
-	sta block
-	lda #>blockheaders
-	adc #$00
-	sta block+1
+	jsr header_addr
+	stxy block
 
 	lda freeptr
 	sta progstart
@@ -1176,13 +1167,14 @@ get_filename = get_filename_addr
 @tmp0=r0
 @tmp1=r1
 	; multiply block number by SIZEOF_BLOCK_HEADER
-	sta @tmp0
 	asl			; *2
+	sta @tmp0
 	asl			; *4
 	sta @tmp1
 	asl			; *8
 	adc @tmp1		; *12
-	adc @tmp0		; *13
+	adc @tmp0		; *14
+
 	adc #<blockheaders
 	tax
 	lda #>blockheaders
@@ -1203,7 +1195,7 @@ get_filename = get_filename_addr
 
 ; save the header state for the block:
 ; start addr, stop addr, base line, # lines, file id, program addr
-	ldy #(BLOCK_START_ADDR+SIZEOF_BLOCK_HEADER) - 1
+	ldy #SIZEOF_BLOCK_HEADER-1
 @copy:	LOADB_Y block
 	STOREB_Y @block
 	dey
@@ -1238,7 +1230,7 @@ get_filename = get_filename_addr
 
 ; copy the header state for the block:
 ; start addr, stop addr, base line, # lines, file id, program addr
-	ldy #(BLOCK_START_ADDR+SIZEOF_BLOCK_HEADER) - 1
+	ldy #SIZEOF_BLOCK_HEADER-1
 @copy:	LOADB_Y block
 	sta blockstate,y
 	dey
