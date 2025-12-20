@@ -48,6 +48,9 @@
 .import __DEBUGGER_LOAD__
 .import __DEBUGGER_SIZE__
 
+.import stop_tracing		; flag to halt a trace command
+.import PROGRAM_STACK_START	; initial stack offset for user program.
+
 ;*******************************************************************************
 MAX_BREAKPOINTS = 16	; max number of breakpoints that may be set
 
@@ -81,26 +84,6 @@ ACTION_STEP_OUT       = 9	; action for STEP OUT command (must be last)
 ; interface that is entered in the debug breakpoint handler
 DEBUG_IFACE_GUI  = 0	; GUI interface (returns to visual debugger)
 DEBUG_IFACE_TEXT = 1	; text interface (returns to TUI)
-
-; Initial stack offset for user program.
-; The debugger will utilize everything above this for its own purposes when
-; stepping, tracing, etc.
-; When using the "GO" command, you may use the entire stack
-; TODO: calculate the maximum value for this
-.export PROGRAM_STACK_START
-PROGRAM_STACK_START = $1d8
-
-; Stop tracing state/NMI
-; This NMI is installed programatically and catches the RESTORE key as a
-; signal to stop a trace
-; These values must be between PRORGAM_STACK_START and $100
-STOP_TRACING_NMI = PROGRAM_STACK_START+1
-stop_tracing     = STOP_TRACING_NMI+4	; sizeof(inc stop_tracing)+sizeof(rti)
-
-; Max depth the debugger may reach during handling of a step during the TRACE
-; command. This amount will be saved/restored by the debugger before handling
-; the debugged program's next instruction.
-TRACE_STACK_DEPTH = $200-PROGRAM_STACK_START
 
 ;*******************************************************************************
 debugtmp = zp::debuggertmp	; scratchpad
@@ -307,11 +290,9 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 ; and finally transfers control to the debugger
 .export __debug_reenter
 .proc __debug_reenter
-	lda $912e
-	sta sim::via2+$e
+	SAVE_IO
 
 	; save the registers pushed by the KERNAL interrupt handler ($FF72)
-
 	; TODO: save VIA timers?
 	;lda $9114
 	;sta sim::via1_t1
@@ -367,13 +348,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	rti
 
 @enter: ; disable anything that could steal control
-	.if .def(vic20)
-	lda #$7f
-	sta $911e	; disable all NMI's
-	sta $911d
-	.elseif .def(c64)
-
-	.endif
+	TRACE_OFF
 
 	tsx
 	stx sim::reg_sp
@@ -486,7 +461,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	ldx #num_disabled_commands-1
 @chkdisabled:
 	cmp disabled_commands,x
-	beq @loopdone		; if key is marked as disabled, ignore it
+	beq @debugloop		; if key is marked as disabled, ignore it
 	dex
 	bpl @chkdisabled
 
@@ -504,9 +479,6 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 
 	jsr zp::jmpaddr		; call the command
 	jmp @enter_iface
-
-@loopdone:
-	jmp @debugloop
 .endproc
 
 ;******************************************************************************
@@ -601,7 +573,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 
 	lda #$00
 	sta step_out_depth
-	jsr install_trace_nmi
+	jsr bsp::install_tracer
 
 	jsr print_tracing
 @trace: lda stop_tracing
@@ -630,40 +602,6 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 .endproc
 
 ;******************************************************************************
-; INSTALL TRACE NMI
-; Installs an NMI that increments stop_tracing when the RESTORE
-; key is pressed.
-; This should be installed for commands that automatically STEP
-; repeatedly, like TRACE and STEP OUT
-.proc install_trace_nmi
-	lda #$00
-	sta stop_tracing
-
-	; ack/disable all interrupts
-	lda #$7f
-	sta $911e
-	sta $911d
-	sta $912d
-	sta $912e
-
-	; write the following ISR:
-	;	inc stop_tracing
-	;	rti
-	lda #$ee		; INC abs
-	sta STOP_TRACING_NMI
-	lda #<stop_tracing
-	sta STOP_TRACING_NMI+1
-	lda #>stop_tracing
-	sta STOP_TRACING_NMI+2
-	lda #$40		; RTI
-	sta STOP_TRACING_NMI+3
-	ldxy #STOP_TRACING_NMI
-	stxy $0318
-
-	rts
-.endproc
-
-;******************************************************************************
 ; TRACE
 ; Puts the debugger into TRACE mode and steps to the next instruction to
 ; begin the trace
@@ -673,7 +611,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 .proc __debug_trace
 	jsr irq::off
 
-	jsr install_trace_nmi
+	jsr bsp::install_tracer
 
 	; run one step (get over breakpoint if there is one)
 	jsr __debug_step
@@ -837,7 +775,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 .export __debug_step_over
 .proc __debug_step_over
 	jsr irq::off
-	jsr install_trace_nmi
+	jsr bsp::install_tracer
 
 	jsr __debug_step	; run one STEP
 	bcs @done		; stop tracing if STEP errored
@@ -985,6 +923,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	bpl @l0
 @ok:	RETURN_OK
 
+;--------------------------------------
 .PUSHSEG
 .RODATA
 .define safety_addrs $0316, $0317, $0318, $0319
@@ -1434,6 +1373,7 @@ __debug_remove_breakpoint:
 @exit:	popcur
 	rts
 
+;--------------------------------------
 .PUSHSEG
 .RODATA
 @offsets:
