@@ -1,3 +1,4 @@
+.include "config.inc"
 .include "kernal.inc"
 .include "layout.inc"
 .include "macros.inc"

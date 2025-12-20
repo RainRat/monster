@@ -6,6 +6,7 @@
 ; directives when their corresponding .ENDMAC or .ENDREP directive is found.
 ;*******************************************************************************
 
+.include "config.inc"
 .include "errors.inc"
 .include "macros.inc"
 .include "memory.inc"

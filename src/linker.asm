@@ -5,6 +5,7 @@
 ;
 ; See the OBJECT CODE overview below for details on the object format.
 ;*******************************************************************************
+.include "config.inc"
 .include "debuginfo.inc"
 .include "errors.inc"
 .include "file.inc"
