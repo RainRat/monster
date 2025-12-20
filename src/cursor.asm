@@ -1,4 +1,6 @@
+.include "config.inc"
 .include "memory.inc"
+.include "layout.inc"
 .include "text.inc"
 .include "zeropage.inc"
 
@@ -133,8 +135,8 @@ maxy: .byte 0
 	stx minx
 	stx miny
 
-	ldx #40
-	ldy #23
+	ldx #LINESIZE
+	ldy #SCREEN_HEIGHT-1
 
 	; fall through to __cur_setmax
 .endproc
