@@ -297,7 +297,7 @@ tempbuff: .res LINESIZE
 ;  - mem::linebuffer: the text to draw
 .export __text_drawline
 .proc __text_drawline
-	ldx #40
+	ldx #LINESIZE
 	stx __text_len
 	ldxy #mem::linebuffer
 	jmp __text_print
@@ -409,7 +409,7 @@ tempbuff: .res LINESIZE
 
 @cont:	; escape-code handlers JMP back here when they are done
 	iny
-	cpx #40
+	cpx #LINESIZE
 	bcc @l0
 @gotodisp:
         jmp @disp
@@ -427,7 +427,7 @@ tempbuff: .res LINESIZE
 :	lda #' '
 	sta @buff,x
 	inx
-	cpx #40
+	cpx #LINESIZE
 	beq @gotodisp
 	dey
 	bne :-
@@ -555,7 +555,7 @@ tempbuff: .res LINESIZE
 :	lda #' '
 :	sta @buff,x
 	inx
-	cpx #40
+	cpx #LINESIZE
 	bcc :-
 
 @buffdone:
@@ -602,7 +602,7 @@ tempbuff: .res LINESIZE
 @l0:	inx
 	lda mem::linebuffer,x
 	beq @done
-	cpx #40
+	cpx #LINESIZE
 	bne @l0
 @done:	rts
 .endproc

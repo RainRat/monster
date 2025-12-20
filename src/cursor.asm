@@ -174,7 +174,7 @@ maxy: .byte 0
 .export __cur_right
 .proc __cur_right
 	lda zp::curx
-	cmp #40
+	cmp #LINESIZE
 	bcs @done
 
 	jsr text::char_index

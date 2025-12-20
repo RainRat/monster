@@ -140,7 +140,7 @@ numparams = zp::ctx+10	; the number of parameters for the context
 	sta @out,y
 	beq @done
 	iny
-	cpy #40
+	cpy #LINESIZE
 	bcc @read
 	RETURN_ERR ERR_LINE_TOO_LONG
 
@@ -253,7 +253,7 @@ numparams = zp::ctx+10	; the number of parameters for the context
 	sta (cur),y
 	beq @done
 	iny
-	cpy #40
+	cpy #LINESIZE
 	bne @write
 @err:	; sec
 	lda #ERR_LINE_TOO_LONG

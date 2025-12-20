@@ -1774,10 +1774,10 @@ __link_get_segment_by_name:
 
 ;*******************************************************************************
 ; WRITE H LINE
-; Writes a 40 column line of '-'s
+; Writes a line of '-'s
 .proc write_h_line
 	lda #'-'
-	ldy #40
+	ldy #LINESIZE
 :	jsr krn::chrout
 	dey
 	bne :-

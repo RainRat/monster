@@ -48,7 +48,7 @@
 	cmp #$0d
 	beq @eof
 	ldx @ch
-	cpx #40		; cap size of string
+	cpx #LINESIZE	; cap size of string
 	bcs @done
 	sta mem::drive_err,x
 	inc @ch

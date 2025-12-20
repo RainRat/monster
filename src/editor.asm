@@ -885,7 +885,7 @@ main:	jsr key::getch
 	jsr __edit_gets		; read the user input
 	php			; save success state
 
-	lda #40
+	lda #LINESIZE
 	sta cur::maxx		; restore cursor x limit
 
 	jsr text::restorebuff
@@ -2032,7 +2032,7 @@ main:	jsr key::getch
 .proc comment_banner
 @cnt=zp::editortmp+2
 	jsr text::bufferon
-	lda #40
+	lda #LINESIZE
 	sta @cnt
 :	lda #';'
 	jsr insert
@@ -2181,22 +2181,22 @@ main:	jsr key::getch
 	jsr src::right
 	bcs @validate
 	ldx @i
-	cpx #40
+	cpx #LINESIZE
 	bcs @validate
 	sta mem::linebuffer,x
 	inc @i
 	bne @readline
 
-	; make sure the rendered line is <= 40 characters
+	; make sure the rendered line is <= LINESIZE characters
 @validate:
 	ldx @i
-	cpx #40
+	cpx #LINESIZE
 	bcs :+
 	lda #$00
 	sta mem::linebuffer,x
 
 :	jsr text::rendered_line_len
-	cpx #40+1			; too long?
+	cpx #LINESIZE+1			; too long?
 	bcc @bump			; if not, continue
 
 	; the join would have made the line too long, don't join it
@@ -3027,7 +3027,7 @@ goto_buffer:
 	stx readonly
 	ldy #EDITOR_ROW_START
 	jsr cur::setmin
-	ldx #40
+	ldx #LINESIZE
 	ldy #STATUS_ROW
 	sty status_row
 	jmp cur::setmax

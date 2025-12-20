@@ -141,20 +141,20 @@ screen: .res LINESIZE*HEIGHT
 	; scroll the screen buffer
 	ldx #HEIGHT-1
 @scroll:
-	ldy #40-1
+	ldy #LINESIZE-1
 :	lda (@scr1),y
 	sta (@scr0),y
 	dey
 	bpl :-
 	lda @scr0
 	clc
-	adc #40
+	adc #LINESIZE
 	sta @scr0
 	bcc :+
 	inc @scr0+1
 :	lda @scr0
 	clc
-	adc #40
+	adc #LINESIZE
 	sta @scr1
 	bcc :+
 	inc @scr1+1
@@ -260,7 +260,7 @@ screen: .res LINESIZE*HEIGHT
 	sta (@scr),y
 	lda @scr
 	clc
-	adc #40
+	adc #LINESIZE
 	sta @scr
 	bcc :+
 	inc @scr+1
@@ -296,7 +296,7 @@ screen: .res LINESIZE*HEIGHT
 	ldxy #screen
 	stxy @scr
 
-@l0:	ldy #40-1
+@l0:	ldy #LINESIZE-1
 :	lda (@scr),y
 	sta @linebuff,y
 	dey
@@ -307,7 +307,7 @@ screen: .res LINESIZE*HEIGHT
 	CALLMAIN text::print
 	lda @scr
 	clc
-	adc #40
+	adc #LINESIZE
 	sta @scr
 	bcc :+
 	inc @scr+1
@@ -447,7 +447,7 @@ screen: .res LINESIZE*HEIGHT
 	ldx #$00
 
 @findredir:
-	cpx #40-1
+	cpx #LINESIZE-1
 	beq @done
 	lda mem::linebuffer+1,x	; start after prompt (+1)
 	beq @done		; no redirect, return
