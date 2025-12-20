@@ -736,6 +736,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	; disable coloring in the IRQ
 	jsr draw::coloroff
 
+	; bring in the visible state from the user program
 	jsr fcpy::save_debug_state
 	jsr fcpy::restore_prog_visual
 

@@ -1,7 +1,7 @@
-;******************************************************************************
+;*******************************************************************************
 ; DEBUG.ASM
 ; This file contains Vic-20 specific support routines for the debugger
-;******************************************************************************
+;*******************************************************************************
 
 .include "../macros.inc"
 
@@ -24,8 +24,7 @@ stop_tracing     = STOP_TRACING_NMI+4	; sizeof(inc stop_tracing)+sizeof(rti)
 ; the debugged program's next instruction.
 TRACE_STACK_DEPTH = $200-PROGRAM_STACK_START
 
-
-;******************************************************************************
+;*******************************************************************************
 ; INSTALL TRACE NMI
 ; Installs an NMI that increments stop_tracing when the RESTORE
 ; key is pressed.

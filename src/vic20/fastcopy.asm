@@ -222,7 +222,7 @@ copytabhi: .hibytes copytab
 .endproc
 
 ;******************************************************************************
-; RESTORE_DEBUG_STATE
+; RESTORE DEBUG STATE
 ; Restores the saved debugger state
 .export __fastcopy_restore_debug_state
 .proc __fastcopy_restore_debug_state
@@ -288,7 +288,7 @@ copytabhi: .hibytes copytab
 .endproc
 
 ;******************************************************************************
-; SAVE_DEBUG_STATE
+; SAVE DEBUG STATE
 ; saves memory likely to be clobbered by the user's
 ; program (namely the screen)
 .export save_debug_state
@@ -385,7 +385,7 @@ copytabhi: .hibytes copytab
 .endproc
 
 ;******************************************************************************
-; SAVE_PROG_STATE
+; SAVE PROG STATE
 ; Saves memory clobbered by the debugger (screen, VIC registers and color)
 .export save_prog_state
 .proc save_prog_state

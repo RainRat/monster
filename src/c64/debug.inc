@@ -10,3 +10,10 @@
 ; "trace".
 .macro TRACE_OFF
 .endmacro
+
+;*******************************************************************************
+; SAVE IO
+; This macro saves C64 specific I/O (CIAs etc.) upon returning to the
+; debugger from a "GO" command
+.macro SAVE_IO
+.endmacro

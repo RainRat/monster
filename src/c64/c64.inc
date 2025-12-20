@@ -9,6 +9,7 @@
 .import __screen_rowshi
 .import __c64_dbg
 
+.include "bsp.inc"
 .include "debug.inc"
 
 .scope c64
