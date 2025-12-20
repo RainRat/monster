@@ -16,6 +16,7 @@
 .include "irq.inc"
 .include "key.inc"
 .include "keycodes.inc"
+.include "layout.inc"
 .include "macros.inc"
 .include "memory.inc"
 .include "runtime.inc"
@@ -34,7 +35,7 @@ NMI_HANDLER_ADDR = mem::spare+120
 CMD_BUFF         = $101			; written by edit::gets
 
 ;*******************************************************************************
-HEIGHT = 24
+HEIGHT = SCREEN_HEIGHT
 
 .segment "CONSOLE_VARS"
 .export __monitor_line
@@ -65,7 +66,7 @@ __monitor_int: .byte 0	; if !0, behaved commands will stop running gracefully
 ; SCREEN
 ; This buffer stores the complete contents of the monitor.  It is used to
 ; restore the monitor to its last state when it is re-entered
-screen: .res 40*24
+screen: .res LINESIZE*HEIGHT
 
 .CODE
 ;******************************************************************************
@@ -138,7 +139,7 @@ screen: .res 40*24
 	stxy @scr1
 
 	; scroll the screen buffer
-	ldx #24-1
+	ldx #HEIGHT-1
 @scroll:
 	ldy #40-1
 :	lda (@scr1),y
