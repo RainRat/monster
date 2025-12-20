@@ -348,15 +348,15 @@ tempbuff: .res LINESIZE
 ;  - .A:  the row to print the string at
 .export __text_print
 .proc __text_print
-@sub = zp::text	; address of string to replace escape char with
-@str = zp::text+2
-@row = zp::text+4
+@sub   = zp::text	; address of string to replace escape char with
+@str   = zp::text+2
+@row   = zp::text+4
 @savex = zp::text+5
 @savey = zp::text+6
-@ret = zp::text+7
+@ret   = zp::text+7
+@tmp   = zp::text+9
 @buff = mem::linebuffer2
-        stx @str
-        sty @str+1
+        stxy @str
 	sta @row
 
 	; save the return address (variadic args are stored on stack)
@@ -386,9 +386,11 @@ tempbuff: .res LINESIZE
 	ldy @savey
 	jmp @cont
 
-:	cmp #$100-NUM_ESCAPE_CODES
+:	; check for escape codes
+	cmp #$100-NUM_ESCAPE_CODES
 	bcc @putch
 
+	; get the escape code vector and execute it
 	sbc #($100-NUM_ESCAPE_CODES)
 	stx @savex
 	tax
@@ -399,6 +401,7 @@ tempbuff: .res LINESIZE
 	ldx @savex
 	jmp (zp::jmpvec)
 
+;--------------------------------------
 @esc_ch:
 	pla			; get character from stack
 @putch:	sta @buff,x
@@ -417,10 +420,10 @@ tempbuff: .res LINESIZE
 	iny
 	sty @savey
 	lda (@str),y	; get next byte (number of spaces to insert)
+
 @insert_spaces:
 	tay
-	bne :+
-	jmp @cont
+	beq :++		; 0 -> we're done
 :	lda #' '
 	sta @buff,x
 	inx
@@ -428,7 +431,7 @@ tempbuff: .res LINESIZE
 	beq @gotodisp
 	dey
 	bne :-
-	ldy @savey
+:	ldy @savey
 	jmp @cont
 
 ;--------------------------------------
@@ -456,6 +459,7 @@ tempbuff: .res LINESIZE
 	tax
 	jsr util::todec
 	ldy #0
+
 	ldx @savex
 :	lda mem::spare,y
 	beq @decdone
@@ -505,33 +509,34 @@ tempbuff: .res LINESIZE
 	sta @sub+1
 	sty @savey
 	ldy #$00
+
 @l1:	lda (@sub),y
-	bne :+
-	ldy @savey
-	bpl @esc_string_done	; branch always
-:	sta @buff,x
+	beq @esc_string_done
+	sta @buff,x
 	iny
 	inx
-	cpx #40
+	cpx #LINESIZE
 	bcc @l1
+
 @esc_string_done:
+	ldy @savey
 	jmp @cont
 
 ;--------------------------------------
 @esc_goto_col:
-@tmp=@savey
 	iny
+	sty @savey
 	lda (@str),y	; get next byte (column to go to)
 	stx @tmp
+
 	; get number of spaces we need to insert (target_col - current_col)
 	sec
 	sbc @tmp
 	bmi @esc_string_done
-	sty @savey
 	jmp @insert_spaces
 
 ;--------------------------------------
-.define escape_vectors @esc_goto_col, $0000,  @esc_ch,  @esc_byte, @esc_spacing,  @esc_value_dec, @esc_value, @esc_string
+.define escape_vectors @esc_goto_col, $0000, @esc_ch, @esc_byte, @esc_spacing, @esc_value_dec, @esc_value, @esc_string
 .PUSHSEG
 .RODATA
 @escvecs_lo: .lobytes escape_vectors

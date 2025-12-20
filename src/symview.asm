@@ -13,6 +13,7 @@
 .include "key.inc"
 .include "keycodes.inc"
 .include "labels.inc"
+.include "layout.inc"
 .include "macros.inc"
 .include "screen.inc"
 .include "settings.inc"
@@ -24,7 +25,7 @@
 
 ;*******************************************************************************
 ; CONSTANTS
-HEIGHT     = 23
+HEIGHT     = SCREEN_HEIGHT-1
 
 SORT_ALPHA = 0	; sort by label name alphabetically
 SORT_ADDR  = 1	; sort by label address
@@ -60,12 +61,12 @@ sort_by_addr_msg: .byte "f1 sort by addr",0
 ; IN:
 ;   - .XY: the item index
 ; OUT:
-;   - lbl: the ID of the label at a given index
-;   - addr: the address of the label at the requested index
-;   - name: the name of the symbol
-;   - filename: the name of the file containing the symbol
-;   - line: the line number that contains the symbol
-;   - .XY: the ID of the label at the given index (determined by sortby)
+;   - lbl:      the ID of the label at a given index
+;   - addr:     the address of the label at the requested index
+;   - name:     the name of the symbol
+;   - filename: the name of the file containing the symbol (if any)
+;   - line:     the line number that contains the symbol
+;   - .XY:      the ID of the label at the given index (determined by sortby)
 .proc get_item
 	; destination buffer for getname
 	lda #<$100
@@ -80,7 +81,7 @@ sort_by_addr_msg: .byte "f1 sort by addr",0
 
 @sortalpha:
 	stxy lbl		; store the ID for the label
-	jsr lbl::getname	; read the symbolname into buffer ($100)
+	jsr lbl::getname	; read the symbol name into buffer ($100)
 	ldxy lbl
 	jsr lbl::addr_and_mode	; get the symbol address
 	stxy addr
@@ -118,7 +119,6 @@ sort_by_addr_msg: .byte "f1 sort by addr",0
 	beq :++		; no filename
 
 :	ldxy #sym_line
-
 	lda line	; push line #
 	pha
 	lda line+1
@@ -170,7 +170,7 @@ sort_by_addr_msg: .byte "f1 sort by addr",0
 	sta @selection
 
 	ldx #HEIGHT
-	jsr draw::hiline	; highlight the current selection
+	jsr draw::hiline	; highlight the bottom row
 
 @start: lda #$00
 	sta @scroll
@@ -179,13 +179,13 @@ sort_by_addr_msg: .byte "f1 sort by addr",0
 @l0:	jsr edit::clear
 
 	; if we are sorting by name, use the sort by addr msg
-	; elif we are sorting by addr, use the sort by name msg
+	; else sorting by addr -> use the sort by name msg
 	ldxy #sort_by_addr_msg
 	lda sortby
 	cmp #SORT_ALPHA
 	beq :+
 	ldxy #sort_by_name_msg
-:	lda #23
+:	lda #HEIGHT
 	jsr text::print
 
 	lda lbl::num
