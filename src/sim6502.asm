@@ -88,8 +88,7 @@ __sim_via2: .res $10
 .export save_sp
 save_sp: .byte 0
 
-.segment "DEBUGGER"
-
+.segment "STEP_EPILOGUE"
 ;*******************************************************************************
 ; STEP DONE
 ; Return point for instruction execution via STEP
@@ -140,6 +139,8 @@ msave=*+1
 	txs
 	cli
 	RETURN_OK
+
+.segment "DEBUGGER"
 
 ;*******************************************************************************
 ; STEP

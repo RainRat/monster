@@ -5,13 +5,6 @@
 
 .BSS
 
-.export STEP_EXEC_BUFFER
-.export STEP_HANDLER_ADDR
-STEP_HANDLER_ADDR:
-STEP_EXEC_BUFFER: .res 10
-
-.BSS
-
 ;*******************************************************************************
 savexy: .word 0
 
