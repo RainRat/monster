@@ -4,6 +4,10 @@
 ;*******************************************************************************
 
 .include "../macros.inc"
+.include "../sim6502.inc"
+.include "../vmem.inc"
+
+.import STEP_EXEC_BUFFER
 
 ; stop_tracing flag- set to tell debugger to halt a trace
 .export stop_tracing
@@ -68,6 +72,7 @@ TRACE_STACK_DEPTH = $200-PROGRAM_STACK_START
 .proc write_step
 @write_instruction:
 @sz=r2
+@cnt=r3
 	stx @sz
 
 	; copy the instruction to the execution buffer, appending
@@ -75,7 +80,7 @@ TRACE_STACK_DEPTH = $200-PROGRAM_STACK_START
 	lda #$00
 	sta @cnt
 @l0:	ldx @cnt
-	lda __sim_op,x
+	lda sim::op,x
 	cpx @sz
 	bcc :+
 	lda #$ea		; NOP
