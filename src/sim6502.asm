@@ -10,6 +10,7 @@
 .include "errors.inc"
 .include "macros.inc"
 .include "memory.inc"
+.include "target.inc"
 .include "vmem.inc"
 .include "zeropage.inc"
 .include "vic20/vaddrs.inc"
@@ -18,6 +19,7 @@
 .import STEP_EXEC_BUFFER
 
 .import is_internal_address
+.import write_step
 
 ;*******************************************************************************
 .BSS
@@ -117,9 +119,13 @@ save_sp: .byte 0
 
 ; if the effective address was INTERNAL, restore the debugger's byte at
 ; that address
+	lda __sim_affected
+	and #OP_LOAD|OP_STORE
+	beq :+			; if memory wansn't used -> skip
+
 	ldxy __sim_effective_addr
 	jsr is_internal_address
-	bne :+
+	bne :+			; if address wasn't "swapped in" -> skip
 	stxy msave_src
 .endproc
 
@@ -171,6 +177,7 @@ msave=*+1
 
 @ok:	; check if opcode uses indexed/indrect addressing
 	stxy __sim_next_pc
+
 	lda __sim_op_mode
 	cmp #(MODE_ZP | MODE_X_INDEXED | MODE_INDIRECT)	; x, ind?
 	beq @translate_ind
@@ -195,30 +202,20 @@ msave=*+1
 @write_instruction:
 	; copy the instruction to the execution buffer, appending
 	; NOPs as needed to fill the 3 byte space
-	lda #$00
-	sta @cnt
-@l0:	ldx @cnt
-	lda __sim_op,x
-	cpx @sz
-	bcc :+
-	lda #$ea		; NOP
-:	sta zp::bankval
-	ldxy #STEP_EXEC_BUFFER
-	lda @cnt
-	jsr vmem::store_off	; write the instruction to the buffer
-	inc @cnt
-	lda @cnt
-	cmp #$03
-	bne @l0
+	ldx @sz
+	jsr write_step
 
 @execute:
 	sei
-	lda #$7f
-	sta $911e		; disable NMIs
+	;TRACE_OFF
+
+	lda __sim_affected
+	and #OP_LOAD|OP_STORE
+	beq @memdone
 
 	ldxy __sim_effective_addr
 	jsr is_internal_address
-	bne :+			; not internal, no need to swap address
+	bne @memdone		; not internal, no need to swap address
 
 	; swap the debugger/user bytes
 	; save the value at the effective address and replace it with the user
@@ -232,7 +229,8 @@ msave=*+1
 	txa
 	sta (@backup),y		; store user byte
 
-:	; restore registers for instruction execution
+@memdone:
+	; restore registers for instruction execution
 	tsx
 	stx save_sp
 

@@ -2,10 +2,18 @@
 .include "../ram.inc"
 .include "../vmem.inc"
 
+.import __STEPHANDLER_RUN__
+.import __STEPHANDLER_LOAD__
+.import __STEPHANDLER_SIZE__
+
+.import __STEP_EPILOGUE_RUN__
+.import __STEP_EPILOGUE_LOAD__
+.import __STEP_EPILOGUE_SIZE__
+
 .export STEP_EXEC_BUFFER
 .export STEP_HANDLER_ADDR
 
-STEP_HANDLER_ADDR = $c000-stephandler_size
+STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 
 ;*******************************************************************************
 ; CLR
@@ -45,22 +53,21 @@ STEP_HANDLER_ADDR = $c000-stephandler_size
 .proc install_step
 @cnt=r0
 @dst=r2
-	ldxy #STEP_HANDLER_ADDR
-	stxy @dst
-	lda #stephandler_size-1
-	sta @cnt
-; copy the STEP handler to the user program and our RAM
-@l0:	ldy @cnt
-	lda stephandler,y
-	sta STEP_HANDLER_ADDR,y
-	sta zp::bankval
-	sty zp::bankoffset
-	ldxy @dst
-	lda #FINAL_BANK_USER
-	jsr ram::store_off
-	dec @cnt
+	; copy the STEP handler to the user program and our RAM
+;.assert __STEPHANDLER_SIZE__ < $100
+	ldy #<__STEPHANDLER_SIZE__-1
+@l0:	lda __STEPHANDLER_LOAD__,y
+	sta __STEPHANDLER_RUN__,y
+	dey
 	bpl @l0
 
+	; copy the STEP handler to the user program and our RAM
+;.assert __STEPHANDLER_SIZE__ < $100
+	ldy #<__STEP_EPILOGUE_SIZE__-1
+@l1:	lda __STEP_EPILOGUE_LOAD__,y
+	sta __STEP_EPILOGUE_RUN__,y
+	dey
+	bpl @l1
 	rts
 .endproc
 
@@ -75,29 +82,23 @@ STEP_HANDLER_ADDR = $c000-stephandler_size
 ;   - .A, .X, .Y: register values for step to execute
 .import step_done
 stephandler:
-	; switch to USER bank
 	pla			; restore .A
 	sta STEP_RESTORE_A
 
 	pla			; get status flags
-	ora #$04		; set I flag
+
+	ora #$04		; set I flag (disable IRQs)
 	pha			; push altered status
 
-STEP_RESTORE_A = STEP_EXEC_BUFFER-2
-	lda #$00		; SMC - restore A
-	plp			; restore altered status flags
+STEP_RESTORE_A=*+1
+	lda #$00
+	plp			; restore altered status flags (no IRQs)
 
+STEP_EXEC_BUFFER:
 	; run the instruction
-STEP_EXEC_BUFFER = STEP_HANDLER_ADDR + (*-stephandler)
-step_buffer:
 	nop
 	nop
 	nop
-
 	php
-	pha
-	sei			; disable IRQs
-
-	pla
 	jmp step_done		; done -> update simulator with new state
 stephandler_size=*-stephandler

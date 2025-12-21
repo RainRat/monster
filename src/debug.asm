@@ -858,9 +858,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 ; perform the step
 @step:	pla			; get instruction size
 	ldxy sim::pc		; and address of instruction to-be-executed
-	jmp *
 	jsr sim::step		; execute the STEP
-	jmp *
 	bcc @countcycles	; if ok, continue
 
 	; display the error explaining why we couldn't STEP
