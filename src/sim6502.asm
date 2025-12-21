@@ -213,6 +213,20 @@ msave=*+1
 	and #OP_LOAD|OP_STORE
 	beq @memdone
 
+.if .defined(c64)
+.import STEP_MEMORY_VALUE
+.import STEP_EFFECTIVE_ADDR
+	ldxy __sim_effective_addr
+	stxy STEP_EFFECTIVE_ADDR
+	jsr is_internal_address
+	bne @memdone		; not internal, no need to swap address
+	stxy @backup
+	jsr vmem::load
+	sta STEP_MEMORY_VALUE
+	ldy #$00
+	lda (@backup),y
+	sta msave		; save debugger byte
+.elseif .defined(vic20)
 	ldxy __sim_effective_addr
 	jsr is_internal_address
 	bne @memdone		; not internal, no need to swap address
@@ -228,6 +242,7 @@ msave=*+1
 	sta msave		; save debugger byte
 	txa
 	sta (@backup),y		; store user byte
+.endif
 
 @memdone:
 	; restore registers for instruction execution
@@ -239,7 +254,6 @@ msave=*+1
 	lda __sim_reg_p
 	pha			; push status flags
 	lda __sim_reg_a
-	pha
 	ldx __sim_reg_x
 	ldy __sim_reg_y
 

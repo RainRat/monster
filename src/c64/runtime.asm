@@ -73,17 +73,27 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 
 .segment "STEPHANDLER"
 
+.export STEP_MEMORY_VALUE
+.export STEP_EFFECTIVE_ADDR
+
 ;******************************************************************************
 ; STEPHANDLER
 ; The step handler runs a single instruction and returns to the
 ; debugger.
 ; IN:
-;   - stack:      .A, .P (top to bottom)
-;   - .A, .X, .Y: register values for step to execute
+;   - STEP_EFFECTIVE_ADDR: memory location that will be used (if any)
+;   - STEP_MEMORY_VALUE:   value that should be stored at the effective addr
+;   - stack:               .A, .P (top to bottom)
+;   - .A, .X, .Y:          register values for step to execute
 .import step_done
 stephandler:
-	pla			; restore .A
 	sta STEP_RESTORE_A
+
+	; store user byte
+STEP_MEMORY_VALUE=*+1
+	lda #$00
+STEP_EFFECTIVE_ADDR=*+1
+	sta $f00d
 
 	pla			; get status flags
 

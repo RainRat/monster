@@ -35,7 +35,7 @@ RTI_ADDR         = BRK_HANDLER_ADDR+3
 .export STEP_EXEC_BUFFER
 STEP_HANDLER_ADDR = NMI_HANDLER_ADDR-stephandler_size
 
-STEP_EXEC_BUFFER  = STEP_HANDLER_ADDR+16
+STEP_EXEC_BUFFER  = STEP_HANDLER_ADDR+15
 STEP_RESTORE_A    = STEP_EXEC_BUFFER-2
 
 TRAMPOLINE = STEP_HANDLER_ADDR - trampoline_size
@@ -531,11 +531,11 @@ brkhandler2_size=*-brkhandler2
 ; debugger.
 .import step_done
 stephandler:
+	sta STEP_RESTORE_A
+
 	; switch to USER bank
 	lda #FINAL_BANK_USER
 	sta $9c02
-	pla			; restore .A
-	sta STEP_RESTORE_A
 
 	pla			; get status flags
 	ora #$04		; set I flag
