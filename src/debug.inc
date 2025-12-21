@@ -18,6 +18,11 @@
 .import __debug_reenter
 .import __debug_remove_breakpoint
 .import __debug_removebreakpointbyid
+.import __debug_restore_debug_low
+.import __debug_restore_debug_zp
+.import __debug_restore_user_zp
+.import __debug_save_debug_zp
+.import __debug_save_user_zp
 .import __debug_setbreakpoint
 .import __debug_save_prog_state
 .import __debug_shift_breakpointsd
@@ -54,6 +59,11 @@
 	reenter            = __debug_reenter
 	removebreakpoint   = __debug_remove_breakpoint
 	removebreakpointbyid = __debug_removebreakpointbyid
+	restore_debug_low  = __debug_restore_debug_low
+	restore_debug_zp   = __debug_restore_debug_zp
+	restore_user_zp    = __debug_restore_user_zp
+	save_debug_zp      = __debug_save_debug_zp
+	save_user_zp       = __debug_save_user_zp
 	shift_breakpointsd = __debug_shift_breakpointsd
 	shift_breakpointsu = __debug_shift_breakpointsu
 	start              = __debug_start

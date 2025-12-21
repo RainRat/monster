@@ -8,12 +8,10 @@
 RETURN_ADDR     = TRAMPOLINE_ADDR-1
 JMP_RETURN_ADDR = RETURN_ADDR-5
 
-.export prog00
 .export prog1000
 .export prog9000
 .export prog9110
 .export prog9400
-.export dbg00
 .export dbg9000
 .export dbg9400
 
@@ -31,19 +29,12 @@ RESTORE_DEBUG_STATE
 	restore_prog_visual, restore_debug_state
 .linecont -
 
-;******************************************************************************
-.segment "BSS_NOINIT"
-; $00-$200 is stored in the main BSS segment for faster access by the simulator
-prog00:	.res $400	; $00-$0400
-dbg00:  .res $400	; $00-$400
-
 .SEGMENT "FASTCOPY_BSS"
 
 ;******************************************************************************
 ; PROG
 ; backup for the user's program during debug
 progsave:
-; prog00 is stored in MAIN bank
 prog1000: .res $1000	; $1000-$2000
 prog9000: .res $10	; $9000-$9010
 prog9110: .res $20	; $9110-$9130
@@ -62,127 +53,6 @@ copytablo: .lobytes copytab
 copytabhi: .hibytes copytab
 
 .CODE
-
-;******************************************************************************
-; SAVE USER ZP
-; Saves the state of the user's zeropage
-; IN:
-;  - .XY: the resturn address (the stack s clobbered by this procedure)
-.export __fastcopy_save_user_zp
-.proc __fastcopy_save_user_zp
-	stxy @ret
-
-	ldx #$00
-:	lda $00,x
-	sta prog00,x
-	lda $100,x
-	sta prog00+$100,x
-	lda $200,x
-	sta prog00+$200,x
-	lda $300,x
-	sta prog00+$300,x
-	dex
-	bne :-
-
-@ret=*+1
-	jmp $f00d
-.endproc
-
-;******************************************************************************
-; RESTORE USER ZP
-; Restores the state of the user's zeropage
-; IN:
-;  - .XY: the resturn address (the stack s clobbered by this procedure)
-.export __fastcopy_restore_user_zp
-.proc __fastcopy_restore_user_zp
-	stxy @ret
-
-	ldx #$00
-:	lda prog00,x
-	sta $00,x
-	lda prog00+$100,x
-	sta $100,x
-	lda prog00+$200,x
-	sta $200,x
-	lda prog00+$300,x
-	sta $300,x
-	dex
-	bne :-
-
-@ret=*+1
-	jmp $f00d
-.endproc
-
-;*****************************************************************************
-; RESTORE DEBUG ZP
-; Restores the $00-$100 values forthe debugger
-.export __fastcopy_restore_debug_zp
-.proc __fastcopy_restore_debug_zp
-	ldx #$00
-:	lda dbg00,x
-	sta $00,x
-	dex
-	bne :-
-	rts
-.endproc
-
-;******************************************************************************
-; RESTORE DEBUG LOW
-; Restores the state of the debugger's "low" memory
-; IN:
-;   - .XY: the return address (stack can't be used)
-.export __fastcopy_restore_debug_low
-.proc __fastcopy_restore_debug_low
-	stxy @ret
-
-	ldx #$00
-:	lda dbg00+$100,x
-	sta $100,x
-	lda dbg00+$200,x
-	sta $200,x
-	dex
-	bne :-
-
-	; copy around the NMI vector
-	ldx #$100-$1a
-:	lda dbg00+$31a,x
-	sta $31a,x
-	dex
-	bne :-
-
-	ldx #$18-1
-:	lda dbg00+$300,x
-	sta $300,x
-	dex
-	bpl :-
-
-@ret=*+1
-	jmp	$f00d
-.endproc
-
-;******************************************************************************
-; SAVE DEBUG ZP
-; Saves the state of the debugger's zeropage
-; IN:
-;   - .XY: the return address (stack can't be used)
-.export __fastcopy_save_debug_zp
-.proc __fastcopy_save_debug_zp
-@zp=dbg00
-	stxy @ret
-	ldx #$00
-@l0:	lda $00,x
-	sta @zp,x
-	lda $100,x
-	sta @zp+$100,x
-	lda $200,x
-	sta @zp+$200,x
-	lda $300,x
-	sta @zp+$300,x
-	dex
-	bne @l0
-@ret=*+1
-	jmp	$f00d
-.endproc
 
 ;******************************************************************************
 ; SAVE DEBUG STATE
@@ -228,6 +98,7 @@ copytabhi: .hibytes copytab
 .proc __fastcopy_restore_debug_state
 	ldx #proc_ids::RESTORE_DEBUG_STATE
 .endproc
+	; entry point for routines
 	lda copytablo,x
 	sta @vec
 	lda copytabhi,x
@@ -344,7 +215,7 @@ copytabhi: .hibytes copytab
 	dex
 	bne :-
 
-	; fall through to RESTORE PROG INTERNAL
+	; fall through to RESTORE PROG VISUAL
 .endproc
 
 ;******************************************************************************

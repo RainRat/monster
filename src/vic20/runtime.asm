@@ -68,7 +68,7 @@ TRAMPOLINE_ADDR = TRAMPOLINE+13
 	jsr fcpy::save_debug_state
 
 	ldxy #@restore_dbg_done		; need to pass return address
-	jmp fcpy::save_debug_zp
+	jmp dbg::save_debug_zp
 
 @restore_dbg_done:
 	lda #$7f
@@ -102,7 +102,7 @@ TRAMPOLINE_ADDR = TRAMPOLINE+13
 	stx sim::reg_sp
 
 	ldxy #@save_done	; need to pass return address
-	jmp fcpy::save_user_zp
+	jmp dbg::save_user_zp
 
 @save_done:
 	sei
@@ -112,10 +112,10 @@ TRAMPOLINE_ADDR = TRAMPOLINE+13
 	; restore the debug (Monster's) low memory
 	; this has the routines (in the shared RAM space) we need to do the rest
 	; of the banekd program state save (save_prog_state)
-	jsr fcpy::restore_debug_zp
+	jsr dbg::restore_debug_zp
 
 	ldxy #@restore_debug_done
-	jmp fcpy::restore_debug_low
+	jmp dbg::restore_debug_low
 
 @restore_debug_done:
 @save_sp=*+1
@@ -250,11 +250,11 @@ TRAMPOLINE_ADDR = TRAMPOLINE+13
 	sta $912d
 
 	ldxy #@restore_dbg_done		; need to pass return address
-	jmp fcpy::save_debug_zp
+	jmp dbg::save_debug_zp
 
 @restore_dbg_done:
 	ldxy #@restore_done		; need to pass return address
-	jmp fcpy::restore_user_zp
+	jmp dbg::restore_user_zp
 
 @restore_done:
 	; reinstall NMI
@@ -428,14 +428,14 @@ go_pre_run:
 
 	; save the user's zeropage and restore the debugger's
 	ldxy #@save_done	; need to pass return address
-	jmp fcpy::save_user_zp
+	jmp dbg::save_user_zp
 
 @save_done:
 	ldxy #@restore_debug_done
-	jmp fcpy::restore_debug_low
+	jmp dbg::restore_debug_low
 
 @restore_debug_done:
-	jsr fcpy::restore_debug_zp
+	jsr dbg::restore_debug_zp
 
 	; save program state and swap the debugger state in
 	jsr dbg::swap_out

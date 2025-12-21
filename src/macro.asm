@@ -2,10 +2,10 @@
 .include "errors.inc"
 .include "labels.inc"
 .include "macros.inc"
-.include "string.inc"
-.include "zeropage.inc"
-
 .include "ram.inc"
+.include "string.inc"
+.include "target.inc"
+.include "zeropage.inc"
 
 ;*******************************************************************************
 ; CONSTANTS
@@ -71,6 +71,8 @@ macros:          .res $1400
 @addr=zp::macros+4
 @params=r0
 @numparams=r2
+	SELECT_BANK "MACRO"
+
 	sta @numparams
 	stxy @src
 	lda nummacros
@@ -179,6 +181,8 @@ macros:          .res $1400
 @macro=zp::macros+$0e
 @numparams=zp::macros+$10
 @tmplabel=$140
+	SELECT_BANK "MACRO"
+
 	asl
 	tax
 	lda macro_addresses,x
@@ -323,6 +327,8 @@ macros:          .res $1400
 @name=r4
 @cnt=r6
 @tmp=r7
+	SELECT_BANK "MACRO"
+
 	stxy @tofind
 	lda #<macro_addresses
 	sta @addr

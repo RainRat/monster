@@ -47,3 +47,15 @@
 	pla
 	rts
 .endproc
+
+;*******************************************************************************
+; SELECT BANK MACRO
+; Sets the RAM bank to the macro one
+.export select_bank_macro
+.proc select_bank_macro
+	pha
+	lda #FINAL_BANK_MACROS
+	sta reu::reuaddr+2
+	pla
+	rts
+.endproc

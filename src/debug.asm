@@ -88,6 +88,14 @@ DEBUG_IFACE_TEXT = 1	; text interface (returns to TUI)
 ;*******************************************************************************
 debugtmp = zp::debuggertmp	; scratchpad
 
+;******************************************************************************
+.segment "BSS_NOINIT"
+; $00-$200 is stored in the main BSS segment for faster access by the simulator
+.export prog00
+prog00:	.res $400	; $00-$0400
+dbg00:  .res $400	; $00-$400
+
+
 ;*******************************************************************************
 ; Program state variables
 
@@ -370,18 +378,16 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	ldx #$ff
 	txs
 
-.ifdef vic20
 	; save the user's zeropage and restore the debugger's
 	ldxy #@save_done	; need to pass return address
-	jmp fcpy::save_user_zp
+	jmp __debug_save_user_zp
 
 @save_done:
 	ldxy #@restore_debug_done
-	jmp fcpy::restore_debug_low
+	jmp __debug_restore_debug_low
 
 @restore_debug_done:
-	jsr fcpy::restore_debug_zp
-.endif
+	jsr __debug_restore_debug_zp
 
 	; save program state and swap the debugger state in
 	jsr __debug_swap_out
@@ -438,8 +444,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 
 @debugloop_gui:
 	jsr text::update
-	jsr key::getch
-	beq @debugloop_gui
+	jsr key::waitch
 
 	pha
 	jsr cur::off
@@ -732,13 +737,12 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 ; returns with the debugger's memory swapped back in
 .export __debug_swap_user_mem
 .proc __debug_swap_user_mem
-.ifdef vic20
 	; disable coloring in the IRQ
 	jsr draw::coloroff
 
 	; bring in the visible state from the user program
-	jsr fcpy::save_debug_state
-	jsr fcpy::restore_prog_visual
+	jsr bsp::save_debug_state
+	jsr bsp::restore_prog_visual
 
 	; wait for a key to swap the state back
 	jsr key::waitch
@@ -747,11 +751,8 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	inc mem::coloron
 
 	; restore debugger state
-	jsr fcpy::restore_debug_state
+	jsr bsp::restore_debug_state
 	jmp irq::on
-.else
-	rts
-.endif
 .endproc
 
 ;******************************************************************************
@@ -857,7 +858,9 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 ; perform the step
 @step:	pla			; get instruction size
 	ldxy sim::pc		; and address of instruction to-be-executed
+	jmp *
 	jsr sim::step		; execute the STEP
+	jmp *
 	bcc @countcycles	; if ok, continue
 
 	; display the error explaining why we couldn't STEP
@@ -994,13 +997,10 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 ; the user program.
 .export __debug_swap_in
 .proc __debug_swap_in
-.ifdef vic20
 	; swap entire user RAM in (needed if we don't know what memory will
 	; be changed before next BRK)
-	jsr fcpy::save_debug_state
-	jmp fcpy::restore_progstate
-.else
-.endif
+	jsr bsp::save_debug_state
+	jmp bsp::restore_prog_state
 .endproc
 
 ;******************************************************************************
@@ -1009,12 +1009,9 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 ; debug state.
 .export __debug_swap_out
 .proc __debug_swap_out
-.ifdef vic20
 	; save the program state before we restore the debugger's
-	jsr fcpy::save_prog_state
-	jmp fcpy::restore_debug_state		; restore debugger state
-.else
-.endif
+	jsr bsp::save_prog_state
+	jmp bsp::restore_debug_state		; restore debugger state
 .endproc
 
 ;*******************************************************************************
@@ -1501,11 +1498,129 @@ __debug_remove_breakpoint:
 ; ACTIVATE MONITOR
 ; Activates the text user interface debugger (monitor)
 .proc activate_monitor
-.ifdef vic20
-	jsr fcpy::save_debug_state
-.else
-.endif
+	jsr bsp::save_debug_state
 	jmp edit::entermonitor
+.endproc
+
+;******************************************************************************
+; SAVE USER ZP
+; Saves the state of the user's zeropage
+; IN:
+;  - .XY: the resturn address (the stack s clobbered by this procedure)
+.export __debug_save_user_zp
+.proc __debug_save_user_zp
+	stxy @ret
+
+	ldx #$00
+:	lda $00,x
+	sta prog00,x
+	lda $100,x
+	sta prog00+$100,x
+	lda $200,x
+	sta prog00+$200,x
+	lda $300,x
+	sta prog00+$300,x
+	dex
+	bne :-
+
+@ret=*+1
+	jmp $f00d
+.endproc
+
+;******************************************************************************
+; RESTORE USER ZP
+; Restores the state of the user's zeropage
+; IN:
+;  - .XY: the resturn address (the stack s clobbered by this procedure)
+.export __debug_restore_user_zp
+.proc __debug_restore_user_zp
+	stxy @ret
+
+	ldx #$00
+:	lda prog00,x
+	sta $00,x
+	lda prog00+$100,x
+	sta $100,x
+	lda prog00+$200,x
+	sta $200,x
+	lda prog00+$300,x
+	sta $300,x
+	dex
+	bne :-
+
+@ret=*+1
+	jmp $f00d
+.endproc
+
+;*****************************************************************************
+; RESTORE DEBUG ZP
+; Restores the $00-$100 values forthe debugger
+.export __debug_restore_debug_zp
+.proc __debug_restore_debug_zp
+	ldx #$00
+:	lda dbg00,x
+	sta $00,x
+	dex
+	bne :-
+	rts
+.endproc
+
+;******************************************************************************
+; RESTORE DEBUG LOW
+; Restores the state of the debugger's "low" memory
+; IN:
+;   - .XY: the return address (stack can't be used)
+.export __debug_restore_debug_low
+.proc __debug_restore_debug_low
+	stxy @ret
+
+	ldx #$00
+:	lda dbg00+$100,x
+	sta $100,x
+	lda dbg00+$200,x
+	sta $200,x
+	dex
+	bne :-
+
+	; copy around the NMI vector
+	ldx #$100-$1a
+:	lda dbg00+$31a,x
+	sta $31a,x
+	dex
+	bne :-
+
+	ldx #$18-1
+:	lda dbg00+$300,x
+	sta $300,x
+	dex
+	bpl :-
+
+@ret=*+1
+	jmp	$f00d
+.endproc
+
+;******************************************************************************
+; SAVE DEBUG ZP
+; Saves the state of the debugger's zeropage
+; IN:
+;   - .XY: the return address (stack can't be used)
+.export __debug_save_debug_zp
+.proc __debug_save_debug_zp
+@zp=dbg00
+	stxy @ret
+	ldx #$00
+@l0:	lda $00,x
+	sta @zp,x
+	lda $100,x
+	sta @zp+$100,x
+	lda $200,x
+	sta @zp+$200,x
+	lda $300,x
+	sta @zp+$300,x
+	dex
+	bne @l0
+@ret=*+1
+	jmp	$f00d
 .endproc
 
 .RODATA

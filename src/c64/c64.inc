@@ -2,6 +2,7 @@
 .import select_bank_debuginfo
 .import select_bank_debuginfo
 .import select_bank_copybuff
+.import select_bank_macro
 
 .import __screen_crowslo
 .import __screen_crowshi
@@ -38,5 +39,7 @@
 	jsr select_bank_linker
 .elseif .match("COPYBUFF", bank)
 	jsr select_bank_copybuff
+.elseif .match("MACRO", bank)
+	jsr select_bank_macro
 .endif
 .endmacro

@@ -21,14 +21,19 @@
         sta $0318
         lda #>@nmi
         sta $0319
+
+	; generate an NMI with timer A
         lda #$00
         sta $dd0e
         sta $dd04
         sta $dd05
+
         lda #$81
-        sta $dd0d
+        sta $dd0d	; set NMI source as timer A
         lda #$01
-        sta $dd0e
+        sta $dd0e	; start timer
+	lda $dd0d	; ack NMI to enable it
+
 	IO_DONE
 	rts
 

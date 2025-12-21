@@ -3,9 +3,19 @@
 ; This file contains C64-specific helpers for things like debugging/tracing
 ;*******************************************************************************
 
-.DATA
+.include "../macros.inc"
+.include "nmi.inc"
+.include "reu.inc"
+
 .export stop_tracing
-stop_tracing: .byte 0
+
+.DATA
+; Stop tracing state/NMI
+; This NMI is installed programatically and catches the RESTORE key as a
+; signal to stop a trace
+; These values must be between PRORGAM_STACK_START and $100
+STOP_TRACING_NMI = PROGRAM_STACK_START+1
+stop_tracing     = STOP_TRACING_NMI+4	; sizeof(inc stop_tracing)+sizeof(rti)
 
 .export PROGRAM_STACK_START
 PROGRAM_STACK_START = $1e0
@@ -13,7 +23,126 @@ PROGRAM_STACK_START = $1e0
 .CODE
 
 ;*******************************************************************************
+; INSTALL TRACER
+; Installs a routine to catch
 .export __bsp_install_tracer
 .proc __bsp_install_tracer
+	; disable NMIs
+	jsr nmi::disable
 
+	lda #$00
+	sta stop_tracing
+
+	; write the following ISR:
+	;	inc stop_tracing
+	;	rti
+	lda #$ee		; INC abs
+	sta STOP_TRACING_NMI
+	lda #<stop_tracing
+	sta STOP_TRACING_NMI+1
+	lda #>stop_tracing
+	sta STOP_TRACING_NMI+2
+	lda #$40		; RTI
+	sta STOP_TRACING_NMI+3
+	ldxy #STOP_TRACING_NMI
+	stxy $0318
+
+	rts
+.endproc
+
+;*******************************************************************************
+; RESTORE DEBUG STATE
+.export __bsp_restore_debug_state
+.proc __bsp_restore_debug_state
+	; just restore everything
+	; TODO: don't be lazy
+	lda #$00
+	sta reu::c64addr
+	sta reu::c64addr+1
+	sta reu::reuaddr
+	sta reu::reuaddr+1
+	lda #^REU_BACKUP_ADDR
+	sta reu::reuaddr+2
+	jmp reu::load
+.endproc
+
+;*******************************************************************************
+; SAVE DEBUG STATE
+.export __bsp_save_debug_state
+.proc __bsp_save_debug_state
+	; just save everything
+	; TODO: don't be lazy
+	lda #$00
+	sta reu::c64addr
+	sta reu::c64addr+1
+	sta reu::reuaddr
+	sta reu::reuaddr+1
+	lda #^REU_BACKUP_ADDR
+	sta reu::reuaddr+2
+	jmp reu::store
+.endproc
+
+;******************************************************************************
+; RESTORE PROG STATE
+.export __bsp_restore_prog_state
+.proc __bsp_restore_prog_state
+	; just restore everything
+	; TODO: don't be lazy
+	lda #$00
+	sta reu::c64addr
+	sta reu::c64addr+1
+	sta reu::reuaddr
+	sta reu::reuaddr+1
+	lda #^REU_VMEM_ADDR
+	sta reu::reuaddr+2
+	jmp reu::load
+.endproc
+
+;******************************************************************************
+; RESTORE PROG VISUAL
+.export __bsp_restore_prog_visual
+.proc __bsp_restore_prog_visual
+	; just restore everything
+	; TODO: don't be lazy
+	lda #$00
+	sta reu::c64addr
+	sta reu::c64addr+1
+	sta reu::reuaddr
+	sta reu::reuaddr+1
+	lda #^REU_BACKUP_ADDR
+	sta reu::reuaddr+2
+	jmp reu::load
+.endproc
+
+;******************************************************************************
+; SAVE PROG STATE
+; Saves memory clobbered by the debugger (screen, I/O registers and color)
+.export __bsp_save_prog_state
+.proc __bsp_save_prog_state
+	; just save everything
+	; TODO: don't be lazy
+	lda #$00
+	sta reu::c64addr
+	sta reu::c64addr+1
+	sta reu::reuaddr
+	sta reu::reuaddr+1
+	lda #^REU_VMEM_ADDR
+	sta reu::reuaddr+2
+	jmp reu::store
+.endproc
+
+;******************************************************************************
+; SAVE VIC STATE
+; Saves the VIC
+.proc save_vic_state
+	; just save everything
+	; TODO: don't be lazy
+	lda #$00
+	sta reu::c64addr
+	sta reu::c64addr+1
+	sta reu::reuaddr
+	sta reu::reuaddr+1
+	lda #^REU_VMEM_ADDR
+	sta reu::reuaddr+2
+	jmp reu::store
 .endproc

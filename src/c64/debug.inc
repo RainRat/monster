@@ -1,7 +1,10 @@
+.include "nmi.inc"
+
 ;*******************************************************************************
 ; TRACE ON
 ; This macro enables the NMI (or other method) required to interrupt a "trace"
 .macro TRACE_ON
+	jsr nmi::enable
 .endmacro
 
 ;*******************************************************************************
@@ -9,6 +12,7 @@
 ; This macro disables the NMI (or other method) responsible for performing a
 ; "trace".
 .macro TRACE_OFF
+	jsr nmi::disable
 .endmacro
 
 ;*******************************************************************************

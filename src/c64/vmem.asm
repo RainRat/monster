@@ -4,8 +4,6 @@
 .include "../memory.inc"
 
 .BSS
-.export prog00
-prog00: .res $400
 
 .export STEP_EXEC_BUFFER
 .export STEP_HANDLER_ADDR
@@ -134,4 +132,18 @@ savexy: .word 0
 	; all RAM is writable
 	; TODO: check the bank register?
 	RETURN_OK
+.endproc
+
+;*******************************************************************************
+; IS INTERNAL ADDRESS
+; Always returns .Z set to indicate that address is "internal"
+; On the C64 all user RAM is "internal" (must be swapped for debugging)
+; IN:
+;  - .XY: the address to test
+; OUT:
+;  - .Z: set
+.export is_internal_address
+.proc is_internal_address
+	lda #$00
+	rts
 .endproc

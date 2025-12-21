@@ -17,6 +17,8 @@
 .import STEP_HANDLER_ADDR
 .import STEP_EXEC_BUFFER
 
+.import is_internal_address
+
 ;*******************************************************************************
 .BSS
 
@@ -765,31 +767,6 @@ msave=*+1
 	inc @cycles
 
 @done:	lda @cycles
-	rts
-.endproc
-
-;*******************************************************************************
-; IS INTERNAL ADDRESS
-; Returns with .Z set if the given address is outside of the address ranges
-; [$2000,$8000] or [$a000,$ffff]
-;
-; IN:
-;  - .XY: the address to test
-; OUT:
-;  - .Z: set if the address in [$00,$2000] or [$8000,$a000]
-.export is_internal_address
-.proc is_internal_address
-	cmpw #$2000
-	bcc @internal
-	cmpw #$8000
-	bcc @external
-	cmpw #$94f0
-	bcc @internal
-@external:
-	lda #$ff
-	rts
-@internal:
-	lda #$00
 	rts
 .endproc
 

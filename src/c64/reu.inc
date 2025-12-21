@@ -30,6 +30,9 @@ C64_REU_INC = 1
 ; address of virtual memory state
 REU_VMEM_ADDR           = $fe0000
 
+; backup of Monster's state while debugging
+REU_BACKUP_ADDR         = $fd0000
+
 ; address in the REU to save/restore C64 data to
 REU_TMP_ADDR            = $ff0000
 
