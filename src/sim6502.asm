@@ -258,6 +258,7 @@ msave=*+1
 	ldy __sim_reg_y
 
 	; execute the instruction
+	pha
 	jmp STEP_HANDLER_ADDR
 
 ;---------------------------------------

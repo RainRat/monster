@@ -26,6 +26,12 @@
 ; BRK/NMI HANDLER ADDRESSES
 ; address in user program where the BRK handler will reside
 ; NOTE: the user program cannot use the space occupied by these handlers
+;
+;  |----------------------------------------------------|
+;  |  TRAMPOLINE  |   STEP    |     NMI    |     BRK    | $8000
+;  |----------------------------------------------------|
+;
+
 BRK_HANDLER_TOP  = $8000
 NMI_HANDLER_ADDR = BRK_HANDLER_TOP-brkhandler1_size
 BRK_HANDLER_ADDR = BRK_HANDLER_TOP-brkhandler1_size+5-1 ; 5 = sizeof NMI portion
@@ -35,7 +41,7 @@ RTI_ADDR         = BRK_HANDLER_ADDR+3
 .export STEP_EXEC_BUFFER
 STEP_HANDLER_ADDR = NMI_HANDLER_ADDR-stephandler_size
 
-STEP_EXEC_BUFFER  = STEP_HANDLER_ADDR+15
+STEP_EXEC_BUFFER  = STEP_HANDLER_ADDR+16
 STEP_RESTORE_A    = STEP_EXEC_BUFFER-2
 
 TRAMPOLINE = STEP_HANDLER_ADDR - trampoline_size
@@ -531,11 +537,12 @@ brkhandler2_size=*-brkhandler2
 ; debugger.
 .import step_done
 stephandler:
-	sta STEP_RESTORE_A
-
 	; switch to USER bank
 	lda #FINAL_BANK_USER
 	sta $9c02
+
+	pla
+	sta STEP_RESTORE_A
 
 	pla			; get status flags
 	ora #$04		; set I flag
@@ -587,19 +594,19 @@ trampoline_size=*-trampoline
 @dst=r2
 	ldxy #STEP_HANDLER_ADDR
 	stxy @dst
-	lda #stephandler_size-1
+	lda #stephandler_size
 	sta @cnt
 ; copy the STEP handler to the user program and our RAM
 @l0:	ldy @cnt
-	lda stephandler,y
-	sta STEP_HANDLER_ADDR,y
+	lda stephandler-1,y
+	sta STEP_HANDLER_ADDR-1,y
 	sta zp::bankval
 	sty zp::bankoffset
 	ldxy @dst
 	lda #FINAL_BANK_USER
 	jsr ram::store_off
 	dec @cnt
-	bpl @l0
+	bne @l0
 
 	rts
 .endproc

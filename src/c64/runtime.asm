@@ -87,6 +87,7 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 ;   - .A, .X, .Y:          register values for step to execute
 .import step_done
 stephandler:
+	pla
 	sta STEP_RESTORE_A
 
 	; store user byte
