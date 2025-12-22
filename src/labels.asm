@@ -177,14 +177,6 @@ __label_load: LBLJUMP proc_ids::LOAD
 labels: .res MAX_LABELS*MAX_LABEL_NAME_LEN
 
 ;******************************************************************************
-; LABEL MODES
-; This bit array contains the size of each label
-; Bit 7 of the first byte corresponds to label ID 0, bit 6 to the label ID 1,
-; and so on
-.export label_modes
-label_modes: .res MAX_LABELS / 8	; modes (0=absolute, 1=zeropage)
-
-;******************************************************************************
 ; SEGMENT IDS
 ; These bytes correspond to each label and tell us which segment it is defined
 ; within
@@ -206,6 +198,14 @@ numanon: .word 0	; total number of anonymous labels
 
 scope: .res 8 ; buffer containing the current scope
 labelvars_size=*-labelvars
+
+;******************************************************************************
+; LABEL MODES
+; This bit array contains the size of each label
+; Bit 7 of the first byte corresponds to label ID 0, bit 6 to the label ID 1,
+; and so on
+.export label_modes
+label_modes: .res MAX_LABELS / 8	; modes (0=absolute, 1=zeropage)
 
 .segment "LABEL_BSS"
 

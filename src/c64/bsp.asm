@@ -58,14 +58,14 @@ PROGRAM_STACK_START = $1e0
 .proc __bsp_restore_debug_state
 	; just restore everything
 	; TODO: don't be lazy
-	lda #$01
-	sta reu::c64addr
-	sta reu::reuaddr
-	lda #$00
-	sta reu::c64addr+1
-	sta reu::reuaddr+1
+	ldxy #$0001
+	stxy reu::c64addr
+	stxy reu::reuaddr
 	lda #^REU_BACKUP_ADDR
 	sta reu::reuaddr+2
+
+	ldxy #$fffe-1
+	stxy reu::txlen
 	jmp reu::load
 .endproc
 
@@ -75,14 +75,14 @@ PROGRAM_STACK_START = $1e0
 .proc __bsp_save_debug_state
 	; just save everything
 	; TODO: don't be lazy
-	lda #$01
-	sta reu::c64addr
-	sta reu::reuaddr
-	lda #$00
-	sta reu::c64addr+1
-	sta reu::reuaddr+1
+	ldxy #$0001
+	stxy reu::c64addr
+	stxy reu::reuaddr
 	lda #^REU_BACKUP_ADDR
 	sta reu::reuaddr+2
+
+	ldxy #$fffe-1
+	stxy reu::txlen
 	jmp reu::store
 .endproc
 
@@ -92,14 +92,14 @@ PROGRAM_STACK_START = $1e0
 .proc __bsp_restore_prog_state
 	; just restore everything
 	; TODO: don't be lazy
-	lda #$01
-	sta reu::c64addr
-	sta reu::reuaddr
-	lda #$00
-	sta reu::c64addr+1
-	sta reu::reuaddr+1
+	ldxy #$0001
+	stxy reu::c64addr
+	stxy reu::reuaddr
 	lda #^REU_VMEM_ADDR
 	sta reu::reuaddr+2
+
+	ldxy #$fffe-1
+	stxy reu::txlen
 	jmp reu::load
 .endproc
 
@@ -107,16 +107,24 @@ PROGRAM_STACK_START = $1e0
 ; RESTORE PROG VISUAL
 .export __bsp_restore_prog_visual
 .proc __bsp_restore_prog_visual
-	; just restore everything
-	; TODO: don't be lazy
-	lda #$01
-	sta reu::c64addr
-	sta reu::reuaddr
-	lda #$00
-	sta reu::c64addr+1
-	sta reu::reuaddr+1
-	lda #^REU_BACKUP_ADDR
+	; load the character data for the screen
+	ldxy #$0400
+	stxy reu::c64addr
+	stxy reu::reuaddr
+	lda #^REU_VMEM_ADDR
 	sta reu::reuaddr+2
+	ldxy #$0800
+	stxy reu::txlen
+	jsr reu::load
+
+	; load the VIC-II registers and color memory
+	ldxy #$d000
+	stxy reu::c64addr
+	stxy reu::reuaddr
+	lda #^REU_VMEM_ADDR
+	sta reu::reuaddr+2
+	ldxy #$0be7
+	stxy reu::txlen
 	jmp reu::load
 .endproc
 
@@ -127,14 +135,14 @@ PROGRAM_STACK_START = $1e0
 .proc __bsp_save_prog_state
 	; just save everything
 	; TODO: don't be lazy
-	lda #$01
-	sta reu::c64addr
-	sta reu::reuaddr
-	lda #$00
-	sta reu::c64addr+1
-	sta reu::reuaddr+1
+	ldxy #$0001
+	stxy reu::c64addr
+	stxy reu::reuaddr
 	lda #^REU_VMEM_ADDR
 	sta reu::reuaddr+2
+
+	ldxy #$fffe-1
+	stxy reu::txlen
 	jmp reu::store
 .endproc
 
@@ -144,14 +152,14 @@ PROGRAM_STACK_START = $1e0
 .proc save_vic_state
 	; just save everything
 	; TODO: don't be lazy
-	lda #$01
-	sta reu::c64addr
-	sta reu::reuaddr
-	lda #$00
-	sta reu::c64addr+1
-	sta reu::reuaddr+1
+	ldxy #$0001
+	stxy reu::c64addr
+	stxy reu::reuaddr
 	lda #^REU_VMEM_ADDR
 	sta reu::reuaddr+2
+
+	ldxy #$fffe-1
+	stxy reu::txlen
 	jmp reu::store
 .endproc
 

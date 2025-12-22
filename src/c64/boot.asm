@@ -1,3 +1,4 @@
+.include "bsp.inc"
 .include "layout.inc"
 .include "reu.inc"
 .include "../asm.inc"
@@ -33,6 +34,9 @@
 @next: .word 0
 start:
 	sei
+
+	; save the current machine state
+	jsr run::clr
 
 	; disable BASIC
 	lda $01
@@ -94,7 +98,6 @@ start:
 	jsr buff::clear		; clear copy buffer
 
 	jsr mon::init
-	jsr run::clr
 
 	lda #$80
 	sta $028a	; repeat all characters
