@@ -52,6 +52,10 @@ __sim_next_pc: .word 0
 .export __sim_jammed
 __sim_jammed: .byte 0
 
+; set if a write to an unusable address occurred (e.g. the step handler)
+.export __sim_vital_addr_clobbered
+__sim_vital_addr_clobbered: .byte 0
+
 ; set if the CPU has encountered an "illegal" (undocumented) opcode
 .export __sim_illegal
 __sim_illegal: .byte 0
@@ -267,9 +271,10 @@ msave=*+1
 ; Also updates simulator flags based on that next instruction
 @getnextpc:
 	lda #$00
-	sta __sim_branch_taken 	; clear branch taken flag
-	sta __sim_jammed	; clear JAM'd flag
-	sta __sim_at_brk	; clear BRK flag
+	sta __sim_branch_taken		; clear branch taken flag
+	sta __sim_jammed		; clear JAM'd flag
+	sta __sim_at_brk		; clear BRK flag
+	sta __sim_vital_addr_clobbered	; clear dangerous write flag
 
 	; get the opcode
 	ldxy @op
@@ -291,8 +296,22 @@ msave=*+1
 	sta @operand+1
 	sta __sim_operand+1
 
-	lda @opcode
+;------------------
+; if we're writing, check if it is safe to do so to the effective addr
+@chkaddr:
+	lda __sim_affected
+	and #OP_STORE
+	beq @chkjam
+	jsr is_write_safe
+	bcc @chkjam
+	ldxy __sim_pc		; return original PC (processor jammed)
+	sec			; flag error
+	rts
+
+;------------------
+; check if opcode to execute will JAM the CPU
 @chkjam:
+	lda @opcode
 	jsr @isjam
 	bne @nojam
 @jam:	inc __sim_jammed
@@ -609,6 +628,7 @@ msave=*+1
 	; we will save/restore state before/after a BRK using this
 	jsr get_effective_addr
 	stxy __sim_effective_addr
+
 @done:	rts
 .endproc
 
@@ -782,6 +802,47 @@ msave=*+1
 
 @done:	lda @cycles
 	rts
+.endproc
+
+;*******************************************************************************
+; IS WRITE SAFE
+; Checks if the simulator's effective address is safe to write
+; IN:
+;   - .XY: the address to check
+; OUT:
+;   - .C: set if the address is not safe to write to
+.proc is_write_safe
+	ldx #@num_safe_addrs-1
+@l0:	lda __sim_effective_addr
+	cmp @safeaddrs_lo,x
+	bne :+
+	lda __sim_effective_addr+1
+	cmp @safeaddrs_hi,x
+	beq @err
+:	dex
+	bpl @l0
+
+@ok:	RETURN_OK
+
+@err:	; an important memory location will be clobbered
+	inc __sim_vital_addr_clobbered
+	sec
+	rts
+
+.PUSHSEG
+.RODATA
+.ifdef vic20
+.define safety_addrs $0316, $0317, $0318, $0319
+	@safeaddrs_lo: .lobytes safety_addrs
+	@safeaddrs_hi: .hibytes safety_addrs
+	@num_safe_addrs=*-@safeaddrs_hi
+.elseif .defined(c64)
+.define safety_addrs $0316, $0317, $0318, $0319, $00, $01
+	@safeaddrs_lo: .lobytes safety_addrs
+	@safeaddrs_hi: .hibytes safety_addrs
+	@num_safe_addrs=*-@safeaddrs_hi
+.endif
+.POPSEG
 .endproc
 
 .RODATA

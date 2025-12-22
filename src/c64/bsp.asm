@@ -58,7 +58,7 @@ PROGRAM_STACK_START = $1e0
 .proc __bsp_restore_debug_state
 	; just restore everything
 	; TODO: don't be lazy
-	lda #$02
+	lda #$01
 	sta reu::c64addr
 	sta reu::reuaddr
 	lda #$00
@@ -75,7 +75,7 @@ PROGRAM_STACK_START = $1e0
 .proc __bsp_save_debug_state
 	; just save everything
 	; TODO: don't be lazy
-	lda #$02
+	lda #$01
 	sta reu::c64addr
 	sta reu::reuaddr
 	lda #$00
@@ -92,7 +92,7 @@ PROGRAM_STACK_START = $1e0
 .proc __bsp_restore_prog_state
 	; just restore everything
 	; TODO: don't be lazy
-	lda #$02
+	lda #$01
 	sta reu::c64addr
 	sta reu::reuaddr
 	lda #$00
@@ -109,7 +109,7 @@ PROGRAM_STACK_START = $1e0
 .proc __bsp_restore_prog_visual
 	; just restore everything
 	; TODO: don't be lazy
-	lda #$02
+	lda #$01
 	sta reu::c64addr
 	sta reu::reuaddr
 	lda #$00
@@ -127,7 +127,7 @@ PROGRAM_STACK_START = $1e0
 .proc __bsp_save_prog_state
 	; just save everything
 	; TODO: don't be lazy
-	lda #$02
+	lda #$01
 	sta reu::c64addr
 	sta reu::reuaddr
 	lda #$00
@@ -144,7 +144,7 @@ PROGRAM_STACK_START = $1e0
 .proc save_vic_state
 	; just save everything
 	; TODO: don't be lazy
-	lda #$02
+	lda #$01
 	sta reu::c64addr
 	sta reu::reuaddr
 	lda #$00

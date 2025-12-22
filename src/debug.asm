@@ -858,6 +858,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 ; perform the step
 @step:	pla			; get instruction size
 	ldxy sim::pc		; and address of instruction to-be-executed
+
 	jsr sim::step		; execute the STEP
 	bcc @countcycles	; if ok, continue
 
@@ -903,36 +904,15 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	bne jam_detected
 
 	; does the next instruction write to memory?
-	lda sim::affected
-	and #OP_STORE
+	lda sim::vital_addr_clobbered
 	beq @ok
 
-	ldx #@num_safe_addrs-1
-@l0:	lda sim::effective_addr
-	cmp @safeaddrs_lo,x
-	bne @next
-	lda sim::effective_addr+1
-	cmp @safeaddrs_hi,x
-	bne @next
-
-; an important memory location will be clobbered
-@clobber:
+	; an important memory location will be clobbered
 	ldx #<strings::vital_addr_clobber
 	ldy #>strings::vital_addr_clobber
 	bne print_msg
 
-@next:	dex
-	bpl @l0
 @ok:	RETURN_OK
-
-;--------------------------------------
-.PUSHSEG
-.RODATA
-.define safety_addrs $0316, $0317, $0318, $0319
-	@safeaddrs_lo: .lobytes safety_addrs
-	@safeaddrs_hi: .hibytes safety_addrs
-	@num_safe_addrs=*-@safeaddrs_hi
-.POPSEG
 .endproc
 
 ;*******************************************************************************

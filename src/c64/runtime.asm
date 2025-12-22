@@ -1,3 +1,4 @@
+.include "bsp.inc"
 .include "../macros.inc"
 .include "../ram.inc"
 .include "../vmem.inc"
@@ -19,6 +20,8 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 ; CLR
 .export __run_clr
 .proc __run_clr
+	; TODO: run cold start (or enough of it to get C64 in intial state)
+	jsr bsp::save_prog_state
 	rts
 .endproc
 
@@ -90,6 +93,10 @@ stephandler:
 	pla
 	sta STEP_RESTORE_A
 
+	; make I/O visible
+	lda #$36
+	sta $01
+
 	; store user byte
 STEP_MEMORY_VALUE=*+1
 	lda #$00
@@ -111,5 +118,13 @@ STEP_EXEC_BUFFER:
 	nop
 	nop
 	php
+
+	pha
+	lda #$34
+	sta $01
+	lda #$2f
+	sta $00
+	pla
+
 	jmp step_done		; done -> update simulator with new state
 stephandler_size=*-stephandler
