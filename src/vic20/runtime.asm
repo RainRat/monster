@@ -540,7 +540,6 @@ stephandler:
 	; switch to USER bank
 	lda #FINAL_BANK_USER
 	sta $9c02
-
 	pla
 	sta STEP_RESTORE_A
 
@@ -594,19 +593,19 @@ trampoline_size=*-trampoline
 @dst=r2
 	ldxy #STEP_HANDLER_ADDR
 	stxy @dst
-	lda #stephandler_size
+	lda #stephandler_size-1
 	sta @cnt
 ; copy the STEP handler to the user program and our RAM
 @l0:	ldy @cnt
-	lda stephandler-1,y
-	sta STEP_HANDLER_ADDR-1,y
+	lda stephandler,y
+	sta STEP_HANDLER_ADDR,y
 	sta zp::bankval
 	sty zp::bankoffset
 	ldxy @dst
 	lda #FINAL_BANK_USER
 	jsr ram::store_off
 	dec @cnt
-	bne @l0
+	bpl @l0
 
 	rts
 .endproc

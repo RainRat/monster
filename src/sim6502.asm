@@ -365,6 +365,7 @@ msave=*+1
 
 :	cmp #$60
 	bne :+
+
 @rts:   ; fully simulate RTS:
 	; pull the return address, add 1 to it, and set it as the new
 	; PC. Then add 2 to the stack pointer
@@ -826,22 +827,20 @@ msave=*+1
 
 @err:	; an important memory location will be clobbered
 	inc __sim_vital_addr_clobbered
+	jmp *
 	sec
 	rts
 
 .PUSHSEG
 .RODATA
-.ifdef vic20
-.define safety_addrs $0316, $0317, $0318, $0319
-	@safeaddrs_lo: .lobytes safety_addrs
-	@safeaddrs_hi: .hibytes safety_addrs
-	@num_safe_addrs=*-@safeaddrs_hi
+.if .defined(vic20)
+	.define safety_addrs $0316, $0317, $0318, $0319
 .elseif .defined(c64)
-.define safety_addrs $0316, $0317, $0318, $0319, $00, $01
+	.define safety_addrs $0316, $0317, $0318, $0319, $0000, $0001
+.endif
 	@safeaddrs_lo: .lobytes safety_addrs
 	@safeaddrs_hi: .hibytes safety_addrs
 	@num_safe_addrs=*-@safeaddrs_hi
-.endif
 .POPSEG
 .endproc
 
