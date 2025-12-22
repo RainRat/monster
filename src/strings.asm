@@ -116,7 +116,7 @@ __str_jam_detected: .byte "jam detected",0
 __str_illegal_detected: .byte "illegal detected",0
 
 .export __str_vital_addr_clobber_detected
-__str_vital_addr_clobber_detected: .byte "dangerous write detected",0
+__str_vital_addr_clobber_detected: .byte "dangerous write detected ($", ESCAPE_VALUE, ")",0
 
 .export __str_saveall
 __str_saveall: .byte "save all buffers? ", yes_no, 0

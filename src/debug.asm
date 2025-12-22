@@ -906,7 +906,11 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	lda sim::vital_addr_clobbered
 	beq @ok
 
-	; an important memory location will be clobbered
+	; an important memory location will be clobbered, print error
+	lda sim::effective_addr
+	pha
+	lda sim::effective_addr+1
+	pha
 	ldx #<strings::vital_addr_clobber
 	ldy #>strings::vital_addr_clobber
 	bne print_msg

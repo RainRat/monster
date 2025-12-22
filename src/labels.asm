@@ -204,6 +204,7 @@ labelvars_size=*-labelvars
 ; This bit array contains the size of each label
 ; Bit 7 of the first byte corresponds to label ID 0, bit 6 to the label ID 1,
 ; and so on
+.segment "LABELMODES"
 .export label_modes
 label_modes: .res MAX_LABELS / 8	; modes (0=absolute, 1=zeropage)
 

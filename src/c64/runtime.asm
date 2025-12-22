@@ -1,4 +1,5 @@
 .include "bsp.inc"
+.include "../debug.inc"
 .include "../macros.inc"
 .include "../ram.inc"
 .include "../vmem.inc"
@@ -22,6 +23,11 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 .proc __run_clr
 	; TODO: run cold start (or enough of it to get C64 in intial state)
 	jsr bsp::save_prog_state
+
+	ldxy #@restore_dbg_done		; need to pass return address
+	jmp dbg::save_debug_zp
+@restore_dbg_done:
+
 	rts
 .endproc
 
