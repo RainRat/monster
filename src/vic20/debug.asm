@@ -41,7 +41,9 @@ TRACE_STACK_DEPTH = $200-PROGRAM_STACK_START
 
 	; ack/disable all interrupts
 	lda #$7f
+	sta $911d
 	sta $911e
+	sta $912d
 	sta $912e
 
 	; write the following ISR:

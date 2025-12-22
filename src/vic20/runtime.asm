@@ -73,10 +73,10 @@ TRAMPOLINE_ADDR = TRAMPOLINE+13
 
 	jsr fcpy::save_debug_state
 
-	ldxy #@restore_dbg_done		; need to pass return address
+	ldxy #@save_dbg_done		; need to pass return address
 	jmp dbg::save_debug_zp
 
-@restore_dbg_done:
+@save_dbg_done:
 	lda #$7f
 	sta $911e			; disable NMI's
 

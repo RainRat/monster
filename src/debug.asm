@@ -578,7 +578,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 
 	lda #$00
 	sta step_out_depth
-	js4 bsp::install_tracer
+	jsr bsp::install_tracer
 
 	jsr print_tracing
 @trace: lda stop_tracing

@@ -134,8 +134,8 @@ save_sp: .byte 0
 .endproc
 
 msave_src=*+1
-	lda $f00d	; get the affected user byte
-	jsr vmem::store	; save it to its buffer
+	lda $f00d		; get the affected user byte
+	jsr vmem::store		; save it to its buffer
 
 	; restore the byte that was clobbered at the effective address
 	ldxy __sim_effective_addr
@@ -211,7 +211,7 @@ msave=*+1
 
 @execute:
 	sei
-	;TRACE_OFF
+	TRACE_OFF
 
 	lda __sim_affected
 	and #OP_LOAD|OP_STORE
@@ -300,7 +300,7 @@ msave=*+1
 ; if we're writing, check if it is safe to do so to the effective addr
 @chkaddr:
 	lda __sim_affected
-	and #OP_STORE
+	and #OP_STORE|OP_LOAD
 	beq @chkjam
 	jsr is_write_safe
 	bcc @chkjam
@@ -409,12 +409,16 @@ msave=*+1
 	lda __sim_reg_p
 	ora #$04
 	sta __sim_reg_p
+	incw __sim_pc
+	jmp @step_handled
 
 :	cmp #$78		; SEI
 	bne :+
 	lda __sim_reg_p
 	and #$04^$ff
 	sta __sim_reg_p
+	incw __sim_pc
+	jmp @step_handled
 
 :	cmp #$00		; BRK?
 	bne :+
@@ -935,7 +939,7 @@ side_effects_tab:
 .byte OP_LOAD|OP_STORE 			; $46 LSR zpg
 .byte $00				; ---
 .byte OP_STACK|OP_STORE			; $48 PHA
-.byte OP_REG_A|OP_LOAD    		; $49 EOR #
+.byte OP_REG_A				; $49 EOR #
 .byte OP_REG_A                  	; $4a LSR A
 .byte $00				; ---
 .byte OP_PC				; $4c JMP abs
@@ -971,7 +975,7 @@ side_effects_tab:
 .byte OP_LOAD|OP_STORE 		; $66 ROR zpg
 .byte $00			; ---
 .byte OP_STACK|OP_LOAD|OP_REG_A	; $68 PLA
-.byte OP_REG_A|OP_LOAD    	; $69 ADC #
+.byte OP_REG_A			; $69 ADC #
 .byte OP_REG_A                  ; $6a ROR A
 .byte $00			; ---
 .byte OP_PC|OP_LOAD		; $4c JMP (ind)

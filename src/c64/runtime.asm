@@ -1,7 +1,9 @@
 .include "bsp.inc"
+.include "../asmflags.inc"
 .include "../debug.inc"
 .include "../macros.inc"
 .include "../ram.inc"
+.include "../sim6502.inc"
 .include "../vmem.inc"
 
 .import __STEPHANDLER_RUN__
@@ -107,14 +109,17 @@ stephandler:
 	lda #$36
 	sta $01
 
-	; store user byte
+	; store user byte if it's used
+	lda sim::affected
+	and #OP_LOAD|OP_STORE
+	beq :+
+
 STEP_MEMORY_VALUE=*+1
 	lda #$00
 STEP_EFFECTIVE_ADDR=*+1
 	sta $f00d
 
-	pla			; get status flags
-
+:	pla			; get status flags
 	ora #$04		; set I flag (disable IRQs)
 	pha			; push altered status
 

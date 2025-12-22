@@ -31,6 +31,8 @@ PROGRAM_STACK_START = $1e0
 .proc __bsp_install_tracer
 	; disable NMIs
 	jsr nmi::disable
+	lda #$7f
+	sta $dc0e
 
 	lda #$00
 	sta stop_tracing
