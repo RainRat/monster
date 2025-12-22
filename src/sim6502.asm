@@ -859,146 +859,146 @@ msave=*+1
 side_effects_tab:
 ; $0-
 .byte $00			; $00 BRK
-.byte OP_REG_A|OP_LOAD		; $01 ORA x,ind
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $01 ORA x,ind
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
-.byte OP_REG_A|OP_LOAD		; $05 ORA zpg
-.byte OP_LOAD|OP_STORE 		; $06 ASL zpg
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $05 ORA zpg
+.byte OP_LOAD|OP_STORE|OP_FLAG 	; $06 ASL zpg
 .byte $00			; ---
 .byte OP_STACK|OP_STORE		; $08 PHP
-.byte OP_REG_A			; $09 ORA #
-.byte OP_REG_A			; ASL A
+.byte OP_REG_A|OP_FLAG		; $09 ORA #
+.byte OP_REG_A|OP_FLAG		; ASL A
 .byte $00			; ---
 .byte $00			; ---
-.byte OP_LOAD|OP_REG_A		; $0d ORA abs
-.byte OP_LOAD|OP_STORE		; $0e ASL abs
+.byte OP_LOAD|OP_REG_A|OP_FLAG	; $0d ORA abs
+.byte OP_LOAD|OP_STORE|OP_FLAG	; $0e ASL abs
 .byte $00			; ---
 
 ; $1-
 .byte OP_PC			; $10 BPL rel
-.byte OP_REG_A|OP_LOAD		; $11 ORA ind,y
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $11 ORA ind,y
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
-.byte OP_REG_A|OP_LOAD		; $15 ORA zpg,x
-.byte OP_LOAD|OP_STORE 		; $16 ASL zpg,x
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $15 ORA zpg,x
+.byte OP_LOAD|OP_STORE|OP_FLAG 	; $16 ASL zpg,x
 .byte $00			; ---
 .byte OP_FLAG			; $18 CLC
-.byte OP_REG_A|OP_LOAD		; $19 ORA abs,y
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $19 ORA abs,y
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
-.byte OP_LOAD|OP_REG_A		; $1d ORA abs,x
-.byte OP_LOAD|OP_STORE		; $1e ASL abs,x
+.byte OP_LOAD|OP_REG_A|OP_FLAG	; $1d ORA abs,x
+.byte OP_LOAD|OP_STORE|OP_FLAG	; $1e ASL abs,x
 .byte $00			; ---
 
 ; $2-
 .byte OP_PC|OP_STACK|OP_STORE	; $20 JSR abs
-.byte OP_REG_A|OP_LOAD		; $21 AND x,ind
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $21 AND x,ind
 .byte $00			; ---
 .byte $00			; ---
 .byte OP_FLAG|OP_LOAD		; $24 BIT zpg
-.byte OP_REG_A|OP_LOAD		; $25 AND zpg
-.byte OP_LOAD|OP_STORE 		; $26 ROL zpg
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $25 AND zpg
+.byte OP_LOAD|OP_STORE|OP_FLAG	; $26 ROL zpg
 .byte $00			; ---
 .byte OP_FLAG|OP_STACK|OP_LOAD	; $28 PLP
-.byte OP_REG_A     		; $29 AND #
-.byte OP_REG_A			; $2a ROL A
+.byte OP_REG_A|OP_FLAG   	; $29 AND #
+.byte OP_REG_A|OP_FLAG		; $2a ROL A
 .byte $00			; ---
 .byte OP_FLAG|OP_LOAD		; $2c BIT abs
-.byte OP_LOAD|OP_REG_A		; $2d AND abs
-.byte OP_LOAD|OP_STORE	        ; $2e ROL abs
+.byte OP_LOAD|OP_REG_A|OP_FLAG	; $2d AND abs
+.byte OP_LOAD|OP_STORE|OP_FLAG  ; $2e ROL abs
 .byte $00			; ---
 
 ; $3-
 .byte OP_PC			; $30 BMI rel
-.byte OP_REG_A|OP_LOAD		; $31 AND ind,y
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $31 AND ind,y
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
-.byte OP_REG_A|OP_LOAD		; $35 AND zpg,x
-.byte OP_LOAD|OP_STORE 		; $36 ROL zpg,x
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $35 AND zpg,x
+.byte OP_LOAD|OP_STORE|OP_FLAG 	; $36 ROL zpg,x
 .byte $00			; ---
 .byte OP_FLAG			; $38 SEC
-.byte OP_REG_A|OP_LOAD    	; $39 AND abs,y
+.byte OP_REG_A|OP_LOAD|OP_FLAG 	; $39 AND abs,y
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
-.byte OP_LOAD|OP_REG_A		; $3d AND abs,x
-.byte OP_LOAD|OP_STORE	        ; $3e ROL abs,x
+.byte OP_LOAD|OP_REG_A|OP_FLAG	; $3d AND abs,x
+.byte OP_LOAD|OP_STORE|OP_FLAG	; $3e ROL abs,x
 .byte $00			; ---
 
 ; $4-
 .byte OP_STACK|OP_PC|OP_LOAD|OP_FLAG	; $40 RTI
-.byte OP_REG_A|OP_LOAD			; $41 EOR x, ind
+.byte OP_REG_A|OP_LOAD|OP_FLAG		; $41 EOR x, ind
 .byte $00				; ---
 .byte $00				; ---
 .byte $00				; ---
-.byte OP_REG_A|OP_LOAD			; $45 EOR zpg
-.byte OP_LOAD|OP_STORE 			; $46 LSR zpg
+.byte OP_REG_A|OP_LOAD|OP_FLAG		; $45 EOR zpg
+.byte OP_LOAD|OP_STORE|OP_FLAG 		; $46 LSR zpg
 .byte $00				; ---
 .byte OP_STACK|OP_STORE			; $48 PHA
 .byte OP_REG_A				; $49 EOR #
 .byte OP_REG_A                  	; $4a LSR A
 .byte $00				; ---
 .byte OP_PC				; $4c JMP abs
-.byte OP_LOAD|OP_REG_A			; $4d EOR abs
-.byte OP_LOAD|OP_STORE			; $4e LSR abs
+.byte OP_LOAD|OP_REG_A|OP_FLAG		; $4d EOR abs
+.byte OP_LOAD|OP_STORE|OP_FLAG		; $4e LSR abs
 .byte $00				; ---
 
 ; $5-
 .byte OP_PC			; $50 BVC rel
-.byte OP_REG_A|OP_LOAD		; $51 EOR ind,y
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $51 EOR ind,y
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
-.byte OP_REG_A|OP_LOAD		; $55 EOR zpg,x
-.byte OP_LOAD|OP_STORE 		; $56 LSR zpg,x
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $55 EOR zpg,x
+.byte OP_LOAD|OP_STORE|OP_FLAG 	; $56 LSR zpg,x
 .byte $00			; ---
 .byte OP_FLAG			; $58 CLI
-.byte OP_REG_A|OP_LOAD    	; $59 EOR abs,y
+.byte OP_REG_A|OP_LOAD|OP_FLAG  ; $59 EOR abs,y
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
-.byte OP_LOAD|OP_REG_A		; $5d EOR abs,x
-.byte OP_LOAD|OP_STORE	        ; $5e LSR abs,x
+.byte OP_LOAD|OP_REG_A|OP_FLAG	; $5d EOR abs,x
+.byte OP_LOAD|OP_STORE|OP_FLAG	; $5e LSR abs,x
 .byte $00			; ---
 
 ; $6-
 .byte OP_STACK|OP_PC|OP_LOAD	; $60 RTS
-.byte OP_REG_A|OP_LOAD		; $61 ADC x,ind
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $61 ADC x,ind
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
-.byte OP_REG_A|OP_LOAD		; $65 ADC zpg
-.byte OP_LOAD|OP_STORE 		; $66 ROR zpg
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $65 ADC zpg
+.byte OP_LOAD|OP_STORE|OP_FLAG 	; $66 ROR zpg
 .byte $00			; ---
-.byte OP_STACK|OP_LOAD|OP_REG_A	; $68 PLA
-.byte OP_REG_A			; $69 ADC #
-.byte OP_REG_A                  ; $6a ROR A
+.byte OP_STACK|OP_LOAD|OP_REG_A|OP_FLAG	; $68 PLA
+.byte OP_REG_A|OP_FLAG		; $69 ADC #
+.byte OP_REG_A|OP_FLAG          ; $6a ROR A
 .byte $00			; ---
 .byte OP_PC|OP_LOAD		; $4c JMP (ind)
-.byte OP_LOAD|OP_REG_A		; $4d ADC abs
-.byte OP_LOAD|OP_STORE	        ; $4e ROR abs
+.byte OP_LOAD|OP_REG_A|OP_FLAG	; $4d ADC abs
+.byte OP_LOAD|OP_STORE|OP_FLAG  ; $4e ROR abs
 .byte $00			; ---
 
 ; $7-
 .byte OP_PC			; $70 BVS rel
-.byte OP_REG_A|OP_LOAD		; $71 ADC ind,y
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $71 ADC ind,y
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
-.byte OP_REG_A|OP_LOAD		; $75 ADC zpg,x
-.byte OP_LOAD|OP_STORE 		; $76 ROR zpg,x
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $75 ADC zpg,x
+.byte OP_LOAD|OP_STORE|OP_FLAG	; $76 ROR zpg,x
 .byte $00			; ---
 .byte OP_FLAG			; $78 SEI
-.byte OP_REG_A|OP_LOAD    	; $79 ADC abs,y
+.byte OP_REG_A|OP_LOAD|OP_FLAG 	; $79 ADC abs,y
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
-.byte OP_LOAD|OP_REG_A		; $7d ADC abs,x
-.byte OP_LOAD|OP_STORE  	; $7e ROR abs,x
+.byte OP_LOAD|OP_REG_A|OP_FLAG	; $7d ADC abs,x
+.byte OP_LOAD|OP_STORE|OP_FLAG 	; $7e ROR abs,x
 .byte $00			; ---
 
 ; $8-
@@ -1010,9 +1010,9 @@ side_effects_tab:
 .byte OP_STORE   		; $85 STA zpg
 .byte OP_STORE 		        ; $86 STX zpg
 .byte $00			; ---
-.byte OP_REG_Y              	; $88 DEY
+.byte OP_REG_Y|OP_FLAG         	; $88 DEY
 .byte $00			; ---
-.byte OP_REG_A                  ; $8a TXA
+.byte OP_REG_A|OP_FLAG          ; $8a TXA
 .byte $00			; ---
 .byte OP_STORE			; $8c STY abs
 .byte OP_STORE			; $8d STA abs
@@ -1028,7 +1028,7 @@ side_effects_tab:
 .byte OP_STORE   		; $95 STA zpg,x
 .byte OP_STORE 		        ; $96 STX zpg,y
 .byte $00			; ---
-.byte OP_REG_A              	; $98 TYA
+.byte OP_REG_A|OP_FLAG         	; $98 TYA
 .byte OP_STORE                	; $99 STA abs,Y
 .byte OP_STACK			; $9a TXS
 .byte $00			; ---
@@ -1038,39 +1038,39 @@ side_effects_tab:
 .byte $00			; ---
 
 ; $A-
-.byte OP_REG_Y			; $a0 LDY #
-.byte OP_LOAD|OP_REG_A		; $a1 LDA x,ind
-.byte OP_REG_X			; $a2 LDX #
+.byte OP_REG_Y|OP_FLAG		; $a0 LDY #
+.byte OP_LOAD|OP_REG_A|OP_FLAG	; $a1 LDA x,ind
+.byte OP_REG_X|OP_FLAG		; $a2 LDX #
 .byte $00			; ---
-.byte OP_LOAD|OP_REG_Y		; $a4 LDY zpg
-.byte OP_LOAD|OP_REG_A 		; $a5 LDA zpg
-.byte OP_LOAD|OP_REG_X	        ; $a6 LDX zpg
+.byte OP_LOAD|OP_REG_Y|OP_FLAG	; $a4 LDY zpg
+.byte OP_LOAD|OP_REG_A|OP_FLAG	; $a5 LDA zpg
+.byte OP_LOAD|OP_REG_X|OP_FLAG  ; $a6 LDX zpg
 .byte $00			; ---
-.byte OP_REG_Y              	; $a8 TAY
-.byte OP_REG_A			; $a9 LDA #
-.byte OP_REG_X                  ; $aa TAX
+.byte OP_REG_Y|OP_FLAG        	; $a8 TAY
+.byte OP_REG_A|OP_FLAG		; $a9 LDA #
+.byte OP_REG_X|OP_FLAG          ; $aa TAX
 .byte $00			; ---
-.byte OP_LOAD|OP_REG_Y		; $ac LDY abs
-.byte OP_LOAD|OP_REG_A		; $ad LDA abs
-.byte OP_LOAD|OP_REG_X		; $ae LDX abs
+.byte OP_LOAD|OP_REG_Y|OP_FLAG	; $ac LDY abs
+.byte OP_LOAD|OP_REG_A|OP_FLAG	; $ad LDA abs
+.byte OP_LOAD|OP_REG_X|OP_FLAG	; $ae LDX abs
 .byte $00			; ---
 
 ; $B-
 .byte OP_PC                     ; $b0 BCS rel
-.byte OP_LOAD|OP_REG_A		; $b1 LDA ind,y
+.byte OP_LOAD|OP_REG_A|OP_FLAG	; $b1 LDA ind,y
 .byte $00			; ---
 .byte $00			; ---
-.byte OP_LOAD|OP_REG_Y		; $b4 LDY zpg,x
-.byte OP_LOAD|OP_REG_A 		; $b5 LDA zpg,x
-.byte OP_LOAD|OP_REG_X	        ; $b6 LDX zpg,y
+.byte OP_LOAD|OP_REG_Y|OP_FLAG	; $b4 LDY zpg,x
+.byte OP_LOAD|OP_REG_A|OP_FLAG	; $b5 LDA zpg,x
+.byte OP_LOAD|OP_REG_X|OP_FLAG  ; $b6 LDX zpg,y
 .byte $00			; ---
 .byte OP_FLAG               	; $b8 CLV
-.byte OP_REG_A|OP_LOAD		; $b9 LDA abs,y
-.byte OP_REG_X                  ; $ba TSX
+.byte OP_REG_A|OP_LOAD|OP_FLAG	; $b9 LDA abs,y
+.byte OP_REG_X|OP_FLAG          ; $ba TSX
 .byte $00			; ---
-.byte OP_LOAD|OP_REG_Y		; $bc LDY abs,y
-.byte OP_LOAD|OP_REG_A		; $bd LDA abs,x
-.byte OP_LOAD|OP_REG_X		; $be LDX abs,y
+.byte OP_LOAD|OP_REG_Y|OP_FLAG	; $bc LDY abs,y
+.byte OP_LOAD|OP_REG_A|OP_FLAG	; $bd LDA abs,x
+.byte OP_LOAD|OP_REG_X|OP_FLAG	; $be LDX abs,y
 .byte $00			; ---
 
 ; $C-
@@ -1088,7 +1088,7 @@ side_effects_tab:
 .byte $00			; ---
 .byte OP_FLAG|OP_LOAD   	; $cc CPY abs
 .byte OP_FLAG|OP_LOAD     	; $cd CMP abs
-.byte OP_LOAD|OP_STORE		; $ce DEC abs
+.byte OP_LOAD|OP_STORE|OP_FLAG	; $ce DEC abs
 .byte $00			; ---
 
 ; $D-
@@ -1098,7 +1098,7 @@ side_effects_tab:
 .byte $00			; ---
 .byte $00			; ---
 .byte OP_LOAD|OP_FLAG  		; $d5 CMP zpg,x
-.byte OP_LOAD|OP_STORE	        ; $d6 DEC zpg,x
+.byte OP_LOAD|OP_STORE|OP_FLAG  ; $d6 DEC zpg,x
 .byte $00			; ---
 .byte OP_FLAG               	; $d8 CLD
 .byte OP_REG_A|OP_STORE|OP_FLAG	; $d9 CMP abs,y
@@ -1119,7 +1119,7 @@ side_effects_tab:
 .byte OP_LOAD|OP_STORE|OP_FLAG  ; $e6 INC zpg
 .byte $00			; ---
 .byte OP_REG_X|OP_FLAG          ; $e8 INX
-.byte OP_REG_A	                ; $e9 SBC #
+.byte OP_REG_A|OP_FLAG	        ; $e9 SBC #
 .byte $00			; $ea NOP
 .byte $00			; ---
 .byte OP_FLAG|OP_LOAD   	; $ec CPX abs
@@ -1129,12 +1129,12 @@ side_effects_tab:
 
 ; $F-
 .byte OP_PC                     ; $f0 BEQ rel
-.byte OP_LOAD|OP_FLAG 		; $f1 SBC ind,y
+.byte OP_LOAD|OP_FLAG|OP_FLAG	; $f1 SBC ind,y
 .byte $00			; ---
 .byte $00			; ---
 .byte $00			; ---
 .byte OP_LOAD|OP_FLAG|OP_REG_A 	; $f5 SBC zpg,x
-.byte OP_LOAD|OP_STORE	        ; $f6 INC zpg,x
+.byte OP_LOAD|OP_STORE|OP_FLAG  ; $f6 INC zpg,x
 .byte $00			; ---
 .byte OP_FLAG               	; $f8 SED
 .byte OP_REG_A|OP_FLAG|OP_LOAD  ; $f9 SBC abs,y
