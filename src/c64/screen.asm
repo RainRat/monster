@@ -55,7 +55,11 @@
 :	sta SCREEN_ADDR,x
 	sta SCREEN_ADDR+$100,x
 	sta SCREEN_ADDR+$200,x
-	sta SCREEN_ADDR+$300,x
+	dex
+	bne :-
+
+	ldx #$e8
+:	sta SCREEN_ADDR+$300-1,x
 	dex
 	bne :-
 
@@ -78,6 +82,12 @@
         sta COLMEM_ADDR+$300,y
 	dey
         bne @l0
+
+	ldy #$e8
+:	sta SCREEN_ADDR+$300-1,y
+	dey
+	bne :-
+
         rts
 .endproc
 

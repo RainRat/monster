@@ -21,6 +21,10 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 ; CLR
 .export __run_clr
 .proc __run_clr
+	ldxy #@save_done	; need to pass return address
+	jmp dbg::save_user_zp
+@save_done:
+
 	; TODO: run cold start (or enough of it to get C64 in intial state)
 	jsr bsp::save_prog_state
 

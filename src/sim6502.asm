@@ -827,7 +827,6 @@ msave=*+1
 
 @err:	; an important memory location will be clobbered
 	inc __sim_vital_addr_clobbered
-	jmp *
 	sec
 	rts
 

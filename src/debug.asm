@@ -578,7 +578,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 
 	lda #$00
 	sta step_out_depth
-	jsr bsp::install_tracer
+	js4 bsp::install_tracer
 
 	jsr print_tracing
 @trace: lda stop_tracing
@@ -830,7 +830,8 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	ldxy sim::pc			; address of instruction
 	jsr sim::get_side_effects	; get state that will be clobbered/used
 
-	; clear watch flags
+;---------------------------------------
+; update watch values and mark them as no longer dirty
 	ldx watch::num
 	beq @step
 
@@ -854,6 +855,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	dex
 	bne @l0
 
+;---------------------------------------
 ; perform the step
 @step:	pla			; get instruction size
 	ldxy sim::pc		; and address of instruction to-be-executed

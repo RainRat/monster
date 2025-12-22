@@ -24,6 +24,7 @@
 .include "settings.inc"
 .include "string.inc"
 .include "strings.inc"
+.include "target.inc"
 .include "text.inc"
 .include "zeropage.inc"
 
@@ -373,9 +374,6 @@ screen: .res LINESIZE*HEIGHT
 	bcs @clrline
 	pha
 
-	lda #$7f
-	sta $911d	; ack all interrupts
-
 	lda #$00
 	sta __monitor_outfile	; default to screen
 	sta __monitor_int	; reset SIGINT
@@ -422,8 +420,7 @@ screen: .res LINESIZE*HEIGHT
 	bne @done
 	jmp @prompt
 
-@done:	lda #$7f
-	sta $911e		; disable NMIs
+@done:	TRACE_OFF
 
 	; restore the cursor
 	lda cursave_x
