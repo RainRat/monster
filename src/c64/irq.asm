@@ -26,9 +26,6 @@
 	ldxy #hw_irq_handler
 	stxy $fffe		; hardware vector
 
-	lda #$34
-	sta $01
-
 	cli
 	rts
 .endproc

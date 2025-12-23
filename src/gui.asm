@@ -394,6 +394,9 @@ __gui_reenter = __gui_activate
 ; cause the breakpoints GUI to populate with new data.
 .export __gui_refresh
 .proc __gui_refresh
+	lda stackdepth
+	beq exit
+
 	; copy the persistent GUI state to the zeropage
 	jsr copyvars
 	bcc redraw_state

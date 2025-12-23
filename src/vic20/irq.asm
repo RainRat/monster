@@ -285,6 +285,7 @@ rowcnt: .byte 0
 	lda #$00|$7f
 	sta $911e
 	sta $912e
+
 	cli
 	rts
 .endproc

@@ -1,4 +1,5 @@
 .include "bsp.inc"
+.include "debug.inc"
 .include "reu.inc"
 .include "../asmflags.inc"
 .include "../debug.inc"
@@ -49,6 +50,8 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 ; GO
 .export __run_go
 .proc __run_go
+	; enable NMI's to catch user's RESTORE key
+	TRACE_ON
 	rts
 .endproc
 
