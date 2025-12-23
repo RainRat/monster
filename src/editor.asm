@@ -65,7 +65,7 @@
 .include "c64/c64.inc"
 .endif
 
-;******************************************************************************
+;*******************************************************************************
 ; CONSTANTS
 MODE_COMMAND     = 1
 MODE_INSERT      = 2
@@ -79,7 +79,7 @@ MAX_JUMPS = 8
 VISUAL      = 1
 VISUAL_LINE = 2
 
-;******************************************************************************
+;*******************************************************************************
 ; ZEROPAGE
 height = zp::editor+1	; height of the text-editor (shrinks when displaying
 			; error, showing debugger, etc.
@@ -89,7 +89,7 @@ mode = zp::editor_mode	; editor mode (COMMAND, INSERT)
 __edit_height = height
 
 .BSS
-;******************************************************************************
+;*******************************************************************************
 readonly:  .byte 0	; if !0 no edits are allowed to be made via the editor
 
 .export __edit_debugging
@@ -198,7 +198,7 @@ main:	jsr key::getch
 	bne main	; branch always (continue main loop)
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; HANDLE_KEY
 ; Handles a keypress within the editor
 ; IN:
@@ -224,7 +224,7 @@ main:	jsr key::getch
 	jmp text::status
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; LABEL_ADDR_OR_ORG
 ; Returns the address of the label given in .XY or, if no label is given (a
 ; 0-length string is given) the address of the program origin
@@ -245,7 +245,7 @@ main:	jsr key::getch
 @label:	jmp expr::eval
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; ENTER MONITOR
 ; Activates the monitor
 .export __edit_enter_monitor
@@ -254,7 +254,7 @@ main:	jsr key::getch
 	JUMP FINAL_BANK_MONITOR, mon::enter
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; MONITOR
 ; Activates the monitor and restores the editor when it exits
 .proc monitor
@@ -266,7 +266,7 @@ main:	jsr key::getch
 	jmp scr::restore
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; EXIT CONSOLE
 ; Returns from the console
 .export __edit_exit_monitor
@@ -275,7 +275,7 @@ main:	jsr key::getch
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; COMMAND_GO
 ; :g <symbol>
 ; Begins execution at the address of the given symbol.
@@ -291,7 +291,7 @@ main:	jsr key::getch
 	jmp (zp::jmpvec)
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; COMMAND_DEBUG
 ; Starts the debugger at the address specified by the given label.
 ; If no label is given (a 0-length string is given) then begins debugging at
@@ -326,7 +326,7 @@ main:	jsr key::getch
 	jmp dbg::start	; start debugging at address in .XY
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; COMMAND ASSEMBLE FILE
 ; :a <filename>
 ; Assembles the given filename
@@ -375,7 +375,7 @@ main:	jsr key::getch
 @done:	jmp display_result
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; COMMAND_LINK
 ; Opens the "LINK" file from disk, parses it, and links all object files
 ; on the same disk
@@ -408,7 +408,7 @@ main:	jsr key::getch
 @done:	jmp irq::on
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; COMMAND ASM TO OBJ
 ; Assembles the entire source of the active source buffer to an object file
 ; of the given name
@@ -459,7 +459,7 @@ main:	jsr key::getch
 	jmp irq::on
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; COMMAND_ASM
 ; Assembles the entire source of the active source buffer
 ; OUT:
@@ -900,7 +900,7 @@ main:	jsr key::getch
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; ONKEY
 ; Handles a keypress from the user in INSERT mode
 .proc onkey
@@ -1001,7 +1001,7 @@ main:	jsr key::getch
 @done:	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; CANCEL
 ; If not in COMMAND mode, just enters command mode
 ; If already in command mode: clears auxiliary views (if any active), errors,
@@ -1019,7 +1019,7 @@ main:	jsr key::getch
 	; fall through to reset_size
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; RESET SIZE
 ; Resets the display to the largest size
 .proc reset_size
@@ -2469,7 +2469,7 @@ main:	jsr key::getch
 	; fall through to refresh
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; REFRESH
 ; Redraws the screen
 .export __edit_refresh
@@ -2539,7 +2539,7 @@ __edit_refresh:
 	jmp text::restorebuff	; restore current line data
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; RESIZE
 ; Resizes the editor to the given number of rows. The cursor is moved to be
 ; within the new size if it would be out of bounds.
@@ -2563,7 +2563,7 @@ __edit_refresh:
 	jmp refresh
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; PRINT LINE
 ; Prints the line buffer at the given cursor's y-position and handles
 ; highlighting/coloring (if applicable).
@@ -2587,7 +2587,7 @@ __edit_refresh:
 @done:	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; SET BREAKPOINT
 ; Creates a breakpoint at the cursor's current file/line number or removes it
 ; if one already exists
@@ -2636,7 +2636,7 @@ __edit_set_breakpoint:
 	jmp gui::refresh
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; NEW BUFFER
 ; Creates a new buffer and sets it as the new active buffer
 ; or returns an error if one could not be made
@@ -2654,7 +2654,7 @@ __edit_set_breakpoint:
 	jmp refresh
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; CLOSE_BUFFER
 ; Frees the current source buffer and moves to the previous buffer (if there
 ; is one) or a new source.
@@ -2668,7 +2668,7 @@ __edit_set_breakpoint:
 :	jmp refresh	; refresh the new buffer
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; NEXT_BUFFER
 ; Moves to the source buffer before the active one. If we are already at the
 ; first buffer, does nothing
@@ -2683,7 +2683,7 @@ __edit_set_breakpoint:
 @done:	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; PREV_BUFFER
 ; Moves to the source buffer after the active one. If we are already at the
 ; last buffer, does nothing
@@ -2699,7 +2699,7 @@ __edit_set_breakpoint:
 @done:	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; UDG_EDIT
 ; Activates the UDG character editor module
 .proc udgedit
@@ -2781,7 +2781,7 @@ __edit_set_breakpoint:
 .endif
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; BUFFER NAVIGATION HANDLERS
 buffer1: lda #$00
 	 skw
@@ -4575,7 +4575,7 @@ goto_buffer:
 	; fall through to FIND LAST SEARCH
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; FIND LAST SEARCH
 ; Searches for the next/previous occurrence of the string in mem::findbuff
 .proc find_last_search
@@ -4585,7 +4585,7 @@ goto_buffer:
 	; fall through to FIND
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; FIND
 ; Searches for the text given in .YX and moves the cursor to it if it's
 ; found
@@ -4816,7 +4816,7 @@ goto_buffer:
 @done:	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; NEXT_ERR
 ; Navigates the cursor to the next error from the error log
 .proc next_err
@@ -4825,7 +4825,7 @@ goto_buffer:
 	jmp gotoline
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; GOTOLINE
 ; Sets the editor to the line in .YX and refreshes the screen.
 ; IN:
@@ -5078,7 +5078,7 @@ __edit_gotoline:
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; HIGHLIGHT
 ; If the row that should be highlighted is visible, highlight it
 .proc highlight
@@ -5104,7 +5104,7 @@ __edit_gotoline:
 	jmp toggle_highlight	; highlight was NOT visible, but is now
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; SCROLLDOWN
 ; scrolls everything in the given range of rows and highlights the row that
 ; is scrolled in (if highlight is enabled)
@@ -5129,7 +5129,7 @@ __edit_gotoline:
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; REPORT DRIVE ERROR
 ; Reports the error that was last read from the drive (iec::readerr)
 .proc report_drive_error
@@ -5138,7 +5138,7 @@ __edit_gotoline:
 	jmp key::waitch
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; REPORT TYPEIN ERROR
 ; Reports just the error message for the given error.
 ; This is used for giving the user realtime errors as they are typing in their
@@ -5151,7 +5151,7 @@ __edit_gotoline:
 	jmp beep::short
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; SRC2SCREEN
 ; Takes the given source line number and returns its row position on the screen.
 ; IN:
@@ -5197,7 +5197,7 @@ __edit_gotoline:
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; ADD JUMP POINT
 ; Adds a jump point at the current source position
 .proc add_jump_point
@@ -5234,7 +5234,7 @@ __edit_gotoline:
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; JUMPBACK
 ; Jumps back to the last source position the user has jumped from
 .export jumpback
@@ -5254,7 +5254,7 @@ __edit_gotoline:
 	jmp gotoline
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; IS READONLY
 ; Returns .Z set if the buffer should not allow edits (true if readonly has
 ; been explictly enabled or if we are in a VISUAL editing mode)
@@ -5267,7 +5267,7 @@ __edit_gotoline:
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; CMP VIS START
 ; Checks if the source cursor is on the line that the visual selection began
 ; on.  Assumes that we are in VISUAL/(LINE) mode
@@ -5278,7 +5278,7 @@ __edit_gotoline:
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; IS VISUAL
 ; Returns .Z set if the current mode is VISUAL or VISUAL_LINE
 ; OUT:
@@ -5292,7 +5292,7 @@ __edit_gotoline:
 :	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; SET_HIGHLIGHT
 ; Sets the line to highlight and enables line-highlight
 ; IN:
@@ -5315,7 +5315,7 @@ __edit_gotoline:
 	; fall through to toggle_highlight
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; TOGGLE_HIGHLIGHT
 ; Unhighlights the highlighted row if it's already highlighted or highlights
 ; if it it isn't
@@ -5335,7 +5335,7 @@ __edit_gotoline:
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; PRINT_INFO
 ; Updates the status line with the given info message and refreshses the status
 .proc print_info
@@ -5343,7 +5343,7 @@ __edit_gotoline:
 	jmp text::print
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; CURRENT FILE ID
 ; Returns the debug file ID of the active source buffer as well as the current
 ; line we are on in that buffer
@@ -5363,7 +5363,7 @@ __edit_gotoline:
 
 .RODATA
 
-;******************************************************************************
+;*******************************************************************************
 ; TOGGLE AUTOFORMAT
 ; Toggles auto-formatting enable/disable
 .proc toggle_autoformat
