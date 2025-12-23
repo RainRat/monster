@@ -94,6 +94,8 @@ copytabhi: .hibytes copytab
 ;******************************************************************************
 ; RESTORE DEBUG STATE
 ; Restores the saved debugger state
+.export restore_debug_visual
+restore_debug_visual:
 .export __fastcopy_restore_debug_state
 .proc __fastcopy_restore_debug_state
 	ldx #proc_ids::RESTORE_DEBUG_STATE
@@ -162,6 +164,8 @@ copytabhi: .hibytes copytab
 ; SAVE DEBUG STATE
 ; saves memory likely to be clobbered by the user's
 ; program (namely the screen)
+.export save_debug_visual
+save_debug_visual:
 .export save_debug_state
 .proc save_debug_state
 @vicsave=dbg9000

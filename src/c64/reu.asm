@@ -185,6 +185,62 @@ tab_num_elements: .word 0
 .endproc
 
 ;*******************************************************************************
+; LOAD DELAYED
+; Loads the C64 with data from the given source 24-bit address to the given
+; C64 address
+; This version of the routine can load in the entire 16-bit address space
+; IN:
+;   - reu::c64_addr: destination address (24 bit)
+;   - reu::reu_addr: source address (24 bit)
+;   - reu::len:      the number of bytes to copy (16-bit)
+.export __reu_load_delayed
+.proc __reu_load_delayed
+	lda #$36
+	sta $01
+
+	lda #$81	; transfer REU -> C64 (delayed)
+	sta $df01
+
+	jsr mapreu
+
+	lda #$34
+	sta $01
+
+	lda $ff00
+	sta $ff00
+
+	rts
+.endproc
+
+;*******************************************************************************
+; STORE DELAYED
+; Stores the C64 memory from the given source 24-bit address to the given
+; REU address
+; This version of the routine can load in the entire 16-bit address space
+; IN:
+;   - reu::c64_addr: the source address (24 bit)
+;   - reu::reu_addr: the destination address (24 bit)
+;   - reu::len:      the number of bytes to copy (16-bit)
+.export __reu_store_delayed
+.proc __reu_store_delayed
+	lda #$36
+	sta $01
+
+	jsr mapreu
+
+	lda #$80	; transfer C64 RAM -> REU delayed
+	sta $df01
+
+	lda #$34
+	sta $01
+
+	lda $ff00
+	sta $ff00
+
+	rts
+.endproc
+
+;*******************************************************************************
 ; COMPARE
 ; Compares the data at reuaddr and c64addr for up to reu::txlen bytes.
 ; OUT:

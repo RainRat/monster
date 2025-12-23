@@ -12,6 +12,10 @@
 	restore_prog_visual = __fastcopy_restore_prog_visual
 	save_debug_state    = __fastcopy_save_debug_state
 	save_prog_state     = __fastcopy_save_prog_state
+
+	; aliases
+	save_debug_visual    = __fastcopy_save_debug_state
+	restore_debug_visual = __fastcopy_restore_debug_state
 .endscope
 
 ;*******************************************************************************

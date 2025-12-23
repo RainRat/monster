@@ -741,7 +741,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	jsr draw::coloroff
 
 	; bring in the visible state from the user program
-	jsr bsp::save_debug_state
+	jsr bsp::save_debug_visual
 	jsr bsp::restore_prog_visual
 
 	; wait for a key to swap the state back
@@ -751,7 +751,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	inc mem::coloron
 
 	; restore debugger state
-	jmp bsp::restore_debug_state
+	jmp bsp::restore_debug_visual
 .endproc
 
 ;******************************************************************************

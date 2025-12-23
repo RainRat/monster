@@ -1,4 +1,5 @@
 .include "bsp.inc"
+.include "reu.inc"
 .include "../asmflags.inc"
 .include "../debug.inc"
 .include "../macros.inc"
@@ -33,7 +34,6 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 	ldxy #@restore_dbg_done		; need to pass return address
 	jmp dbg::save_debug_zp
 @restore_dbg_done:
-
 	rts
 .endproc
 
@@ -106,7 +106,7 @@ stephandler:
 	sta STEP_RESTORE_A
 
 	; make I/O visible
-	lda #$36
+	lda #$34
 	sta $01
 
 	; store user byte if it's used
@@ -135,8 +135,6 @@ STEP_EXEC_BUFFER:
 	php
 
 	pha
-	lda #$34
-	sta $01
 	lda #$2f
 	sta $00
 	pla

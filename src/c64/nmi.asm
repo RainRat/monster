@@ -14,6 +14,8 @@ nmis_disabled: .byte 0
 	beq @done
 
 	IO_BEGIN
+	lda #$7f
+	sta $dd0d
 	bit $dd0d	; ACK NMI
 	IO_DONE
 
@@ -33,8 +35,10 @@ nmis_disabled: .byte 0
 
         lda #<@nmi
         sta $0318
+	sta $fffa
         lda #>@nmi
         sta $0319
+	sta $fffb
 
 	; generate an NMI with timer A
         lda #$00
@@ -46,7 +50,6 @@ nmis_disabled: .byte 0
         sta $dd0d	; set NMI source as timer A
         lda #$01
         sta $dd0e	; start timer
-	lda $dd0d	; ack NMI to enable it
 
 	IO_DONE
 @done:	rts

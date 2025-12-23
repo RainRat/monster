@@ -8,6 +8,7 @@ C64_REU_INC = 1
 .import __reu_find
 .import __reu_init
 .import __reu_load
+.import __reu_load_delayed
 .import __reu_load1
 .import __reu_loadb
 .import __reu_loadb_off
@@ -16,6 +17,7 @@ C64_REU_INC = 1
 .import __reu_reu_addr
 .import __reu_swap
 .import __reu_store
+.import __reu_store_delayed
 .import __reu_store1
 .import	__reu_storeb
 .import __reu_storeb_off
@@ -29,9 +31,11 @@ C64_REU_INC = 1
 
 ; address of virtual memory state
 REU_VMEM_ADDR           = $fe0000
+REU_VMEM_IO             = $fd0000
+REU_VMEM_ROM            = $fc0000
 
 ; backup of Monster's state while debugging
-REU_BACKUP_ADDR         = $fd0000
+REU_BACKUP_ADDR         = $fb0000
 
 ; address in the REU to save/restore C64 data to
 REU_TMP_ADDR            = $ff0000
@@ -42,6 +46,7 @@ REU_TMP_ADDR            = $ff0000
 	compare        = __reu_compare
 	find           = __reu_find
 	load           = __reu_load
+	load_delayed   = __reu_load_delayed
 	loadb          = __reu_loadb
 	load1          = __reu_load1
 	loadb_off      = __reu_loadb_off
@@ -50,6 +55,7 @@ REU_TMP_ADDR            = $ff0000
 	move           = __reu_move
 	reuaddr        = __reu_reu_addr
 	store          = __reu_store
+	store_delayed  = __reu_store_delayed
 	store1         = __reu_store1
 	storeb         = __reu_storeb
 	storeb_off     = __reu_storeb_off
