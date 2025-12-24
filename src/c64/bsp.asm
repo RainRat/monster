@@ -69,7 +69,7 @@ PROGRAM_STACK_START = $1e0
 
 	ldxy #$fff0-1
 	stxy reu::txlen
-	jmp reu::load
+	jmp reu::load_delayed
 .endproc
 
 ;*******************************************************************************
@@ -85,7 +85,7 @@ PROGRAM_STACK_START = $1e0
 	sta reu::reuaddr+2
 	ldxy #$fff0-1
 	stxy reu::txlen
-	jmp reu::store
+	jmp reu::store_delayed
 .endproc
 
 ;******************************************************************************

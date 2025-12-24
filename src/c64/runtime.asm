@@ -17,6 +17,10 @@
 .import __TRAMPOLINE_LOAD__
 .import __TRAMPOLINE_SIZE__
 
+.import __NMI_HANDLER_RUN__
+.import __NMI_HANDLER_LOAD__
+.import __NMI_HANDLER_SIZE__
+
 .import __STEP_EPILOGUE_RUN__
 .import __STEP_EPILOGUE_LOAD__
 .import __STEP_EPILOGUE_SIZE__
@@ -47,6 +51,7 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 ; INIT
 .export __run_init
 .proc __run_init
+	jsr install_nmi
 	jsr install_step
 	jsr install_trampoline
 	rts
@@ -56,7 +61,7 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 ; GO
 .export __run_go
 .proc __run_go
-	; enable NMI's to catch user's RESTORE key
+	jsr bsp::save_debug_state
 	TRACE_ON
 
 	lda #$34	; make all RAM available
@@ -73,19 +78,31 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 	ldxy #$e000
 	stxy reu::c64addr
 	stxy reu::reuaddr
+	lda #^REU_VMEM_ADDR
+	sta reu::reuaddr+2
 	ldxy #$2000-$08
 	stxy reu::txlen
 	jsr reu::load_delayed
+
+	; install the SW/HW NMI handler
+	lda #<nmi_handler
+	sta $fffa
+	lda #>nmi_handler
+	sta $fffb
 
 	; set up the REU in preparation of swapping to the user's program
 	; ($0001-$cfxx)
 	lda #$36			; expose REU registers
 	sta $01
 
+	; enable NMI's to catch user's RESTORE key
+
 	ldxy #$0001
 	stxy $df02			; C64 addr
 	stxy $df04			; REU addr
-	ldxy #__TRAMPOLINE_RUN__-1
+	lda #^REU_VMEM_ADDR
+	sta $df04+2
+	ldxy #__NMI_HANDLER_RUN__-1
 	stxy $df07			; length
 
 	; bounce to the user's program
@@ -133,7 +150,7 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 @dst=r2
 	; copy the STEP handler to the user program and our RAM
 	;.assert stephandler_size < $100
-	ldy #<stephandler_size
+	ldy #<stephandler_size-1
 @l0:	lda __STEPHANDLER_LOAD__,y
 	sta __STEPHANDLER_RUN__,y
 	dey
@@ -149,6 +166,64 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 	rts
 .endproc
 
+;******************************************************************************
+; INSTALL NMI
+; Installs the NMI handler
+.proc install_nmi
+	ldy #<nmi_handler_size-1
+@l0:	lda __NMI_HANDLER_LOAD__,y
+	sta __NMI_HANDLER_RUN__,y
+	dey
+	bpl @l0
+.endproc
+
+.segment "NMI_HANDLER"
+;******************************************************************************
+; NMI HANDLER
+; Handles an NMI (RESTORE key) or BRK to return to the debugger
+nmi_handler:
+	pha		; NMI handler
+	txa
+	pha
+	tya
+	pha
+
+	; save the current state of the program
+	; TODO: also save I/O
+	; ($0001-$ceff)
+	ldx #$01
+	stx $df02
+	stx $df04
+	dex
+	stx $df02+1
+	stx $df04+1
+	ldx #<($cf00-1)
+	stx $df07
+	ldx #>($cf00-1)
+	stx $df07+1
+	ldx #^REU_VMEM_ADDR
+	stx $df04+2
+
+	lda #$36
+	sta $01
+	lda #$81|$20
+	sta $df01	; C64 -> REU (delayed) + autoload
+
+	ldx $ff00
+	stx $ff00
+
+	; load program back
+	ldx #^REU_BACKUP_ADDR
+	stx $df04+2
+	lda #$81|$20
+	sta $df01	; REU -> C64 (delayed) + autoload
+
+	ldx $ff00
+	stx $ff00
+
+	jmp dbg::reenter
+nmi_handler_size=*-nmi_handler
+
 .segment "TRAMPOLINE"
 ;******************************************************************************
 ; TRAMPOLINE
@@ -159,6 +234,11 @@ trampoline:
 TRAMPOLINE_PROG01=*+1
 	lda #$00
 	sta $01		; set bank register to user's value
+
+	lda #<nmi_handler
+	sta $0318
+	lda #>nmi_handler
+	sta $0319
 
 	; restore .A
 TRAMPOLINE_A=*+1
