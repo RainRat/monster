@@ -1,6 +1,7 @@
 .include "bsp.inc"
 .include "debug.inc"
 .include "reu.inc"
+.include "vaddrs.inc"
 .include "../asmflags.inc"
 .include "../debug.inc"
 .include "../macros.inc"
@@ -11,6 +12,10 @@
 .import __STEPHANDLER_RUN__
 .import __STEPHANDLER_LOAD__
 .import __STEPHANDLER_SIZE__
+
+.import __TRAMPOLINE_RUN__
+.import __TRAMPOLINE_LOAD__
+.import __TRAMPOLINE_SIZE__
 
 .import __STEP_EPILOGUE_RUN__
 .import __STEP_EPILOGUE_LOAD__
@@ -42,7 +47,8 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 ; INIT
 .export __run_init
 .proc __run_init
-	jsr install_step	; install the STEP handler
+	jsr install_step
+	jsr install_trampoline
 	rts
 .endproc
 
@@ -52,13 +58,67 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 .proc __run_go
 	; enable NMI's to catch user's RESTORE key
 	TRACE_ON
-	rts
+
+	lda #$34	; make all RAM available
+	sta $01
+	lda $ff00	; load current value of $ff00 so we don't clobber it
+
+	lda prog00+1
+	sta TRAMPOLINE_PROG01
+
+	ldxy sim::pc
+	stxy TRAMPOLINE_PC
+
+	; swap in the memory above $d000
+	ldxy #$e000
+	stxy reu::c64addr
+	stxy reu::reuaddr
+	ldxy #$2000-$08
+	stxy reu::txlen
+	jsr reu::load_delayed
+
+	; set up the REU in preparation of swapping to the user's program
+	; ($0001-$cfxx)
+	lda #$36			; expose REU registers
+	sta $01
+
+	ldxy #$0001
+	stxy $df02			; C64 addr
+	stxy $df04			; REU addr
+	ldxy #__TRAMPOLINE_RUN__-1
+	stxy $df07			; length
+
+	; bounce to the user's program
+	ldx sim::reg_x
+	ldy sim::reg_y
+	lda sim::reg_p
+	pha
+	lda sim::reg_a
+	sta TRAMPOLINE_A
+
+	lda #$91			; command to load from REU
+	sei
+	jmp trampoline
 .endproc
 
 ;*******************************************************************************
 ; GO BASIC
 .export __run_go_basic
 .proc __run_go_basic
+	rts
+.endproc
+
+;******************************************************************************
+; INSTALL TRAMPOLINE
+; Installs the "trampoline" code at the top of the user and debug RAM
+; This code lets us switch to the user bank and begin executing code there
+.proc install_trampoline
+	; copy the TRAMPOLINE handler to the user program and our RAM
+	ldy #<trampoline_size-1
+@l0:	lda __TRAMPOLINE_LOAD__,y
+	sta __TRAMPOLINE_RUN__,y
+	dey
+	bpl @l0
 	rts
 .endproc
 
@@ -72,8 +132,8 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 @cnt=r0
 @dst=r2
 	; copy the STEP handler to the user program and our RAM
-;.assert __STEPHANDLER_SIZE__ < $100
-	ldy #<__STEPHANDLER_SIZE__-1
+	;.assert stephandler_size < $100
+	ldy #<stephandler_size
 @l0:	lda __STEPHANDLER_LOAD__,y
 	sta __STEPHANDLER_RUN__,y
 	dey
@@ -89,8 +149,27 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 	rts
 .endproc
 
-.segment "STEPHANDLER"
+.segment "TRAMPOLINE"
+;******************************************************************************
+; TRAMPOLINE
+; Swaps memory and then jumps to the simulated PC
+trampoline:
+	sta $df01	; load program state from REU (delayed)
 
+TRAMPOLINE_PROG01=*+1
+	lda #$00
+	sta $01		; set bank register to user's value
+
+	; restore .A
+TRAMPOLINE_A=*+1
+	lda #$00
+
+	plp
+TRAMPOLINE_PC=*+1
+	jmp $f00d	; jump to the user's program
+trampoline_size=*-trampoline
+
+.segment "STEPHANDLER"
 .export STEP_MEMORY_VALUE
 .export STEP_EFFECTIVE_ADDR
 
