@@ -18,13 +18,10 @@ SCREEN_W=40
 
 .import __src_bank
 .import labels
-	lda __src_bank
-	lda #FINAL_BANK_SYMBOLS
-	;lda #FINAL_BANK_SOURCE0
-	sta reu::reuaddr+2
-	;ldxy #(labels)
 	ldxy #$0000
 	stxy reu::reuaddr
+	lda #FINAL_BANK_BUFF
+	sta reu::reuaddr+2
 
 	ldxy #$500
 	stxy reu::c64addr

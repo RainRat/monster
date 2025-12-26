@@ -118,8 +118,12 @@ __buff_reverse      = reverse
 
 ;*******************************************************************************
 .export copybuff
-copybuff:
-	.res $1e00	; buffer for copy data
+copybuff:		; buffer for copy data
+.ifdef vic20
+	.res $1e00
+.elseif .defined(c64)
+	.res $ffff
+.endif
 
 .segment "COPYBUFF"
 
@@ -138,6 +142,8 @@ copybuff:
 	stxy @buff
 	cmpw #copybuff+MAX_COPY_SIZE	; buffer is full
 	bcs @done
+	ldx #FINAL_BANK_BUFF
+	stx reu::reuaddr+2
 	ldy #$00
 	STOREB_Y @buff
 

@@ -1,3 +1,4 @@
+.import select_bank_linker
 .import select_bank_symbols
 .import select_bank_debuginfo
 .import select_bank_debuginfo
@@ -31,15 +32,17 @@
 .endmacro
 
 .macro SELECT_BANK bank
-.if .match ("SYMBOLS", bank)
+.if .xmatch ("SYMBOLS", bank)
 	jsr select_bank_symbols
-.elseif .match("DEBUGINFO", bank)
+.elseif .xmatch("DEBUGINFO", bank)
 	jsr select_bank_debuginfo
-.elseif .match("LINKER", bank)
+.elseif .xmatch("LINKER", bank)
 	jsr select_bank_linker
-.elseif .match("COPYBUFF", bank)
+.elseif .xmatch("COPYBUFF", bank)
 	jsr select_bank_copybuff
-.elseif .match("MACRO", bank)
+.elseif .xmatch("MACRO", bank)
 	jsr select_bank_macro
+.else
+	.error "invalid bank"
 .endif
 .endmacro
