@@ -138,12 +138,11 @@ copybuff:		; buffer for copy data
 .proc putch
 @buff=r0
 	SELECT_BANK "COPYBUFF"
+
 	ldxy buffptr
 	stxy @buff
 	cmpw #copybuff+MAX_COPY_SIZE	; buffer is full
 	bcs @done
-	ldx #FINAL_BANK_BUFF
-	stx reu::reuaddr+2
 	ldy #$00
 	STOREB_Y @buff
 
@@ -169,6 +168,7 @@ copybuff:		; buffer for copy data
 	SELECT_BANK "COPYBUFF"
 	ldxy buffptr
 	stxy @buff
+
 	cmpw #copybuff
 	beq @done		; buffer empty
 
@@ -260,7 +260,7 @@ copybuff:		; buffer for copy data
 	cmp #$0d
 	beq @ok
 	ldy @i
-	STOREB_Y @dst
+	sta (@dst),y
 	inc @i
 	bne @l0
 
@@ -268,7 +268,7 @@ copybuff:		; buffer for copy data
 @ok:	pha
 	lda #$00
 	ldy @i
-	STOREB_Y @dst	; terminate the line
+	sta (@dst),y	; terminate the line
 	pla
 	clc
 @done:	rts
