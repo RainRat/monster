@@ -36,6 +36,7 @@ REU_VMEM_ROM            = $fc0000
 
 ; backup of Monster's state while debugging
 REU_BACKUP_ADDR         = $fb0000
+REU_BACKUP_IO           = $fa0000
 
 ; address in the REU to save/restore C64 data to
 REU_TMP_ADDR            = $ff0000

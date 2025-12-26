@@ -61,15 +61,18 @@ PROGRAM_STACK_START = $1e0
 .proc __bsp_restore_debug_state
 	; just restore everything
 	; TODO: don't be lazy
-	ldxy #$0001
+	ldxy #$0800
 	stxy reu::c64addr
 	stxy reu::reuaddr
 	lda #^REU_BACKUP_ADDR
 	sta reu::reuaddr+2
 
-	ldxy #$fff0-1
+	ldxy #$10000-$800
 	stxy reu::txlen
-	jmp reu::load_delayed
+	jsr reu::load_delayed
+
+	jsr __bsp_restore_debug_visual
+	rts
 .endproc
 
 ;*******************************************************************************
@@ -78,14 +81,16 @@ PROGRAM_STACK_START = $1e0
 .proc __bsp_save_debug_state
 	; just save everything
 	; TODO: don't be lazy
-	ldxy #$0001
+	ldxy #$0800
 	stxy reu::c64addr
 	stxy reu::reuaddr
 	lda #^REU_BACKUP_ADDR
 	sta reu::reuaddr+2
-	ldxy #$fff0-1
+
+	ldxy #$10000-$800
 	stxy reu::txlen
-	jmp reu::store_delayed
+	jsr reu::store_delayed
+	jmp __bsp_save_debug_visual
 .endproc
 
 ;******************************************************************************
@@ -94,15 +99,16 @@ PROGRAM_STACK_START = $1e0
 .proc __bsp_restore_prog_state
 	; just restore everything
 	; TODO: don't be lazy
-	ldxy #$0001
+	ldxy #$0800
 	stxy reu::c64addr
 	stxy reu::reuaddr
 	lda #^REU_VMEM_ADDR
 	sta reu::reuaddr+2
 
-	ldxy #$fff0-1
+	ldxy #$10000-$800
 	stxy reu::txlen
-	jmp reu::load_delayed
+	jsr reu::load_delayed
+	jmp __bsp_restore_prog_visual
 .endproc
 
 ;******************************************************************************
@@ -113,19 +119,18 @@ PROGRAM_STACK_START = $1e0
 	ldxy #$0400
 	stxy reu::c64addr
 	stxy reu::reuaddr
+	stxy reu::txlen
 	lda #^REU_BACKUP_ADDR
 	sta reu::reuaddr+2
-	ldxy #$0800
-	stxy reu::txlen
 	jsr reu::store
 
-	; load the VIC-II registers and color memory
+	; save the VIC-II registers and color memory
 	ldxy #$d000
 	stxy reu::c64addr
 	stxy reu::reuaddr
-	lda #^REU_BACKUP_ADDR
+	lda #^REU_BACKUP_IO
 	sta reu::reuaddr+2
-	ldxy #$0be7
+	ldxy #$be7
 	stxy reu::txlen
 	jmp reu::store
 .endproc
@@ -138,21 +143,44 @@ PROGRAM_STACK_START = $1e0
 	ldxy #$0400
 	stxy reu::c64addr
 	stxy reu::reuaddr
+	stxy reu::txlen
 	lda #^REU_BACKUP_ADDR
 	sta reu::reuaddr+2
-	ldxy #$0800
-	stxy reu::txlen
 	jsr reu::load
 
 	; load the VIC-II registers and color memory
 	ldxy #$d000
 	stxy reu::c64addr
 	stxy reu::reuaddr
-	lda #^REU_BACKUP_ADDR
+	lda #^REU_BACKUP_IO
 	sta reu::reuaddr+2
-	ldxy #$0be7
+	ldxy #$be7
 	stxy reu::txlen
 	jmp reu::load
+.endproc
+
+;******************************************************************************
+; SAVE PROG VISUAL
+.export __bsp_save_prog_visual
+.proc __bsp_save_prog_visual
+	ldxy #$0400
+	stxy reu::c64addr
+	stxy reu::reuaddr
+	lda #^REU_VMEM_ADDR
+	sta reu::reuaddr+2
+	ldxy #$400
+	stxy reu::txlen
+	jsr reu::store
+
+	; save the VIC-II registers and color memory
+	ldxy #$d000
+	stxy reu::c64addr
+	stxy reu::reuaddr
+	lda #^REU_VMEM_IO
+	sta reu::reuaddr+2
+	ldxy #$be7
+	stxy reu::txlen
+	jmp reu::store
 .endproc
 
 ;******************************************************************************
@@ -165,7 +193,7 @@ PROGRAM_STACK_START = $1e0
 	stxy reu::reuaddr
 	lda #^REU_VMEM_ADDR
 	sta reu::reuaddr+2
-	ldxy #$0800
+	ldxy #$0400
 	stxy reu::txlen
 	jsr reu::load
 
@@ -175,7 +203,7 @@ PROGRAM_STACK_START = $1e0
 	stxy reu::reuaddr
 	lda #^REU_VMEM_IO
 	sta reu::reuaddr+2
-	ldxy #$0be7
+	ldxy #$be7
 	stxy reu::txlen
 	jmp reu::load
 .endproc
@@ -185,27 +213,17 @@ PROGRAM_STACK_START = $1e0
 ; Saves memory clobbered by the debugger (screen, I/O registers and color)
 .export __bsp_save_prog_state
 .proc __bsp_save_prog_state
-	; just save everything
-	; TODO: don't be lazy
-	ldxy #$0001
+	ldxy #$0800
 	stxy reu::c64addr
 	stxy reu::reuaddr
 	lda #^REU_VMEM_ADDR
 	sta reu::reuaddr+2
 
-	ldxy #$fff0-1
+	ldxy #$10000-$800
 	stxy reu::txlen
 	jsr reu::store_delayed
 
-	; save the I/O area
-	ldxy #$d000
-	stxy reu::c64addr
-	stxy reu::reuaddr
-	lda #^REU_VMEM_IO
-	sta reu::reuaddr+2
-	ldxy #$1000
-	stxy reu::txlen
-	jmp reu::store
+	jmp __bsp_save_prog_visual
 .endproc
 
 ;******************************************************************************

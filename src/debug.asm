@@ -93,6 +93,7 @@ debugtmp = zp::debuggertmp	; scratchpad
 ; $00-$200 is stored in the main BSS segment for faster access by the simulator
 .export prog00
 prog00:	.res $400	; $00-$0400
+.export dbg00
 dbg00:  .res $400	; $00-$400
 
 
@@ -993,8 +994,14 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 .export __debug_swap_out
 .proc __debug_swap_out
 	; save the program state before we restore the debugger's
+	; NOTE: c64 already saves program state (necessarily)
+.ifndef c64
 	jsr bsp::save_prog_state
 	jmp bsp::restore_debug_state		; restore debugger state
+.else
+	jsr bsp::save_prog_visual
+	jmp bsp::restore_debug_visual
+.endif
 .endproc
 
 ;*******************************************************************************

@@ -30,6 +30,11 @@
 
 STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 
+.CODE
+;*******************************************************************************
+nop_handler:
+	rti
+
 ;*******************************************************************************
 ; CLR
 .export __run_clr
@@ -40,6 +45,10 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 
 	; TODO: run cold start (or enough of it to get C64 in intial state)
 	jsr bsp::save_prog_state
+
+	ldxy #nop_handler
+	stxy $0318
+	stxy $fffa
 
 	ldxy #@restore_dbg_done		; need to pass return address
 	jmp dbg::save_debug_zp
@@ -61,12 +70,10 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 ; GO
 .export __run_go
 .proc __run_go
-	jsr bsp::save_debug_state
 	TRACE_ON
 
 	lda #$34	; make all RAM available
 	sta $01
-	lda $ff00	; load current value of $ff00 so we don't clobber it
 
 	lda prog00+1
 	sta TRAMPOLINE_PROG01
@@ -74,7 +81,7 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 	ldxy sim::pc
 	stxy TRAMPOLINE_PC
 
-	; swap in the memory above $d000
+	; swap in the memory above $e000
 	ldxy #$e000
 	stxy reu::c64addr
 	stxy reu::reuaddr
@@ -84,34 +91,55 @@ STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 	stxy reu::txlen
 	jsr reu::load_delayed
 
+	; save the debugger's ZP and bring in the user's one
+	ldxy #@save_dbg_done		; need to pass return address
+	jmp dbg::save_debug_zp
+@save_dbg_done:
+	ldxy #@restore_done		; need to pass return address
+	jmp dbg::restore_user_zp
+@restore_done:
+
+	jsr bsp::save_debug_state
+	jsr bsp::restore_prog_visual
+
+	lda #$34
+	sta $01
+
 	; install the SW/HW NMI handler
 	lda #<nmi_handler
 	sta $fffa
+	sta $0318
 	lda #>nmi_handler
 	sta $fffb
-
-	; set up the REU in preparation of swapping to the user's program
-	; ($0001-$cfxx)
-	lda #$36			; expose REU registers
-	sta $01
-
-	; enable NMI's to catch user's RESTORE key
-
-	ldxy #$0001
-	stxy $df02			; C64 addr
-	stxy $df04			; REU addr
-	lda #^REU_VMEM_ADDR
-	sta $df04+2
-	ldxy #__NMI_HANDLER_RUN__-1
-	stxy $df07			; length
+	sta $0319
 
 	; bounce to the user's program
+	ldx sim::reg_sp
+	txs
 	ldx sim::reg_x
 	ldy sim::reg_y
 	lda sim::reg_p
 	pha
 	lda sim::reg_a
 	sta TRAMPOLINE_A
+
+	lda #$36			; expose REU registers
+	sta $01
+
+	; prepare REU registers to load from $800 up to the NMI handler addr
+	lda #$00
+	sta $df02
+	sta $df04
+	lda #$08
+	sta $df02+1
+	sta $df04+1
+	lda #^REU_VMEM_ADDR
+	sta $df04+2
+
+	lda #<(__NMI_HANDLER_RUN__-$800)
+	sta $df07
+	lda #>(__NMI_HANDLER_RUN__-$800)
+	sta $df07+1
 
 	lda #$91			; command to load from REU
 	sei
@@ -188,39 +216,35 @@ nmi_handler:
 	tya
 	pha
 
-	; save the current state of the program
-	; TODO: also save I/O
-	; ($0001-$ceff)
-	ldx #$01
-	stx $df02
-	stx $df04
-	dex
-	stx $df02+1
-	stx $df04+1
-	ldx #<($cf00-1)
-	stx $df07
-	ldx #>($cf00-1)
-	stx $df07+1
-	ldx #^REU_VMEM_ADDR
-	stx $df04+2
-
 	lda #$36
 	sta $01
-	lda #$81|$20
-	sta $df01	; C64 -> REU (delayed) + autoload
 
-	ldx $ff00
-	stx $ff00
+	; save the current state of the program
+	; ($0800-$ceff)
+	lda #$00
+	sta $df02
+	sta $df04
+	lda #$08
+	sta $df02+1
+	sta $df04+1
+	lda #^REU_VMEM_ADDR
+	sta $df04+2
+
+	lda #<(__NMI_HANDLER_RUN__-$800)
+	sta $df07
+	lda #>(__NMI_HANDLER_RUN__-$800)
+	sta $df07+1
+	lda #$90|$20	; load + autoload
+	sta $df01	; C64 -> REU + autoload
 
 	; load program back
-	ldx #^REU_BACKUP_ADDR
-	stx $df04+2
-	lda #$81|$20
-	sta $df01	; REU -> C64 (delayed) + autoload
+	lda #^REU_BACKUP_ADDR
+	sta $df04+2
+	lda #$91
+	sta $df01	; REU -> C64
 
-	ldx $ff00
-	stx $ff00
-
+	lda #$34
+	sta $01
 	jmp dbg::reenter
 nmi_handler_size=*-nmi_handler
 
@@ -229,7 +253,7 @@ nmi_handler_size=*-nmi_handler
 ; TRAMPOLINE
 ; Swaps memory and then jumps to the simulated PC
 trampoline:
-	sta $df01	; load program state from REU (delayed)
+	sta $df01	; load program state from REU
 
 TRAMPOLINE_PROG01=*+1
 	lda #$00
