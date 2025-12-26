@@ -2520,8 +2520,7 @@ __edit_refresh:
 	inx
 	bcs @done
 	stx zp::cury
-	lda #COLOR_NORMAL
-	jsr draw::hline
+	jsr draw::resetline
 	lda zp::cury
 	jsr scr::clrline		; clear the bitmap data for this row
 	jmp @clr
@@ -3583,8 +3582,7 @@ goto_buffer:
 
 	; and clear the color of the newly opened line
 	ldx zp::cury
-	lda #COLOR_NORMAL
-	jsr draw::hline
+	jsr draw::resetline
 
 @setcur:
 	jsr src::get

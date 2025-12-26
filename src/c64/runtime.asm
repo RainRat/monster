@@ -320,10 +320,5 @@ STEP_EXEC_BUFFER:
 	nop
 	php
 
-	pha
-	lda #$2f
-	sta $00
-	pla
-
 	jmp step_done		; done -> update simulator with new state
 stephandler_size=*-stephandler

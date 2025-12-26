@@ -16,7 +16,6 @@
 .include "vic20/vaddrs.inc"
 
 .import STEP_HANDLER_ADDR
-.import STEP_EXEC_BUFFER
 
 .import is_internal_address
 .import write_step

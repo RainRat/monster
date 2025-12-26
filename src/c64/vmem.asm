@@ -1,3 +1,4 @@
+.include "ram.inc"
 .include "reu.inc"
 .include "../errors.inc"
 .include "../macros.inc"
@@ -22,21 +23,33 @@ savexy: .word 0
 ;  - .A: the byte at the physical address
 .export __vmem_load
 .proc __vmem_load
+@tmp=zp::banktmp
 	stxy savexy
 
 	jsr __vmem_translate
-	stxy reu::reuaddr
+	cmp #FINAL_BANK_MAIN
+	bne :+
+
+@00:	stxy @tmp
+	ldy #$00
+	lda (@tmp),y
+	jmp @done
+
+:	stxy reu::reuaddr
 	cmp #^REU_VMEM_ROM
 	bne :+
-@rom: lda $01
+
+@rom:	lda $01
 	pha
-	lda #$33
+	lda #$33		; expose ROM
 	sta $01
 	stxy @addr
 @addr=*+1
 	ldx $f00d
+
 	pla
-	sta $01
+	sta $01			; restore bank register
+
 	txa
 	jmp @done
 
@@ -81,17 +94,26 @@ savexy: .word 0
 ;  - .A:  the byte to store
 .export __vmem_store
 .proc __vmem_store
-@tmp=zp::banktmp
+@addr=zp::banktmp
 	stxy savexy
 
 	pha
 	jsr __vmem_translate
-	stxy reu::reuaddr
+	cmp #FINAL_BANK_MAIN
+	bne :+
+
+@00:	stxy @addr
+	ldy #$00
+	pla
+	sta (@addr),y
+	jmp @done
+
+:	stxy reu::reuaddr
 	sta reu::reuaddr+2
 	pla
 	jsr reu::store1
 
-	ldxy savexy		; restore .XY
+@done:	ldxy savexy		; restore .XY
 	rts
 .endproc
 
@@ -130,7 +152,15 @@ savexy: .word 0
 ;  - .A:  the bank number of the physical address
 .export __vmem_translate
 .proc __vmem_translate
-	; check the bank register to see if virtual address is:
+	cpy #>$0400
+	bcs :+
+
+@00:	; $00-$400 is stored in the prog00 buffer
+	add16 #(prog00-$00)
+	lda #FINAL_BANK_MAIN
+	rts
+
+:	; check the bank register to see if virtual address is:
 	; - virtual RAM
 	; - virtual I/O
 	;%0xx: Character ROM visible at $D000-$DFFF. (Except for the value %000, see above.)

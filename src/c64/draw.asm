@@ -6,23 +6,43 @@
 .include "../memory.inc"
 .include "../zeropage.inc"
 
+; mirrored from draw.inc
+COLOR_TEXT    = 0
+COLOR_NORMAL  = 1
+COLOR_RVS     = 2
+COLOR_BRKON   = 3
+COLOR_BRKOFF  = 4
+COLOR_SUCCESS = 5
+COLOR_SELECT  = 6
+
+
 .CODE
 
 ;******************************************************************************
 ; HILINE
 .export __draw_hiline
 .proc __draw_hiline
-	lda #$55
-	jmp __draw_hline
+	cmp #COLOR_NORMAL
+	bne __draw_hline
 .endproc
 
 ;******************************************************************************
 ; RESETLINE
 .export __draw_resetline
 .proc __draw_resetline
-	lda #$11
+@dst=r0
+	ldy c64::rowslo,x
+	sty @dst
+	ldy c64::rowshi,x
+	sty @dst+1
 
-	; fall through
+	ldy #SCREEN_WIDTH-1
+:	lda (@dst),y
+	and #$7f
+	sta (@dst),y
+	dey
+	bpl :-
+	rts
 .endproc
 
 ;******************************************************************************
@@ -34,17 +54,17 @@
 .export __draw_hline
 .proc __draw_hline
 @dst=r0
-	IO_BEGIN
-	ldy c64::crowslo,x
+	ldy c64::rowslo,x
 	sty @dst
-	ldy c64::crowshi,x
+	ldy c64::rowshi,x
 	sty @dst+1
 
 	ldy #SCREEN_WIDTH-1
-:	sta (@dst),y
+:	lda (@dst),y
+	ora #$80
+	sta (@dst),y
 	dey
 	bpl :-
-	IO_DONE
 	rts
 .endproc
 
