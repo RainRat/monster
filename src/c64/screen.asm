@@ -76,9 +76,10 @@
 ;  - .A: the color to fill the screen with
 .export __screen_clrcolor
 .proc __screen_clrcolor
-	rts
+	IO_BEGIN
+
 	ldy #$00
-	lda #TEXT_COLOR
+	lda prefs::text_color
 @l0:    sta COLMEM_ADDR,y
         sta COLMEM_ADDR+$100,y
         sta COLMEM_ADDR+$200,y
@@ -86,11 +87,7 @@
 	dey
         bne @l0
 
-	ldy #$e8
-:	sta SCREEN_ADDR+$300-1,y
-	dey
-	bne :-
-
+	IO_DONE
         rts
 .endproc
 
@@ -359,7 +356,7 @@
 	txa
 	clc
 	adc @offset
-	cmp #NUM_ROWS
+	cmp #NUM_ROWS-1
 	bcs @next		; destination is off screen, skip
 
 	tay

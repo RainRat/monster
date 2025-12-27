@@ -107,8 +107,6 @@ NUM_TABLES   = 7
 
 	jsr scr::clrcolor
 	lda __prefs_normal_color
-	sta $900f
-
 	jsr draw::refresh_colors
 	jmp irq::on
 .endproc
