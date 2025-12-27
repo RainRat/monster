@@ -111,4 +111,14 @@ start:
 	lda #DEFAULT_DEVICE
 	sta zp::device
 
+	; clear row colors
+	lda #DEFAULT_900F
+	ldx #24-1
+:	lda #DEFAULT_900F
+	sta mem::rowcolors,x
+	lda #COLOR_NORMAL
+	sta mem::rowcolors_idx,x
+	dex
+	bpl :-
+
 	jmp edit::init

@@ -1,6 +1,7 @@
 .include "c64.inc"
 .include "layout.inc"
 .include "macros.inc"
+.include "prefs.inc"
 .include "settings.inc"
 .include "../macros.inc"
 .include "../memory.inc"
@@ -15,15 +16,14 @@ COLOR_BRKOFF  = 4
 COLOR_SUCCESS = 5
 COLOR_SELECT  = 6
 
-
 .CODE
 
 ;******************************************************************************
 ; HILINE
 .export __draw_hiline
 .proc __draw_hiline
-	cmp #COLOR_NORMAL
-	bne __draw_hline
+	lda #COLOR_RVS
+	jmp __draw_hline
 .endproc
 
 ;******************************************************************************
@@ -31,18 +31,9 @@ COLOR_SELECT  = 6
 .export __draw_resetline
 .proc __draw_resetline
 @dst=r0
-	ldy c64::rowslo,x
-	sty @dst
-	ldy c64::rowshi,x
-	sty @dst+1
+	lda #COLOR_NORMAL
 
-	ldy #SCREEN_WIDTH-1
-:	lda (@dst),y
-	and #$7f
-	sta (@dst),y
-	dey
-	bpl :-
-	rts
+	; fall through to __draw_hline
 .endproc
 
 ;******************************************************************************
@@ -54,17 +45,44 @@ COLOR_SELECT  = 6
 .export __draw_hline
 .proc __draw_hline
 @dst=r0
+	sta mem::rowcolors_idx,x
+	sty @savey
+
+	; look up real color from palette
+	tay
+	lda prefs::palette,y
+
+	; look up color from palette
+	sta mem::rowcolors,x
+
 	ldy c64::rowslo,x
 	sty @dst
 	ldy c64::rowshi,x
 	sty @dst+1
 
+	cmp prefs::normal_color
+	bne @rvs
+@norvs:
+	; unreverse characters
+	ldy #SCREEN_WIDTH-1
+:	lda (@dst),y
+	and #$7f
+	sta (@dst),y
+	dey
+	bpl :-
+	bmi @done
+
+@rvs:	; reverse the characters for the row
 	ldy #SCREEN_WIDTH-1
 :	lda (@dst),y
 	ora #$80
 	sta (@dst),y
 	dey
 	bpl :-
+
+@done:
+@savey=*+1
+	ldy #$00
 	rts
 .endproc
 
@@ -91,8 +109,33 @@ COLOR_SELECT  = 6
 ;  - .A: the amount to scroll
 .export __draw_scrollcolorsu
 .proc __draw_scrollcolorsu
-	; TODO:
-	rts
+@n=r0
+@last=r1
+	sty @last
+	cpx @last
+	bcs @done
+	sta @n
+
+	; get start row + scroll amount
+	txa
+	clc
+	adc @n
+	tay
+	cmp @last
+	bcs @done		; if first row + n >= last row, don't scroll
+@l0:	lda mem::rowcolors,y	; start+.X
+	sta mem::rowcolors,x	; start+.A+.X
+	lda mem::rowcolors_idx,y
+	sta mem::rowcolors_idx,x
+	inx
+	iny
+	cpx @last
+	bne @l0
+	lda prefs::normal_color
+	sta mem::rowcolors,x	; clear last row
+	lda #COLOR_NORMAL
+	sta mem::rowcolors_idx,x
+@done:	rts
 .endproc
 
 ;******************************************************************************
@@ -103,8 +146,9 @@ COLOR_SELECT  = 6
 ;  - .Y: the last row to scroll
 .export __draw_scrollcolorsd1
 .proc __draw_scrollcolorsd1
-	; TODO:
-	rts
+	lda #$01
+
+	; fall through to __draw_scrollcolorsd
 .endproc
 
 ;******************************************************************************
@@ -117,8 +161,39 @@ COLOR_SELECT  = 6
 ;  - .A: the amount to scroll
 .export __draw_scrollcolorsd
 .proc __draw_scrollcolorsd
-	; TODO:
-	rts
+@last=r0
+@start=r1
+	stx @start
+	sty @last
+
+	clc
+	adc @last
+	tay
+
+	ldx @last
+	cpx @start
+	beq @done		; nothing to scroll
+@l0:	cpy @last		; is the target in the scroll range?
+	beq :+
+	bcs :++			; if not, skip it
+
+:	lda mem::rowcolors,x	; last_row
+	sta mem::rowcolors,y	; (last_row + amount)
+	lda mem::rowcolors_idx,x
+	sta mem::rowcolors_idx,y
+
+:	; reset the line we just scrolled
+	lda prefs::normal_color
+	sta mem::rowcolors,x
+	lda #COLOR_NORMAL
+	sta mem::rowcolors_idx,x
+
+	dey
+	dex
+	bmi @done
+	cpx @start
+	bcs @l0
+@done:	rts
 .endproc
 
 ;******************************************************************************
@@ -126,7 +201,8 @@ COLOR_SELECT  = 6
 ; Disables color in the interrupt and sets the background to its default color
 .export __draw_coloroff
 .proc __draw_coloroff
-	; TODO:
+	lda #$00
+	sta mem::coloron
 	rts
 .endproc
 
@@ -134,6 +210,11 @@ COLOR_SELECT  = 6
 ; REFRESH COLORS
 .export __draw_refresh_colors
 .proc __draw_refresh_colors
-	; TODO
+	ldx #SCREEN_HEIGHT-1
+@l0:	ldy mem::rowcolors_idx,x
+	lda prefs::palette,y
+	sta mem::rowcolors,x
+	dex
+	bpl @l0
 	rts
 .endproc

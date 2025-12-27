@@ -3,7 +3,10 @@
 ;*******************************************************************************
 
 .include "macros.inc"
+.include "prefs.inc"
 .include "../config.inc"
+.include "../draw.inc"
+.include "../layout.inc"
 .include "../macros.inc"
 .include "../memory.inc"
 .include "../settings.inc"
@@ -211,13 +214,18 @@
 .proc __screen_save
 	; TODO:
 	; save colors
-;	ldx #SCREEN_ROWS*2-1
-;:	lda mem::rowcolors,x
-;	sta mem::rowcolors_save,x
-;	lda #DEFAULT_900F
-;	sta mem::rowcolors,x
-;	dex
-;	bpl :-
+	ldx #SCREEN_HEIGHT*2-1
+:	lda mem::rowcolors_idx,x
+	sta mem::rowcolors_save,x
+
+	lda prefs::normal_color
+	sta mem::rowcolors,x
+
+	lda #COLOR_NORMAL
+	sta mem::rowcolors_idx,x
+
+	dex
+	bpl :-
 
 	jmp __screen_init
 .endproc
@@ -231,13 +239,13 @@
 @buff=r0
 @bm=r2
 	; TODO
-;	; restore the per-row colors
-;	ldx #SCREEN_ROWS*2-1
-;:	lda mem::rowcolors_save,x
-;	sta mem::rowcolors,x
-;	dex
-;	bpl :-
-
+	; restore the per-row colors
+	ldx #SCREEN_HEIGHT*2-1
+:	lda mem::rowcolors_save,x
+	sta mem::rowcolors_idx,x
+	dex
+	bpl :-
+	jmp draw::refresh_colors
 	rts
 .endproc
 
@@ -407,8 +415,9 @@
 __text_puts:
 .export puts
 .proc puts
-@src = zp::text
-@dst = zp::text+2
+@src   = zp::text
+@dst   = zp::text+2
+@color = zp::text+4
 	stxy @src
 
 	tax
@@ -417,10 +426,19 @@ __text_puts:
 	lda __screen_rowshi,x
 	sta @dst+1
 
+	; get the "color" for the row
+	lda mem::rowcolors,x
+	sta @color
+
 	ldy #$00
 @l0:	lda (@src),y
 	jsr asc2scr
-	sta (@dst),y
+	; check if we need to reverse
+	ldx @color
+	cpx prefs::normal_color
+	beq :+
+	ora #$80
+:	sta (@dst),y
 	iny
 	cpy #NUM_COLS
 	bne @l0

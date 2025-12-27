@@ -5,6 +5,7 @@
 ;*******************************************************************************
 
 .include "config.inc"
+.include "layout.inc"
 
 ;*******************************************************************************
 .segment "SPARE"
@@ -34,7 +35,7 @@ __linesave: .res 40
 __mem_coloron: .byte 0
 
 .export __mem_rowcolors
-__mem_rowcolors: .res 24
+__mem_rowcolors: .res SCREEN_HEIGHT
 
 .export __mem_rowcolors_idx
 __mem_rowcolors_idx: .res 24
