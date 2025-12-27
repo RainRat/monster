@@ -52,7 +52,7 @@ CURSOR_LR_MASK      = 2
 
 :	cmp #$c1
 	bcc @done
-	cmp #$db
+	cmp #$da+1
 	bcs @done
 	eor #$80	; if control code, EOR $80
 
