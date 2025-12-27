@@ -34,8 +34,6 @@
 
 .include "ram.inc"
 
-CMD_BUFF = $101
-
 .segment "CONSOLE"
 
 ;*******************************************************************************
@@ -49,7 +47,6 @@ CMD_BUFF = $101
 .export __dbgcmd_run
 .proc __dbgcmd_run
 @cnt=r0
-	CALLMAIN str::toupper	; commands are case insensitive
 	stxy zp::line
 
 	ldy #$00

@@ -33,10 +33,14 @@
 .import is_whitespace	; from monitorcmd.asm
 
 NMI_HANDLER_ADDR = mem::spare+120
-CMD_BUFF         = $101			; written by edit::gets
+
 
 ;*******************************************************************************
 HEIGHT = SCREEN_HEIGHT
+
+.segment "SHAREBSS"
+.export CMD_BUFF
+CMD_BUFF: .res 40		; written by edit::gets
 
 .segment "CONSOLE_VARS"
 .export __monitor_line
@@ -373,8 +377,20 @@ screen: .res LINESIZE*HEIGHT
 	CALLMAIN edit::gets
 	bcs @clrline
 	pha
+	ldxy #$101
+	CALLMAIN str::toupper	; commands are case insensitive
 
-	lda #$00
+	ldx #$00
+	lda $101
+	beq @exec
+
+:	lda $101,x
+	sta CMD_BUFF,x
+	beq @exec
+	inx
+	bne :-
+
+@exec:	lda #$00
 	sta __monitor_outfile	; default to screen
 	sta __monitor_int	; reset SIGINT
 
@@ -395,6 +411,12 @@ screen: .res LINESIZE*HEIGHT
 :	pla
 	cmp #$02		; 2 because prompt makes min length 1
 	bcs @run
+
+	; no input, run the last command (if there is one)
+	lda CMD_BUFF
+	bne @run
+
+	; no previous prompt, get input again
 	jmp @prompt		; if command length is 0, there is no command
 
 @run:	; run the command
