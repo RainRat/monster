@@ -3577,7 +3577,6 @@ goto_buffer:
 	ldx zp::cury
 	ldy height
 	jsr draw::scrollcolorsd1
-	jmp *
 
 	; and clear the color of the newly opened line
 	ldx zp::cury
