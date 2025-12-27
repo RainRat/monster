@@ -752,7 +752,8 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	inc mem::coloron
 
 	; restore debugger state
-	jmp bsp::restore_debug_visual
+	jsr bsp::restore_debug_visual
+	jmp irq::on
 .endproc
 
 ;******************************************************************************

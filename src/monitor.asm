@@ -31,6 +31,7 @@
 .include "ram.inc"
 
 .import is_whitespace	; from monitorcmd.asm
+.import __mon_default_start_set
 
 NMI_HANDLER_ADDR = mem::spare+120
 
@@ -244,6 +245,7 @@ screen: .res LINESIZE*HEIGHT
 .proc __monitor_init
 	lda #$00
 	sta line
+	sta __mon_default_start_set
 	rts
 .endproc
 

@@ -34,6 +34,12 @@
 
 .include "ram.inc"
 
+.segment "CONSOLE_VARS"
+default_start:     .word 0	; default start address for command
+
+.export __mon_default_start_set
+__mon_default_start_set: .byte 0
+
 .segment "CONSOLE"
 
 ;*******************************************************************************
@@ -1264,7 +1270,15 @@
 @start=zp::debuggertmp
 @stop=zp::debuggertmp+2
 	sta @size
-	; get the start address
+	ldy #$00
+	lda (zp::line),y
+	bne :+
+
+	; line is empty use default start address
+	ldxy default_start
+	jmp @default		; jump ahead to compute default stop address
+
+:	; get the start address
 	jsr eval
 	stxy @start
 	bcs @ret
@@ -1281,9 +1295,13 @@
 	clc
 	adc @start
 	sta @stop
+	sta default_start
 	lda @start+1
 	adc #$00
 	sta @stop+1
+	sta default_start+1
+	lda #$01
+	sta __mon_default_start_set
 	jsr eat_whitespace
 	RETURN_OK
 
@@ -1291,6 +1309,10 @@
 	jsr eat_whitespace
 	jsr eval
 	stxy @stop
+	stxy default_start
+	lda #$01
+	sta __mon_default_start_set
+
 	jsr eat_whitespace
 	clc			; ok
 @ret:	rts
