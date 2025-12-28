@@ -1489,6 +1489,7 @@ __debug_remove_breakpoint:
 ; ACTIVATE MONITOR
 ; Activates the text user interface debugger (monitor)
 .proc activate_monitor
+	jsr scr::save
 	jsr bsp::save_debug_state
 	jmp edit::entermonitor
 .endproc

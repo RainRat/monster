@@ -87,6 +87,14 @@
 	dey
         bne @l0
 
+	ldx #SCREEN_HEIGHT-1
+:	lda #COLOR_NORMAL
+	sta mem::rowcolors_idx,x
+	lda prefs::normal_color
+	sta mem::rowcolors,x
+	dex
+	bpl :-
+
 	IO_DONE
         rts
 .endproc
@@ -209,20 +217,30 @@
 ; to scr::restore
 .export __screen_save
 .proc __screen_save
-	; TODO:
+@scr=r0
 	; save colors
-	ldx #SCREEN_HEIGHT*2-1
+	ldx #SCREEN_HEIGHT-1
 :	lda mem::rowcolors_idx,x
 	sta mem::rowcolors_save,x
-
 	lda prefs::normal_color
 	sta mem::rowcolors,x
-
 	lda #COLOR_NORMAL
 	sta mem::rowcolors_idx,x
-
 	dex
 	bpl :-
+
+	; unreverse all characters on screen
+	ldxy #SCREEN_ADDR
+	stxy @scr
+	ldy #$00
+	ldx #$04
+:	lda (@scr),y
+	and #$7f
+	sta (@scr),y
+	dey
+	bne :-
+	dex
+	bne :-
 
 	jmp __screen_init
 .endproc
@@ -235,9 +253,8 @@
 .proc __screen_restore
 @buff=r0
 @bm=r2
-	; TODO
 	; restore the per-row colors
-	ldx #SCREEN_HEIGHT*2-1
+	ldx #SCREEN_HEIGHT-1
 :	lda mem::rowcolors_save,x
 	sta mem::rowcolors_idx,x
 	dex
