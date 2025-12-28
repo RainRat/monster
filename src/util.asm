@@ -528,8 +528,9 @@ result=mem::spare
 ;  - .XY: the address of the string to parse
 ;  - r0: the address to store the parsed string
 ; OUT:
-;  - r0: the text within the quotes (")
-;  - .C: set if the given string was not valid
+;  - r0:  the text within the quotes (")
+;  - .XY: the address where we stopped parsing
+;  - .C:  set if the given string was not valid
 .export __util_parse_enquoted_string
 .proc __util_parse_enquoted_string
 @src=r2
@@ -555,6 +556,7 @@ result=mem::spare
 
 @done:	lda #$00
 	sta (@dst),y	; 0-terminate the string
+	ldxy @src
 	RETURN_OK
 @err:	RETURN_ERR ERR_SYNTAX_ERROR
 .endproc

@@ -1838,8 +1838,13 @@ __asm_tokenize_pass1 = __asm_tokenize
 	clc			; ok
 @ret0:	rts
 
-@cont:	jsr util::parse_enquoted_line
+@cont:	ldxy #@filename
+	stxy r0
+	ldxy zp::line
+	jsr util::parse_enquoted_line
 	bcs @ret0
+	stxy zp::line
+	jsr line::incptr
 
 	ldxy #@filename
 	jsr file::exists
@@ -1864,6 +1869,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	beq @l0			; end of line -> continue
 	cmp #';'
 	beq @l0			; comment (';') -> continue
+
 	cmp #','
 	bne @err		; unexpected character
 	jsr line::incptr
@@ -1879,8 +1885,9 @@ __asm_tokenize_pass1 = __asm_tokenize
 	bne :-
 
 	; get the optional size parameter
-	bcs @err
 	jsr line::process_ws
+	lda (zp::line),y
+	beq @l0			; end of line -> continue
 	cmp #';'
 	beq @l0			; comment (';') -> continue
 	cmp #','
