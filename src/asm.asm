@@ -1827,13 +1827,19 @@ __asm_tokenize_pass1 = __asm_tokenize
 ; current assembly address.
 .proc incbinfile
 @filename=$100
+@offset=r0
+@size=r0
+@size_specified=r2
 	lda state::verify
 	beq @cont
+
+	; don't include a file when verifying
 	lda #ASM_DIRECTIVE
-	RETURN_OK		; don't include a file when verifying
+	clc			; ok
+@ret0:	rts
 
 @cont:	jsr util::parse_enquoted_line
-	bcs @ret
+	bcs @ret0
 
 	ldxy #@filename
 	jsr file::exists
@@ -1849,17 +1855,61 @@ __asm_tokenize_pass1 = __asm_tokenize
 	tax
 	jsr krn::chkin	; CHKIN (use file as input)
 
+	lda #$00
+	sta @size_specified
+
+	; look for the optional offset parameter
+	jsr line::process_ws
+	lda (zp::line),y
+	beq @l0			; end of line -> continue
+	cmp #';'
+	beq @l0			; comment (';') -> continue
+	cmp #','
+	bne @err		; unexpected character
+	jsr line::incptr
+	jsr expr::eval
+	bcs @err
+	stxy @offset
+
+	; read @offset many bytes and throw them away
+:	jsr file::readb
+	bcs @err
+	decw @offset
+	iszero @offset
+	bne :-
+
+	; get the optional size parameter
+	bcs @err
+	jsr line::process_ws
+	cmp #';'
+	beq @l0			; comment (';') -> continue
+	cmp #','
+	bne @err		; unexpected character
+	jsr line::incptr
+	jsr expr::eval
+	bcs @err
+	stxy @size
+	iszero @size
+	beq @eof		; if size is 0, we're done
+	inc @size_specified
+
 @l0:	; read the binary file contents byte-by-byte
 	jsr file::readb
 	bcs @err
 	ldy file::eof
-	bne @eof	; loop until EOF
+	bne @eof		; loop until EOF
 
 	;ldy #$00
-	jsr writeb	; write the byte
+	jsr writeb		; write the byte
 	bcs @err
 	jsr incpc
-	jmp @l0
+	lda @size_specified
+	beq @l0
+
+	; if a size was given, decrement the counter and loop if !0
+	decw @size
+	iszero @size
+	bne @l0
 
 @eof:	clc			; return without err
 @err:	pla			; restore file handle

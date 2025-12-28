@@ -19,6 +19,9 @@ nmis_disabled: .byte 0
 	bit $dd0d	; ACK NMI
 	IO_DONE
 
+	lda #$00
+	sta nmis_disabled
+
 @done:	rts
 .endproc
 
@@ -32,6 +35,12 @@ nmis_disabled: .byte 0
 	inc nmis_disabled
 
 	IO_BEGIN
+
+	; save the existing NMI handler
+	lda $0318
+	pha
+	lda $0319
+	pha
 
         lda #<@nmi
         sta $0318
@@ -51,7 +60,15 @@ nmis_disabled: .byte 0
         lda #$01
         sta $dd0e	; start timer
 
+	pla
+	sta $0318+1
+	sta $fffa+1
+	pla
+	sta $0318
+	sta $fffa
+
 	IO_DONE
+
 @done:	rts
 
 @nmi:	rti
