@@ -1468,7 +1468,8 @@ __mon_default_start_set: .byte 0
 	cmp dbgi::numfiles
 	beq @done
 :	lda @cnt
-	jsr dbgi::get_filename
+	CALL FINAL_BANK_MAIN, dbgi::get_filename
+	bcs @done
 	jsr mon::puts
 	inc @cnt
 	lda @cnt

@@ -110,6 +110,12 @@ debugtmp = block+16
 __debug_file     = file		; the active file
 __debug_src_line = srcline	; the line # stored by dbg::storeline
 
+.segment "SHAREBSS"
+; number of files that we have debug info for
+.export __debug_numfiles
+__debug_numfiles:
+numfiles:   .byte 0
+
 .segment "DEBUGINFO"
 
 ;*******************************************************************************
@@ -202,10 +208,6 @@ __debuginfo_set_seg_id:   BANKJUMP dbgi_proc_ids::SET_SEG_ID
 .segment "DEBUGINFO_VARS"
 
 ;*******************************************************************************
-; number of files that we have debug info for
-.export __debug_numfiles
-__debug_numfiles:
-numfiles:   .byte 0
 numblocks:  .byte 0	; number of blocks that we have debug info for
 block_open: .byte 0	; if !0, we are creating a block, when this is set
 			; creating a new block will first close the open one
