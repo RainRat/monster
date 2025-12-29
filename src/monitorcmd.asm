@@ -1459,6 +1459,25 @@ __mon_default_start_set: .byte 0
 .endproc
 
 ;*******************************************************************************
+; SHOW FILES
+; Shows all files loaded in the debug info
+.proc show_files
+@cnt=zp::debuggertmp
+	lda #$00
+	sta @cnt
+	cmp dbgi::numfiles
+	beq @done
+:	lda @cnt
+	jsr dbgi::get_filename
+	jsr mon::puts
+	inc @cnt
+	lda @cnt
+	cmp dbgi::numfiles
+	bne :-
+@done:	RETURN_OK
+.endproc
+
+;*******************************************************************************
 ; EVAL
 ; Calls "expr::eval" and returns
 ; IN:
@@ -1533,13 +1552,14 @@ commands:
 .byte "zo",0	; step out of current subroutine (if debugging)
 .byte "p",0	; poke a single byte to the given address
 .byte "s",0	; save memory
+.byte "files",0	; shows all files that are loaded in debug-info
 
 .linecont +
 .define command_vectors clear, add_watch, add_watch_load, add_watch_store, \
 	remove_watch, list_watches, list_breakpoints, add_break_addr, \
 	add_break_line, remove_break, fill, dump, move, new, goto, compare, \
 	hunt, __dbgcmd_regs, disasm, assemble, showmem, trace, quit, step, \
-	step_over, go, backtrace, step_out, poke, savemem
+	step_over, go, backtrace, step_out, poke, savemem, show_files
 .linecont -
 commandslo: .lobytes command_vectors
 commandshi: .hibytes command_vectors

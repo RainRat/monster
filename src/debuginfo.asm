@@ -203,6 +203,8 @@ __debuginfo_set_seg_id:   BANKJUMP dbgi_proc_ids::SET_SEG_ID
 
 ;*******************************************************************************
 ; number of files that we have debug info for
+.export __debug_numfiles
+__debug_numfiles:
 numfiles:   .byte 0
 numblocks:  .byte 0	; number of blocks that we have debug info for
 block_open: .byte 0	; if !0, we are creating a block, when this is set
