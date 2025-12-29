@@ -20,7 +20,7 @@ SCREEN_W=40
 .import labels
 	ldxy #$0000
 	stxy reu::reuaddr
-	lda #FINAL_BANK_BUFF
+	lda #FINAL_BANK_MACROS
 	sta reu::reuaddr+2
 
 	ldxy #$500

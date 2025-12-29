@@ -1,7 +1,9 @@
 .include "asm.inc"
+.include "config.inc"
 .include "errors.inc"
 .include "labels.inc"
 .include "macros.inc"
+.include "memory.inc"
 .include "ram.inc"
 .include "string.inc"
 .include "target.inc"
@@ -105,7 +107,7 @@ macros:          .res $1400
 	; store the number of parameters
 	dec @numparams	; decrement to get the # without the macro name
 	lda @numparams
-	sta (@dst),y
+	STOREB_Y @dst
 	incw @dst
 
 	; store the parameters if there are any
@@ -183,6 +185,7 @@ macros:          .res $1400
 @tmplabel=$140
 	SELECT_BANK "MACRO"
 
+	; get the address of the macro from its id
 	asl
 	tax
 	lda macro_addresses,x
@@ -194,38 +197,36 @@ macros:          .res $1400
 	ldy #$00
 	sty @err	; init err to none
 :	incw @macro
-	lda (@macro),y
+	LOADB_Y @macro
 	bne :-
 
 	; define the macro params
 	incw @macro
-	lda (@macro),y
+	LOADB_Y @macro
 	sta @numparams
 	incw @macro
 
 	lda #$00
 	sta @cnt
 @setparams:
+	SELECT_BANK "MACRO"
+
 	lda @cnt
 	cmp @numparams
 	beq @paramsdone
-	asl
-	tax
 
 	; get the value to set the parameter to
+	asl
+	tax
 	lda @params,x
 	sta zp::label_value
 	lda @params+1,x
 	sta zp::label_value+1
 
-	; get the name of the parameter to set the value for
-	ldx @macro
-	ldy @macro+1
-
 	; save the label name for later removal
-	txa
+	lda @macro
 	pha
-	tya
+	lda @macro+1
 	pha
 	inc @cnt
 
@@ -283,6 +284,7 @@ macros:          .res $1400
 	bne @cleanuploop	; if yes, cleanup and exit
 
 @ok:	; move to the next line
+	SELECT_BANK "MACRO"
 	ldy #$00
 :	incw @macro
 	LOADB_Y @macro
@@ -390,8 +392,8 @@ macros:          .res $1400
 ;  .A:       the max length to compare
 ; OUT:
 ;  .Z: set if the strings are equal
-.proc strcmp
 .ifdef vic20
+.proc strcmp
 	tay		; is length 0?
 	dey
 	bmi @match	; if 0-length comparison, it's a match by default
@@ -403,9 +405,10 @@ macros:          .res $1400
 	bpl @l0
 @match:	lda #$00
 @ret:	rts
+.endproc
+
 .else
 strcmp = str::compare
 .endif
-.endproc
 
 endmac:	.byte ".endmac",0
