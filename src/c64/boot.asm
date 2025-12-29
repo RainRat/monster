@@ -38,9 +38,8 @@ start:
 	; save the current machine state
 	jsr run::clr
 
-	; disable BASIC
-	lda $01
-	and #$fe
+	; enable all RAM
+	lda #$34
 	sta $01
 
 ;--------------------------------------

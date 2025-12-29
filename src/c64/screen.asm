@@ -4,6 +4,7 @@
 
 .include "macros.inc"
 .include "prefs.inc"
+.include "reu.inc"
 .include "../config.inc"
 .include "../draw.inc"
 .include "../layout.inc"
@@ -229,6 +230,15 @@
 	dex
 	bpl :-
 
+	; save the screen data
+	lda #^REU_BACKUP_ADDR
+	sta reu::reuaddr+2
+	ldxy #$0400
+	stxy reu::reuaddr
+	stxy reu::c64addr
+	stxy reu::txlen
+	jsr reu::store
+
 	; unreverse all characters on screen
 	ldxy #SCREEN_ADDR
 	stxy @scr
@@ -259,6 +269,16 @@
 	sta mem::rowcolors_idx,x
 	dex
 	bpl :-
+
+	; restore the screen data
+	lda #^REU_BACKUP_ADDR
+	sta reu::reuaddr+2
+	ldxy #$0400
+	stxy reu::reuaddr
+	stxy reu::c64addr
+	stxy reu::txlen
+	jsr reu::load
+
 	jmp draw::refresh_colors
 	rts
 .endproc
