@@ -3348,7 +3348,6 @@ goto_buffer:
 
 	ldxy @file
 	jsr file::exists
-	jmp *
 	bcs @err
 
 	; display loading...
