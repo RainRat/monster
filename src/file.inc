@@ -4,6 +4,7 @@
 .importzp __file_load_address_end
 
 .import __file_close
+.import __file_closeall
 .import __file_eof
 .import __file_exists
 .import __file_getline
@@ -24,6 +25,7 @@
 
 .scope file
 	close            = __file_close
+	closeall         = __file_closeall
 	eof              = __file_eof
 	exists           = __file_exists
 	geterr           = __file_geterr

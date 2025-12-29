@@ -160,6 +160,10 @@ err_unnamed_buffer:
 	;.byte "unnamed buffer",0
 	.byte $ab,$8e,$b,$45,$26,$c2,$a9,$86,$2c,$80
 
+err_too_many_buffers:
+	;.byte "too many open buffers",0
+	.byte $a3,$cf,$db,$41,$76,$5b,$7c,$5,$76,$c2,$a9,$86,$2c,$93,$0
+
 err_no_filename:
 	;.byte "no file name",0
 	.byte $73,$db,$32,$4c,$2e,$ce,$b,$45,$0
@@ -249,6 +253,7 @@ err_oom:
 	err_drive_did_not_respond, \
 	err_file_too_big, \
 	err_unnamed_buffer, \
+	err_too_many_buffers, \
 	err_no_filename, \
 	err_no_open_scope, \
 	err_label_already_defined, \

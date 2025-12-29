@@ -3320,10 +3320,12 @@ goto_buffer:
 
 	; check if the file is already open in one of our buffers
 	lda src::numbuffers
-	cmp #MAX_SOURCES
-	bcs @replace		; too many sources, close current and replace
+	cmp #MAX_SOURCES-1
+	bcc :+
+	lda #ERR_TOO_MANY_BUFFERS
+	jmp report_typein_error
 
-	jsr src::buffer_by_name
+:	jsr src::buffer_by_name
 	bcs @notfound
 
 @switch_buff:
@@ -3340,9 +3342,6 @@ goto_buffer:
 	jsr refresh
 	RETURN_OK
 
-@replace:
-; there too many open buffers, open a new one
-	jsr src::close
 
 @notfound:
 ; buffer doesn't exist in any RAM bank, load from disk
@@ -3369,7 +3368,7 @@ goto_buffer:
 	php
 
 	jsr irq::on
-	jsr file::close		; close the file
+	jsr file::closeall	; close all files
 	plp
 	bcs @err
 	ldxy @file
@@ -3391,6 +3390,7 @@ goto_buffer:
 
 @err:	jsr irq::on
 	jsr report_drive_error
+	jsr file::closeall	; close all files
 	sec
 	rts
 .endproc

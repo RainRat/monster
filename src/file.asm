@@ -464,6 +464,16 @@ OSPROC __file_close
 ENDOSPROC
 
 ;*******************************************************************************
+; CLOSE ALL
+; Closes all open files/channels
+.export __file_closeall
+OSPROC __file_closeall
+	lda #$00
+	sta zp::numfiles
+	jmp krn::clall
+ENDOSPROC
+
+;*******************************************************************************
 ; INIT DRIVE
 ; Initializes the drive
 OSPROC init_drive

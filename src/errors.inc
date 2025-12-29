@@ -52,34 +52,35 @@ ERR_DRIVE_DID_NOT_RESPOND = 34
 ERR_FILE_TOO_BIG          = 35
 
 ;******************************************************************************
-ERR_UNNAMED_BUFFER = 36
-ERR_NO_FILENAME    = 37
-ERR_NO_OPEN_SCOPE  = 38
+ERR_UNNAMED_BUFFER   = 36
+ERR_TOO_MANY_BUFFERS = 37
+ERR_NO_FILENAME      = 38
+ERR_NO_OPEN_SCOPE    = 39
 
-ERR_LABEL_ALREADY_DEFINED = 39
-ERR_TOO_MANY_LABELS       = 40
-ERR_LABEL_NOT_KNOWN_PASS1 = 41
+ERR_LABEL_ALREADY_DEFINED = 40
+ERR_TOO_MANY_LABELS       = 41
+ERR_LABEL_NOT_KNOWN_PASS1 = 42
 
-ERR_INVALID_COMMAND = 42
+ERR_INVALID_COMMAND = 43
 
-ERR_COPY_TOO_BIG = 43
+ERR_COPY_TOO_BIG = 44
 
-ERR_BUFFER_NAME_EXISTS   = 44
-ERR_BUFFER_FULL          = 45
-ERR_BUFFER_MUST_BE_NAMED = 46
+ERR_BUFFER_NAME_EXISTS   = 45
+ERR_BUFFER_FULL          = 46
+ERR_BUFFER_MUST_BE_NAMED = 47
 
 ;******************************************************************************
 ; linker errors
-ERR_TOO_MANY_GLOBAL_REFS = 47
-ERR_TOO_MANY_SEGMENTS    = 48
-ERR_SECTION_TOO_SMALL    = 49
-ERR_NO_SECTIONS          = 50
-ERR_ADDRMODE_MISMATCH    = 51
-ERR_ALREADY_EXPORTED     = 52
+ERR_TOO_MANY_GLOBAL_REFS = 48
+ERR_TOO_MANY_SEGMENTS    = 49
+ERR_SECTION_TOO_SMALL    = 50
+ERR_NO_SECTIONS          = 51
+ERR_ADDRMODE_MISMATCH    = 52
+ERR_ALREADY_EXPORTED     = 53
 
 ;******************************************************************************
 ; general errors
-ERR_OOM                  = 53
+ERR_OOM                  = 54
 
 .import __err_get
 
