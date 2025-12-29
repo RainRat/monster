@@ -256,7 +256,6 @@ main:	jsr key::getch
 ; MONITOR
 ; Activates the monitor and restores the editor when it exits
 .proc monitor
-	jmp *
 	jsr scr::save
 	pushcur
 	jsr __edit_enter_monitor

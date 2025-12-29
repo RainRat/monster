@@ -172,7 +172,11 @@ screen: .res LINESIZE*HEIGHT
 @print:	ldxy @msg
 
 	; render the message
+.ifdef vic20
 	CALLMAIN text::render_ind
+.else
+	CALLMAIN text::render
+.endif
 	stxy @msg
 
 	lda #$00
@@ -197,7 +201,7 @@ screen: .res LINESIZE*HEIGHT
 	sta @scr0+1
 
 	; store the text we are about to draw to the monitor buffer
-	ldy #39
+	ldy #LINESIZE-1
 @copy:	lda (@msg),y
 	sta (@scr0),y
 	dey
