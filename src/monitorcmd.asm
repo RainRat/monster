@@ -809,9 +809,9 @@ __mon_default_start_set: .byte 0
 .PUSHSEG
 .RODATA
 @byte_msg:
-	.byte "$", ESCAPE_VALUE, " "
+	.byte "$", ESCAPE_VALUE, " .db $", ESCAPE_BYTE, 0
 @byte_msg_no_addr:
-	.byte "$", ESCAPE_BYTE, 0
+	.byte ".db $", ESCAPE_BYTE, 0
 @disasm_msg:
 	.byte "$", ESCAPE_VALUE, " ", ESCAPE_STRING,0	; <address> <instruction>
 .POPSEG
