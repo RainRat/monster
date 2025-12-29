@@ -1276,6 +1276,7 @@ __mon_default_start_set: .byte 0
 
 	; line is empty use default start address
 	ldxy default_start
+	stxy @start
 	jmp @default		; jump ahead to compute default stop address
 
 :	; get the start address
