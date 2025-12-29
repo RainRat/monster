@@ -214,14 +214,14 @@ block_open: .byte 0	; if !0, we are creating a block, when this is set
 freeptr: .word 0	; pointer to next available address in debuginfo
 blocksp: .byte 0	; stack pointer for block stack
 
-;*******************************************************************************
-; BSS
-.segment "DEBUGINFO_BSS"
-
 ; file table (stored as table of 0-terminated filenames)
 .export __debug_filenames
 __debug_filenames:
 filenames: .res MAX_FILES * MAX_FILENAME_LEN
+
+;*******************************************************************************
+; BSS
+.segment "DEBUGINFO_BSS"
 
 blockstack: .res $100	; stack for line program state machine
 

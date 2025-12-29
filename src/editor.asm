@@ -3342,13 +3342,13 @@ goto_buffer:
 	jsr refresh
 	RETURN_OK
 
-
 @notfound:
 ; buffer doesn't exist in any RAM bank, load from disk
 	jsr irq::off
 
 	ldxy @file
 	jsr file::exists
+	jmp *
 	bcs @err
 
 	; display loading...
