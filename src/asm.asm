@@ -1538,9 +1538,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 
 	; assemble the current line
 	ldxy #mem::ctxbuffer
-.ifdef vic20
 	lda #FINAL_BANK_MAIN	; bank doesn't matter for ctx
-.endif
 	jsr __asm_tokenize
 	bcc :+
 	sta @errcode		; save errcode
@@ -2014,9 +2012,7 @@ __asm_include:
 	lda zp::file
 	pha
 
-.ifdef vic20
 	lda #FINAL_BANK_MAIN	; any bank that is valid (low mem is used)
-.endif
 	jsr __asm_tokenize_pass
 	bcc @ok
 	jsr errlog::log
