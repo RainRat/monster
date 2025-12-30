@@ -78,6 +78,7 @@
 .include "util.inc"
 .include "state.inc"
 .include "strings.inc"
+.include "target.inc"
 .include "vmem.inc"
 .include "zeropage.inc"
 

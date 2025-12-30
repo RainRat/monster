@@ -1,6 +1,10 @@
 TARGET ?= vic20
 REGION ?= NTSC
 
+# for Vic-20, which expansion to use
+# Valid values: fe3, ultimem
+EXPANSION ?= fe3
+
 # default device # (for cart image)
 DEFAULT_DEVICE=8
 
@@ -11,7 +15,7 @@ X64=x64sc
 SCREEN_MODE=soft4x8
 #SCREEN_MODE=hard8x8
 
-ASMFLAGS=--asm-define $(TARGET) --asm-define $(REGION) --asm-define $(SCREEN_MODE) --asm-define DEFAULT_DEVICE=$(DEFAULT_DEVICE)
+ASMFLAGS=--asm-define $(TARGET) --asm-define $(REGION) --asm-define $(SCREEN_MODE) --asm-define DEFAULT_DEVICE=$(DEFAULT_DEVICE) --asm-define FE3
 
 # set KERNAL based on configured TARGET and REGION
 ifeq ($(TARGET),vic20)
@@ -44,6 +48,7 @@ ifeq ($(TARGET),c64)
 	EMU=$(X64)
 endif
 
+
 FE3BIN=fe3vice.bin
 CART_IMAGE=monster.bin	# name of cart binary to produce
 TEST_IMAGE=test.bin	# name of test suite cart binary to produce
@@ -56,12 +61,18 @@ BOOTSRC=$(TARGET)/boot.asm
 
 # platform specific source files
 TARGET_SRC=$(filter-out $BOOTSRC, $(wildcard $(TARGET)/*.asm))
+
+ifdef EXPANSION
+	TARGET_EXP_SRC=$(wildcard $(TARGET)/$(EXPANSION)/*.asm)
+else
+	TARGET_EXP_SRC=
+endif
 MODE_SRC=$(wildcard $(TARGET)/$(SCREEN_MODE)/*.asm)
 
 # platform independent source files
 PI_SRC=$(wildcard *.asm)
 
-SRC=$(TARGET_SRC) $(PI_SRC) $(MODE_SRC)
+SRC=$(TARGET_SRC) $(PI_SRC) $(MODE_SRC) #$(TARGET_EXP_SRC)
 TEST_TXTS=$(wildcard tests/*.txt)
 
 #UNIT=$(wildcard *.a65)
@@ -158,6 +169,8 @@ vstart:
 clean:
 	rm -f *.prg *.o test.d81 $(CART_IMAGE) monster.d81
 	rm -rf vic20/*.o
+	rm -rf vic20/fe3/*.o
+	rm -rf vic20/ultimem/*.o
 	rm -rf vic20/hard8x8.o/*.o
 	rm -rf vic20/soft4x8.o/*.o
 	rm -rf c64/*.o

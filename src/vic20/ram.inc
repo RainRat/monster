@@ -1,7 +1,8 @@
 .ifndef VIC20_RAM_INC
 VIC20_RAM_INC = 1
 
-.include "finalex.inc"
+.import __ram_call
+
 .include "../zeropage.inc"
 
 ;******************************************************************************
@@ -211,6 +212,53 @@ VIC20_RAM_INC = 1
 @loop:	sta (addr),y
 	dey
 	bpl @loop
+.endmacro
+
+;******************************************************************************
+; CALL
+; calls the banked routine
+; params:
+;  bank: the bank of the procedure to call
+;  proc: the procedure to call
+.macro CALL bank, proc
+	jsr __ram_call
+	.byte bank
+	.word proc
+.endmacro
+
+;******************************************************************************
+; CALLMAIN
+; equivalent to CALL FINAL_BANK_MAIN, proc
+.macro CALLMAIN proc
+	jsr __ram_call
+	.byte FINAL_BANK_MAIN
+	.word proc
+.endmacro
+
+;******************************************************************************
+; JUMP
+; jumps to the banked routine
+; params:
+;  bank: the bank of the procedure to jump to
+;  proc: the procedure to jump to
+.macro JUMP bank, proc
+	jsr __ram_call
+	.byte bank
+	.word proc
+	rts
+.endmacro
+
+;******************************************************************************
+; JUMPMAIN
+; equivalent to JUMP FINAL_BANK_MAIN, proc
+; params:
+;  bank: the bank of the procedure to jump to
+;  proc: the procedure to jump to
+.macro JUMPMAIN  proc
+	jsr __ram_call
+	.byte FINAL_BANK_MAIN
+	.word proc
+	rts
 .endmacro
 
 .endif

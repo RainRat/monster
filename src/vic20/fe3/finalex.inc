@@ -1,7 +1,6 @@
 .ifndef VIC20_FINALEX_INC
 VIC20_FINALEX_INC=1
 
-.import __ram_call
 .import __ram_load_byte
 .import __ram_load_byte_off
 .import __ram_memcpy
@@ -10,6 +9,8 @@ VIC20_FINALEX_INC=1
 .import __ram_memcpy_bank
 .import __ram_get_byte
 .import __ram_store_byte
+.import __fe3_push_bank
+.import __fe3_pop_bank
 
 ;******************************************************************************
 ; BANK LAYOUT
@@ -90,7 +91,6 @@ FINAL_BANK_FASTTEXT  = $a0|$e
 
 ;******************************************************************************
 .scope fe3
-	call       = __ram_call
 	copy       = __ram_memcpy
 	copyline   = __ram_copy_line
 	store      = __ram_store_byte
@@ -100,51 +100,23 @@ FINAL_BANK_FASTTEXT  = $a0|$e
 	get_byte   = __ram_get_byte
 .endscope
 
-;******************************************************************************
-; CALL
-; calls the banked routine
-; params:
-;  bank: the bank of the procedure to call
-;  proc: the procedure to call
-.macro CALL bank, proc
-	jsr __ram_call
-	.byte bank
-	.word proc
+.scope exp
+	push_bank   = __fe3_push_bank
+	pop_bank    = __fe3_pop_bank
+.endscope
+
+;*******************************************************************************
+; SELECT BANK
+; Activates the bank from the given string
+.macro SELECT_BANK str
 .endmacro
 
-;******************************************************************************
-; CALLMAIN
-; equivalent to CALL FINAL_BANK_MAIN, proc
-.macro CALLMAIN proc
-	jsr __ram_call
-	.byte FINAL_BANK_MAIN
-	.word proc
-.endmacro
 
-;******************************************************************************
-; JUMP
-; jumps to the banked routine
-; params:
-;  bank: the bank of the procedure to jump to
-;  proc: the procedure to jump to
-.macro JUMP bank, proc
-	jsr __ram_call
-	.byte bank
-	.word proc
-	rts
-.endmacro
-
-;******************************************************************************
-; JUMPMAIN
-; equivalent to JUMP FINAL_BANK_MAIN, proc
-; params:
-;  bank: the bank of the procedure to jump to
-;  proc: the procedure to jump to
-.macro JUMPMAIN  proc
-	jsr __ram_call
-	.byte FINAL_BANK_MAIN
-	.word proc
-	rts
+;*******************************************************************************
+; SELECT BANK A
+; Activates the bank in .A
+.macro SELECT_BANK_A
+	sta $9c02
 .endmacro
 
 .endif

@@ -1,3 +1,6 @@
+.ifndef C64_C64_INC
+C64_C64_INC = 1
+
 .import select_bank_linker
 .import select_bank_symbols
 .import select_bank_debuginfo
@@ -46,3 +49,5 @@
 	.error "invalid bank"
 .endif
 .endmacro
+
+.endif

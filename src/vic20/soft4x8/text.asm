@@ -1,6 +1,7 @@
 .include "bitmap.inc"
-.include "../finalex.inc"
+.include "../banks.inc"
 .include "../../macros.inc"
+.include "../../ram.inc"
 .include "../../zeropage.inc"
 
 .CODE

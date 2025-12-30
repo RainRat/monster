@@ -1,4 +1,4 @@
-.include "finalex.inc"
+.include "banks.inc"
 .include "prefs.inc"
 .include "settings.inc"
 .include "../beep.inc"
@@ -37,7 +37,7 @@ rowcnt: .byte 0
 ;*******************************************************************************
 ; SYS_UPDATE
 ; This is the main IRQ for this program. It handles updating the beeper.
-; It is relocated to a place where it may be called from any bank
+; It is located so that it may be called from any bank
 .proc sys_update
 	lda $9c02
 	sta @savebank

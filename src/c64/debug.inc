@@ -1,3 +1,6 @@
+.ifndef C64_DEBUG_INC
+C64_DEBUG_INC = 1
+
 .include "nmi.inc"
 
 ;*******************************************************************************
@@ -21,3 +24,5 @@
 ; debugger from a "GO" command
 .macro SAVE_IO
 .endmacro
+
+.endif

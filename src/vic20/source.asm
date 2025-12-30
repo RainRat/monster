@@ -1,3 +1,4 @@
+.include "banks.inc"
 .include "../debug.inc"
 .include "../debuginfo.inc"
 .include "../edit.inc"

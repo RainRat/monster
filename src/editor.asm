@@ -50,6 +50,7 @@
 .include "string.inc"
 .include "strings.inc"
 .include "symview.inc"
+.include "target.inc"
 .include "text.inc"
 .include "util.inc"
 .include "vmem.inc"

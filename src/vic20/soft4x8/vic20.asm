@@ -1,4 +1,4 @@
-.include "../finalex.inc"
+.include "../expansion.inc"
 
 .import __text_init
 .segment "SETUP"

@@ -1,3 +1,6 @@
+.ifndef C64_BSP_INC
+C64_BSP_INC = 1
+
 .import __bsp_install_tracer
 .import __bsp_restore_debug_state
 .import __bsp_restore_debug_visual
@@ -19,3 +22,5 @@
 	save_prog_state      = __bsp_save_prog_state
 	save_prog_visual     = __bsp_save_prog_visual
 .endscope
+
+.endif

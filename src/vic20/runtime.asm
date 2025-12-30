@@ -4,6 +4,7 @@
 ; a user's programs
 ;*******************************************************************************
 
+.include "banks.inc"
 .include "fastcopy.inc"
 .include "prefs.inc"
 .include "settings.inc"

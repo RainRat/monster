@@ -1,6 +1,11 @@
 .import __vic20_init
 
-.include "finalex.inc"
+.if .defined(FE3)
+.include "fe3/finalex.inc"
+.elseif .defined(ULTIMEM)
+.include "ultimem/ultimem.inc"
+.endif
+
 .include "debug.inc"
 
 .scope vic20
@@ -13,7 +18,4 @@
 
 .macro ENDOSPROC fn
 .endproc
-.endmacro
-
-.macro SELECT_BANK bank
 .endmacro

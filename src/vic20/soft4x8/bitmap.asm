@@ -7,12 +7,13 @@
 ; This configuration is popularly known as MINIGRAFIK, created by Mike
 ;*******************************************************************************
 
-.include "../../draw.inc"
+.include "../banks.inc"
 .include "../prefs.inc"
 .include "../fastcopy.inc"
-.include "../finalex.inc"
+.include "../../draw.inc"
 .include "../../macros.inc"
 .include "../../memory.inc"
+.include "../../ram.inc"
 .include "../../settings.inc"
 .include "../../util.inc"
 .include "../../zeropage.inc"

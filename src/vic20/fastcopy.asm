@@ -1,3 +1,4 @@
+.include "banks.inc"
 .include "../macros.inc"
 .include "../ram.inc"
 .include "../screen.inc"

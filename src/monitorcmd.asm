@@ -30,6 +30,7 @@
 .include "util.inc"
 .include "vmem.inc"
 .include "watches.inc"
+.include "target.inc"
 .include "zeropage.inc"
 
 .include "ram.inc"

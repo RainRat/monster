@@ -17,6 +17,7 @@
 .include "macros.inc"
 .include "math.inc"
 .include "ram.inc"
+.include "target.inc"
 .include "util.inc"
 
 ;*******************************************************************************

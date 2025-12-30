@@ -22,6 +22,7 @@
 .include "string.inc"
 .include "strings.inc"
 .include "util.inc"
+.include "target.inc"
 .include "zeropage.inc"
 
 .include "ram.inc"

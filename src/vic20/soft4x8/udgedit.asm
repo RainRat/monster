@@ -13,15 +13,16 @@
 ; the created graphic
 ;*******************************************************************************
 
+.include "bitmap.inc"
+.include "../banks.inc"
 .include "../../cursor.inc"
 .include "../../key.inc"
 .include "../../keycodes.inc"
 .include "../../macros.inc"
 .include "../../ui.inc"
 .include "../../text.inc"
+.include "../../ram.inc"
 .include "../../zeropage.inc"
-.include "../finalex.inc"
-.include "bitmap.inc"
 
 ;*******************************************************************************
 PIXEL_SIZE = 4		; size of each pixel in the editor

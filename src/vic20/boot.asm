@@ -19,6 +19,7 @@
 .include "../labels.inc"
 .include "../macros.inc"
 .include "../memory.inc"
+.include "../ram.inc"
 .include "../runtime.inc"
 .include "../screen.inc"
 .include "../settings.inc"

@@ -6,14 +6,13 @@
 ; the active bank.
 ;******************************************************************************
 
-.include "../config.inc"
-.include "../inline.inc"
-.include "../macros.inc"
-.include "../zeropage.inc"
+.include "../../config.inc"
+.include "../../inline.inc"
+.include "../../macros.inc"
+.include "../../zeropage.inc"
 
 .segment "BANKCODE"
 
-bankcode:
 ;*******************************************************************************
 ; STORE_BYTE
 ; stores the byte given in zp::bankval to address .YX in bank .A
@@ -133,58 +132,6 @@ bankcode:
 @done:	beq return_to_x	; branch always (restore bank)
 .endproc
 
-;*******************************************************************************
-; CALL
-; Performs a JSR to the target address at the given bank. When the routine is
-; done, returns to the caller's bank.
-; IN:
-;  - zp::bank:        the bank of the procedure to call
-;  - zp::bankjmpaddr: the procedure address
-;  - zp::banktmp:     the destination bank address
-.export __ram_call
-.proc __ram_call
-@a=zp::banktmp+1
-@x=zp::banktmp+2
-	stx @x
-	sta @a
-
-	jsr inline::setup
-
-	lda #$4c
-	sta zp::bankjmpaddr	; write the JMP instruction
-	lda $9c02
-	ldx zp::banksp
-	inc zp::banksp
-	sta zp::bankstack,x
-
-	jsr inline::getarg_b	; get bank byte
-	sta @bank_sel
-
-	jsr inline::getarg_w	; get procedure address
-	stx zp::bankjmpvec
-	sta zp::bankjmpvec+1
-
-	jsr inline::setup_done
-
-@bank_sel=*+1
-	lda #$00
-	sta $9c02		; swap in the target bank
-	lda @a			; restore .A
-	ldx @x			; restore .X
-	jsr zp::bankjmpaddr	; call the target routine
-	sta @a			; save .A
-	stx @x			; save .X
-
-	dec zp::banksp
-	ldx zp::banksp
-	lda zp::bankstack,x	; get the caller's bank
-	sta $9c02		; restore bank
-
-	lda @a			; restore .A
-	ldx @x			; restore .X
-	rts
-.endproc
-
 .CODE
 
 ;*******************************************************************************
@@ -278,4 +225,29 @@ __ram_copy_banked:
 	bne @l0
 
 @done:	rts
+.endproc
+
+.segment "BANKCODE2"
+;*******************************************************************************
+; PUSH BANK
+; Saves the current RAM bank
+.export __fe3_push_bank
+.proc __fe3_push_bank
+	lda $9c02		; get current bank
+	ldx zp::banksp
+	inc zp::banksp
+	sta zp::bankstack,x	; save current bank
+	rts
+.endproc
+
+;*******************************************************************************
+; POP BANK
+; Restores the last pushed bank
+.export __fe3_pop_bank
+.proc __fe3_pop_bank
+	dec zp::banksp
+	ldx zp::banksp
+	lda zp::bankstack,x	; get the caller's bank
+	sta $9c02		; restore bank
+	rts
 .endproc
