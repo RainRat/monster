@@ -12,6 +12,8 @@
 .include "../sim6502.inc"
 .include "../vmem.inc"
 
+.import __c64_dbg
+
 .import __STEPHANDLER_RUN__
 .import __STEPHANDLER_LOAD__
 .import __STEPHANDLER_SIZE__
@@ -67,8 +69,10 @@ nop_handler:
 	lda #$37
 	sta $01		; expose KERNAL
 
-	jsr $fda3	; init I/O
+
 	jsr $fd50	; RAMTAS
+	jsr $e518	; init hardware
+	jsr $fda3	; init I/O
 	jsr $fd15	; restore default I/O vectors
 	jsr $ff5b	; init screen
 	jsr $e453	; init BASIC vectors
@@ -77,14 +81,14 @@ nop_handler:
 	ldx #<PROGRAM_STACK_START
 	stx sim::reg_sp
 
+	lda #$34
+	sta $01		; done with KERNAL
+
 	ldxy #@save_done	; need to pass return address
-	jmp dbg::save_user_zp
+	jmp reu::save_prog00
 
 @save_done:
 	sei
-
-	lda #$34
-	sta $01		; done with KERNAL
 
 	; restore the debug (Monster's) low memory
 	; this has the routines (in the shared RAM space) we need to do the rest
@@ -105,6 +109,14 @@ nop_handler:
 
 	; restore the rest of Monster's RAM and enter the application
 	jsr bsp::restore_debug_state
+
+	; restore the virtual ZP (clobbered by restore_debug_state)
+	jsr reu::restore_prog00
+
+	lda #$2f
+	sta prog00
+	lda #$37
+	sta prog00+1
 
 	; initialize PC to warm start
 	ldxy #$a483
@@ -140,9 +152,6 @@ nop_handler:
 	lda #$34	; make all RAM available
 	sta $01
 
-	lda prog00+1
-	sta TRAMPOLINE_PROG01
-
 	ldxy sim::pc
 	stxy TRAMPOLINE_PC
 
@@ -161,14 +170,14 @@ nop_handler:
 	jmp dbg::save_debug_zp
 @save_dbg_done:
 	ldxy #@restore_done		; need to pass return address
+
 	jmp dbg::restore_user_zp
 @restore_done:
+	lda #$34
+	sta $01
 
 	jsr bsp::save_debug_state
 	jsr bsp::restore_prog_visual
-
-	lda #$34
-	sta $01
 
 	; install the SW/HW NMI handler
 	lda #<nmi_handler
@@ -187,6 +196,9 @@ nop_handler:
 	pha
 	lda sim::reg_a
 	sta TRAMPOLINE_A
+
+	lda prog00+1
+	sta TRAMPOLINE_PROG01
 
 	lda #$36			; expose REU registers
 	sta $01
@@ -218,7 +230,7 @@ nop_handler:
 	jsr nmi::disable
 	jsr irq::off
 
-	jsr __run_init
+	jsr install_edit_nmi
 
 	; empty the keyboard buffer
 	lda #$00
@@ -279,6 +291,20 @@ nop_handler:
 	sta __NMI_HANDLER_RUN__,y
 	dey
 	bpl @l0
+	rts
+.endproc
+
+;******************************************************************************
+; INSTALL EDIT NMI
+; Installs the NMI used to return from BASIC to the editor (or monitor)
+.proc install_edit_nmi
+	jsr install_nmi
+
+	; overwrite the JMP address to go to edit handler
+	lda #<nmi_edit
+	sta __NMI_HANDLER_RUN__+nmi_handler_size-2
+	lda #>nmi_edit
+	sta __NMI_HANDLER_RUN__+nmi_handler_size-1
 	rts
 .endproc
 

@@ -15,6 +15,8 @@ C64_REU_INC = 1
 .import __reu_loadw
 .import __reu_move
 .import __reu_reu_addr
+.import __reu_restoreprog00
+.import __reu_saveprog00
 .import __reu_swap
 .import __reu_store
 .import __reu_store_delayed
@@ -55,6 +57,8 @@ REU_TMP_ADDR            = $ff0000
 	init           = __reu_init
 	move           = __reu_move
 	reuaddr        = __reu_reu_addr
+	save_prog00    = __reu_saveprog00
+	restore_prog00 = __reu_restoreprog00
 	store          = __reu_store
 	store_delayed  = __reu_store_delayed
 	store1         = __reu_store1

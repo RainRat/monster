@@ -60,7 +60,6 @@ PROGRAM_STACK_START = $1e0
 .export __bsp_restore_debug_state
 .proc __bsp_restore_debug_state
 	; just restore everything
-	; TODO: don't be lazy
 	ldxy #$0800
 	stxy reu::c64addr
 	stxy reu::reuaddr
@@ -130,7 +129,7 @@ PROGRAM_STACK_START = $1e0
 	stxy reu::reuaddr
 	lda #^REU_BACKUP_IO
 	sta reu::reuaddr+2
-	ldxy #$be7
+	ldxy #$be8
 	stxy reu::txlen
 	jmp reu::store
 .endproc
@@ -154,7 +153,7 @@ PROGRAM_STACK_START = $1e0
 	stxy reu::reuaddr
 	lda #^REU_BACKUP_IO
 	sta reu::reuaddr+2
-	ldxy #$be7
+	ldxy #$be8
 	stxy reu::txlen
 	jmp reu::load
 .endproc
@@ -178,7 +177,7 @@ PROGRAM_STACK_START = $1e0
 	stxy reu::reuaddr
 	lda #^REU_VMEM_IO
 	sta reu::reuaddr+2
-	ldxy #$be7
+	ldxy #$be8
 	stxy reu::txlen
 	jmp reu::store
 .endproc
@@ -203,7 +202,7 @@ PROGRAM_STACK_START = $1e0
 	stxy reu::reuaddr
 	lda #^REU_VMEM_IO
 	sta reu::reuaddr+2
-	ldxy #$be7
+	ldxy #$be8
 	stxy reu::txlen
 	jmp reu::load
 .endproc

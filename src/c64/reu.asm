@@ -19,9 +19,12 @@
 .exportzp __reu_move_size
 
 REU_TMP_ADDR            = $ff0000
+REU_VMEM_ADDR           = $fe0000
 
 savex = zp::inline
 savey = zp::inline+1
+
+.import prog00
 
 ;*******************************************************************************
 savea = zp::str0
@@ -44,6 +47,59 @@ tab_element_size: .byte 0
 tab_num_elements: .word 0
 
 .CODE
+
+;*******************************************************************************
+; SAVE PROG00
+.export __reu_saveprog00
+.proc __reu_saveprog00
+	stxy @ret
+
+	lda #$36
+	sta $01
+
+	ldxy #$0000
+	stxy $df02
+	stxy $df04
+	lda #^REU_VMEM_ADDR
+	sta $df04+2
+
+	ldxy #$3ff
+	stxy $df07
+
+	lda #$90	; transfer from c64 -> REU with immediate execution
+	sta $df01	; execute
+
+	lda #$34
+	sta $01
+@ret=*+1
+	jmp $f00d
+.endproc
+
+;*******************************************************************************
+; RESTORE PROG00
+.export __reu_restoreprog00
+.proc __reu_restoreprog00
+	lda #$36
+	sta $01
+
+	ldxy #prog00
+	stxy $df02
+
+	ldxy #$0000
+	stxy $df04
+	lda #^REU_VMEM_ADDR
+	sta $df04+2
+
+	ldxy #$3ff
+	stxy $df07
+
+	lda #$91	; transfer from REU -> c64 with immediate execution
+	sta $df01	; execute
+
+	lda #$34
+	sta $01
+	rts
+.endproc
 
 ;*******************************************************************************
 ; MAPREU

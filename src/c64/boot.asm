@@ -41,6 +41,7 @@ start:
 
 ;--------------------------------------
 ; zero the BSS segment
+; TODO: use REU
 	ldxy #__BSS_LOAD__
 	stxy r0
 
@@ -95,7 +96,6 @@ start:
 
 	; save the current machine state
 	jsr run::clr
-
 	jsr mon::init
 
 	lda #$80
