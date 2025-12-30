@@ -4,7 +4,10 @@
 .include "vaddrs.inc"
 .include "../asmflags.inc"
 .include "../debug.inc"
+.include "../edit.inc"
+.include "../irq.inc"
 .include "../macros.inc"
+.include "../monitor.inc"
 .include "../ram.inc"
 .include "../sim6502.inc"
 .include "../vmem.inc"
@@ -30,6 +33,8 @@
 
 STEP_HANDLER_ADDR = __STEPHANDLER_RUN__
 
+.import PROGRAM_STACK_START
+
 .CODE
 ;*******************************************************************************
 nop_handler:
@@ -39,20 +44,81 @@ nop_handler:
 ; CLR
 .export __run_clr
 .proc __run_clr
+	sei
+
+	pla
+	sta @ret0
+	pla
+	sta @ret1
+
+	tsx
+	stx @save_sp
+
+	jsr __run_init
+	jsr bsp::save_debug_state
+
+	ldxy #@save_dbg_done		; need to pass return address
+	jmp dbg::save_debug_zp
+
+@save_dbg_done:
+	jsr nmi::disable
+	sei
+
+	lda #$37
+	sta $01		; expose KERNAL
+
+	jsr $fda3	; init I/O
+	jsr $fd50	; RAMTAS
+	jsr $fd15	; restore default I/O vectors
+	jsr $ff5b	; init screen
+	jsr $e453	; init BASIC vectors
+	jsr $e3bf	; init BASIC RAM locations
+	jsr $e422	; print startup message and init pointers
+	ldx #<PROGRAM_STACK_START
+	stx sim::reg_sp
+
 	ldxy #@save_done	; need to pass return address
 	jmp dbg::save_user_zp
-@save_done:
 
-	; TODO: run cold start (or enough of it to get C64 in intial state)
+@save_done:
+	sei
+
+	lda #$34
+	sta $01		; done with KERNAL
+
+	; restore the debug (Monster's) low memory
+	; this has the routines (in the shared RAM space) we need to do the rest
+	; of the banekd program state save (save_prog_state)
+	jsr dbg::restore_debug_zp
+
+	ldxy #@restore_debug_done
+	jmp dbg::restore_debug_low
+
+@restore_debug_done:
+@save_sp=*+1
+	ldx #$00
+	txs
+
+	; save the initialized hi RAM ($1000-$2000) and other misc locations of
+	; the user program
 	jsr bsp::save_prog_state
 
-	ldxy #nop_handler
-	stxy $0318
-	stxy $fffa
+	; restore the rest of Monster's RAM and enter the application
+	jsr bsp::restore_debug_state
 
-	ldxy #@restore_dbg_done		; need to pass return address
-	jmp dbg::save_debug_zp
-@restore_dbg_done:
+	; initialize PC to warm start
+	ldxy #$a483
+	stxy sim::pc
+
+	jsr irq::on
+
+@ret1=*+1
+	lda #$00
+	pha
+@ret0=*+1
+	lda #$00
+	pha
+
 	rts
 .endproc
 
@@ -62,8 +128,7 @@ nop_handler:
 .proc __run_init
 	jsr install_nmi
 	jsr install_step
-	jsr install_trampoline
-	rts
+	jmp install_trampoline
 .endproc
 
 ;*******************************************************************************
@@ -150,7 +215,18 @@ nop_handler:
 ; GO BASIC
 .export __run_go_basic
 .proc __run_go_basic
-	rts
+	jsr nmi::disable
+	jsr irq::off
+
+	jsr __run_init
+
+	; empty the keyboard buffer
+	lda #$00
+	ldxy #$c6
+	jsr vmem::store
+
+	; begin execution
+	jmp __run_go
 .endproc
 
 ;******************************************************************************
@@ -203,6 +279,107 @@ nop_handler:
 	sta __NMI_HANDLER_RUN__,y
 	dey
 	bpl @l0
+	rts
+.endproc
+
+;******************************************************************************
+; NMI EDIT
+; This is the NMI handler for invoking BASIC from the editor.
+; It simply saves the state of BASIC and jumps back to the editor main loop
+.proc nmi_edit
+	;lda $912e
+	;sta sim::via2+$e
+
+	jsr nmi::disable
+
+	pla
+	sta sim::reg_y
+	pla
+	sta sim::reg_x
+	pla
+	sta sim::reg_a
+
+	pla
+	sta sim::reg_p
+	and #$10	; mask BRK flag
+	sta dbg::is_brk
+
+	pla
+	sta sim::pc
+	pla
+	sta sim::pc+1
+
+;	; check if an interrupt occurred inside the interrupt handler
+;	; if it did, just RTI
+;	cmp #$80
+;	bcs :+
+;	cmp #$7f
+;	bcc :+
+;	tax
+;	lda sim::reg_p
+;	pha
+;	lda sim::pc
+;	pha
+;	txa
+;	pha
+;	ldx sim::reg_x
+;	ldy sim::reg_y
+;	lda sim::reg_a
+;	rti
+;:	lda #$7f
+;	sta $911e	; disable all NMI's
+;	sta $911d
+
+	tsx
+	stx sim::reg_sp
+
+	; clear decimal in case user set it
+	cld
+
+	sei
+
+	; reinit the debugger's SP
+	ldx #$ff
+	txs
+
+	; save the user's zeropage and restore the debugger's
+	ldxy #@save_done	; need to pass return address
+	jmp dbg::save_user_zp
+
+@save_done:
+	ldxy #@restore_debug_done
+	jmp dbg::restore_debug_low
+
+@restore_debug_done:
+	jsr dbg::restore_debug_zp
+
+	; save program state and swap the debugger state in
+	jsr dbg::swap_out
+        jsr irq::on		; reinstall the main IRQ
+
+	; return to the editor or monitor (whichever is active)
+	lda dbg::interface
+	beq @edit
+
+@mon:	; need to clear bank stack (will grow each time user enters monitor
+	; from BASIC)
+	lda #$00
+	sta zp::banksp
+	CALL FINAL_BANK_MONITOR, mon::reenter
+
+	; return to the editor or monitor (whichever is active)
+	lda edit::debugging
+	beq @edit		; if not debugging, reinit editor
+
+	; edit::gets likely changed the editor mode
+	lda #MODE_COMMAND
+	sta zp::editor_mode
+
+	; re-init debugger at current PC and enter it
+	ldxy sim::pc
+	jmp dbg::start
+
+@edit:	jmp edit::init
 .endproc
 
 .segment "NMI_HANDLER"

@@ -35,9 +35,6 @@
 start:
 	sei
 
-	; save the current machine state
-	jsr run::clr
-
 	; enable all RAM
 	lda #$34
 	sta $01
@@ -95,6 +92,9 @@ start:
 	jsr dbgi::initonce
 	jsr asm::reset
 	jsr buff::clear		; clear copy buffer
+
+	; save the current machine state
+	jsr run::clr
 
 	jsr mon::init
 

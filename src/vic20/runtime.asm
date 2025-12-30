@@ -175,7 +175,6 @@ TRAMPOLINE_ADDR = TRAMPOLINE+13
 	lda #$7f
 	sta $911d
 	sta $911e
-	sei
 
 	jsr irq::off
 
