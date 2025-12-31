@@ -30,39 +30,35 @@ CYCLES_PER_ROW  = 8 * (CYCLES_PER_LINE - 2) - 25
 NUM_ROWS = 24
 
 ;*******************************************************************************
-.segment "SHAREBSS"
-savebank0: .byte 0
-savebank1: .byte 0
-tmp:       .res 2
-
-;*******************************************************************************
 .BSS
-rowcnt:   .byte 0
+rowcnt: .byte 0
 
 .segment "IRQ"
 ;*******************************************************************************
 ; SYS_UPDATE
 ; This is the main IRQ for this program. It handles updating the beeper.
-; It is located so that it may be called from any bank
+; It is relocated to a place where it may be called from any bank
 .proc sys_update
 	lda $9c02
-	sta savebank0
+	sta @savebank
 	lda #FINAL_BANK_MAIN
-	SELECT_BANK_A
+	sta $9c02
 	jsr stable_handler
-	lda savebank0
-	SELECT_BANK_A
+@savebank=*+1
+	lda #$00
+	sta $9c02
 	jmp $eb15
 .endproc
 
 .proc row_interrupt
 	lda $9c02
-	sta savebank1
+	sta @savebank
 	lda #FINAL_BANK_MAIN
-	SELECT_BANK_A
+	sta $9c02
 	jsr row_handler
-	lda savebank1
-	SELECT_BANK_A
+@savebank=*+1
+	lda #$00
+	sta $9c02
 	jmp $eb15
 .endproc
 
@@ -73,8 +69,6 @@ rowcnt:   .byte 0
 ; STABLE_HANDLER
 .export stable_handler
 .proc stable_handler
-@savef5=tmp
-@savef6=tmp
 	cld
 	sec
 .ifdef PAL
@@ -134,9 +128,11 @@ rowcnt:   .byte 0
 	jsr $ebba		; store to keyboard table
 
 @keydone:
-	lda @savef5
+@savef5=*+1
+	lda #$00
         sta $f5
-	lda @savef6
+@savef6=*+1
+	lda #$00
         sta $f6
 
 	jmp beep::update

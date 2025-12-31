@@ -2603,8 +2603,7 @@ __asm_include:
 	;ldy #$00
 	sta (@dst),y
 	incw @dst
-:
-	ldy savereg
+:	ldy savereg
 	rts
 .endproc
 
