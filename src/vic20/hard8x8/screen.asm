@@ -355,7 +355,7 @@ SCREEN_ROWS = 12	; number of physical rows per column
 	txa
 	clc
 	adc @offset
-	cmp #NUM_ROWS
+	cmp #NUM_ROWS-1
 	bcs @next		; destination is off screen, skip
 
 	tay
