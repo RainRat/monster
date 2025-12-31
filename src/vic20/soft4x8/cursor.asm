@@ -73,6 +73,7 @@ R_REPLACE_MASK = $0f	; mask for right half of 8x8 char in REPLACE mode
 .export __cur_toggle
 __cur_toggle:
 @dst=r0
+@mask=r2
 	ldx zp::curx
 	ldy zp::cury
 
@@ -97,8 +98,7 @@ __cur_toggle:
 	jsr mask
 	sta @mask
 	ldy #7
-@mask=*+1
-@l0:	lda #$ff
+@l0:	lda @mask
 	eor (@dst),y
 	sta (@dst),y
 	dey

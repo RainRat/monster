@@ -985,6 +985,7 @@ operands: .res $100
 ;  - .XY:      the ID for the label
 .proc get_label
 @id=zp::expr
+@mode=r0
 	CALLMAIN lbl::isvalid 	; if verifying, let this pass if label is valid
 	bcs @done
 
@@ -1021,8 +1022,7 @@ operands: .res $100
 	jsr inc_line
 	bne @l0
 :
-@mode=*+1
-	lda #$00	; restore mode
+	lda @mode	; restore mode
 @ok:	ldxy @id	; get label
 	clc		; ok
 @done:	rts

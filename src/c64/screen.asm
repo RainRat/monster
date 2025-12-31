@@ -500,6 +500,7 @@ __text_puts:
 ; OUT:
 ;   - .A: the screen code that corresponds to the given char
 .proc asc2scr
+@savex=zp::text+7
 	cmp #$5a
 	bne :+
 :	stx @savex
@@ -517,8 +518,7 @@ __text_puts:
 	;clc
 	adc @offset,x
 
-@savex=*+1
-	ldx #$00
+	ldx @savex
 @done:	rts
 
 .PUSHSEG

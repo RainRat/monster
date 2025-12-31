@@ -486,6 +486,7 @@ __text_puts:
 ; OUT:
 ;   - .A: the screen code that corresponds to the given char
 .proc asc2scr
+@savex=zp::text+7
 	stx @savex
 	cmp #$ff
 	beq @done
@@ -502,8 +503,7 @@ __text_puts:
 	clc
 	adc @offset,x
 
-@savex=*+1
-	ldx #$00
+	ldx @savex
 @done:	rts
 .PUSHSEG
 .RODATA
@@ -519,7 +519,7 @@ __text_puts:
 ;| $E0-$FE | $80               |
 ;| $FF     | $00               |
 @convtab:
-.byte $20,$5a,$60,$80,$a0,$c0,$e0,$ff
+.byte $20,$5b,$60,$80,$a0,$c0,$e0,$ff
 @offset:
 .byte $80,$00,$c0,$a0,$40,$c0,$80,$80
 .POPSEG

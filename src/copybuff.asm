@@ -84,15 +84,14 @@ __buff_reverse:      COPYBUFFJUMP buff_proc_ids::REVERSE
 ;*******************************************************************************
 ; Entrypoint for copy buffer routines
 .proc do_buff_proc
+@savex=zp::banktmp+1
 	stx @savex
 	tax
 	lda buff_procs_lo,x
 	sta @vec
 	lda buff_procs_hi,x
 	sta @vec+1
-
-@savex=*+1
-	ldx #$00
+	ldx @savex
 	pla
 	jsr __ram_call
 	.byte FINAL_BANK_BUFF
