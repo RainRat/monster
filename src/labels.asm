@@ -1378,10 +1378,11 @@ anon_addrs: .res MAX_ANON*2
 ;  - .A: nonzero if the label is local
 ;  - .Z: clear if label is local, set if not
 .proc is_local
-@l=r0
+@l=zp::labels+7
 	stxy @l
 	ldy #$00
 	lda (@l),y
+	ldy @l+1
 	cmp #'@'
 	bne :+
 	lda #$01	; flag that label IS local
@@ -1908,6 +1909,7 @@ anon_addrs: .res MAX_ANON*2
 @num = rc
 @idi = zp::tmp10
 @idj = zp::tmp12
+@sp  = zp::tmp14
 	SELECT_BANK "SYMBOLS"
 
 	lda numlabels
@@ -1934,8 +1936,7 @@ anon_addrs: .res MAX_ANON*2
 	cpx #16		; stack limit
 	bcs @qsok
 
-@qs_csp=*+1
-	ldx #$00
+	ldx @sp
 	txs
 
 @quicksort:
@@ -1953,7 +1954,7 @@ anon_addrs: .res MAX_ANON*2
 	sta @lb
 
 	tsx
-	stx @qs_csp
+	stx @sp
 
 @qsok:	; @i = @lb
 	lda @lb

@@ -1268,8 +1268,9 @@ __mon_default_start_set: .byte 0
 ;   - zp::debuggertmp:   the start of the range
 ;   - zp::debuggertmp+2: the end of the range
 .proc get_range_or_default
-@start=zp::debuggertmp
-@stop=zp::debuggertmp+2
+@start = zp::debuggertmp
+@stop  = zp::debuggertmp+2
+@size  = zp::debuggertmp+4
 	sta @size
 	ldy #$00
 	lda (zp::line),y
@@ -1292,8 +1293,7 @@ __mon_default_start_set: .byte 0
 	bne @cont
 
 @default:
-@size=*+1
-	lda #$00
+	lda @size
 	clc
 	adc @start
 	sta @stop

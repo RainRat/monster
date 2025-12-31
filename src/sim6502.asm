@@ -93,6 +93,9 @@ __sim_via2: .res $10
 .export save_sp
 save_sp: .byte 0
 
+; the debugger's value for the byte that was swapped in for a step (if any)
+msave: .byte 0
+
 .segment "STEP_EPILOGUE"
 ;*******************************************************************************
 ; STEP DONE
@@ -105,11 +108,10 @@ save_sp: .byte 0
 	sty __sim_reg_y
 
 	lda __sim_reg_p
-	and #$04		; get .I flag
-	sta @old_i
+	and #$04		; get .I flag (and clear all other flags)
+	sta __sim_reg_p
 	pla			; get status register
-@old_i=*+1
-	ora #$00		; OR real .I value
+	ora __sim_reg_p		; OR real .I value (always clear during step)
 	sta __sim_reg_p
 
 	tsx
@@ -140,8 +142,7 @@ msave_src=*+1
 	ldxy __sim_effective_addr
 	stxy r0
 	ldy #$00
-msave=*+1
-	lda #$00
+	lda msave
 	sta (r0),y
 
 :	ldx save_sp

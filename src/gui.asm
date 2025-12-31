@@ -410,13 +410,10 @@ exit:	rts				; no GUI to draw
 ; REDRAW STATE
 ; entrypoint to draw the already copied zeropage state
 .proc redraw_state
-@row=guitmp
-	; copy address for getline
-	lda getdata
-	sta @getline
-	lda getdata+1
-	sta @getline+1
-
+@row     = guitmp
+@rowstop = guitmp+1
+@i       = zp::gui+$c
+@getline = zp::jmpvec
 	; resize the main editor window to fit the GUI (may increase editor
 	; size if the GUI window has shrunk since the last call)
 	lda baserow
@@ -444,17 +441,20 @@ exit:	rts				; no GUI to draw
 	sta @i
 
 @dloop: lda @row
-@rowstop=*+1
-	cmp #$00			; are we at the top row yet?
+	cmp @rowstop			; are we at the top row yet?
 	bcc @highlight_selection	; if so, continue to highlight selected
 
-@i=*+1
-	lda #$00
+	; copy address for getline
+	lda getdata
+	sta @getline
+	lda getdata+1
+	sta @getline+1
+
+	lda @i
 	clc
 	adc scroll
 
-@getline=*+1
-	jsr $f00d			; get the next line of data
+	jsr zp::jmpaddr ; get the next line of data
 
 	lda @row
 	jsr text::print

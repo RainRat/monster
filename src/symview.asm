@@ -109,6 +109,7 @@ sort_by_addr_msg: .byte "f1 sort by addr",0
 ; IN:
 ;   - .A: the line to draw the item at
 .proc print_item
+@row=zp::tmp15
 	sta @row
 
 	ldxy #sym_line_no_file
@@ -148,9 +149,7 @@ sort_by_addr_msg: .byte "f1 sort by addr",0
 :	sta sym_line+1
 	sta sym_line_no_file+1
 
-@print:
-@row=*+1
-	lda #$00
+@print: lda @row
 	jsr text::print
 	rts
 .endproc
