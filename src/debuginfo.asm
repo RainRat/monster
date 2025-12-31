@@ -187,14 +187,14 @@ __debuginfo_set_seg_id:   BANKJUMP dbgi_proc_ids::SET_SEG_ID
 ;*******************************************************************************
 ; Entrypoint for routines
 .proc do_proc
+@savex=zp::banktmp+1
 	stx @savex
 	tax
 	lda dbgi_procs_lo,x
 	sta @vec
 	lda dbgi_procs_hi,x
 	sta @vec+1
-@savex=*+1
-	ldx #$00
+	ldx @savex
 	pla
 	jsr __ram_call
 	.byte FINAL_BANK_DEBUG

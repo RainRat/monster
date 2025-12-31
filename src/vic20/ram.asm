@@ -7,16 +7,17 @@
 
 ;*******************************************************************************
 ; CALL
+; Inline procedure to call a routine in another bank
 ; Performs a JSR to the target address at the given bank. When the routine is
 ; done, returns to the caller's bank.
 ; IN:
-;  - zp::bank:        the bank of the procedure to call
-;  - zp::bankjmpaddr: the procedure address
-;  - zp::banktmp:     the destination bank address
+;  - *+3: the bank of the procedure to call
+;  - *+4: the procedure address
 .export __ram_call
 .proc __ram_call
-@a=zp::banktmp+1
-@x=zp::banktmp+2
+@bank = zp::banktmp
+@a    = zp::banktmp+1
+@x    = zp::banktmp+2
 	stx @x
 	sta @a
 
@@ -27,7 +28,7 @@
 
 	jsr exp::push_bank	; save current bank
 	jsr inline::getarg_b	; get bank byte
-	sta @bank_sel
+	sta @bank
 
 	jsr inline::getarg_w	; get procedure address
 	stx zp::bankjmpvec
@@ -35,8 +36,7 @@
 
 	jsr inline::setup_done
 
-@bank_sel=*+1
-	lda #$00		; get the bank to activate
+	lda @bank		; get the bank to activate
 	SELECT_BANK_A		; and activate it
 
 	lda @a			; restore .A
