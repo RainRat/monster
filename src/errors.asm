@@ -10,7 +10,11 @@
 .include "string.inc"
 .include "text.inc"
 
-.DATA
+.ifdef FE3
+.RODATA
+.else
+.segment "ERRORS"
+.endif
 ;******************************************************************************
 err_no_err:
 	.byte 0

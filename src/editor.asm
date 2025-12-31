@@ -5144,7 +5144,8 @@ __edit_gotoline:
 .proc report_typein_error
 	jsr err::get
 	jsr text::info
-	jmp beep::short
+	jsr beep::short
+	jmp key::waitch
 .endproc
 
 ;*******************************************************************************

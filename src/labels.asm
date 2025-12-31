@@ -1378,9 +1378,10 @@ anon_addrs: .res MAX_ANON*2
 ;  - .A: nonzero if the label is local
 ;  - .Z: clear if label is local, set if not
 .proc is_local
+@l=r0
 	stxy @l
-@l=*+1
-	lda $f00d
+	ldy #$00
+	lda (@l),y
 	cmp #'@'
 	bne :+
 	lda #$01	; flag that label IS local

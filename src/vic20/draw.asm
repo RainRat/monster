@@ -46,6 +46,7 @@ COLOR_SELECT  = 6
 ;  - .X: the row to highlight
 .export __draw_hline
 .proc __draw_hline
+@savey=zp::text
 	sta mem::rowcolors_idx,x
 	sty @savey
 
@@ -64,8 +65,7 @@ COLOR_SELECT  = 6
 	dex
 	bne :-
 @done:	stx mem::coloron	; (en/dis)able color
-@savey=*+1
-	ldy #$00
+	ldy @savey
 	rts
 .endproc
 

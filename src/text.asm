@@ -844,15 +844,17 @@ LAST_TAB_COL=TAB_WIDTH*(tabs_end-tabs)
 ;  - .XY: the string to print
 .export __text_info
 .proc __text_info
-@info=zp::text
+@info = zp::text
+@ret  = zp::asmresult
 	; save return address
 	pla
-	sta @ret1
+	sta @ret+1
 	pla
-	sta @ret0
-	jsr __text_render
+	sta @ret
 
+	jsr __text_render
 	stxy @info
+
 	ldy #$00
 :	lda (@info),y
 	sta mem::statusinfo,y
@@ -861,13 +863,10 @@ LAST_TAB_COL=TAB_WIDTH*(tabs_end-tabs)
 	cpy #20
 	bne :-
 
-@done:
-; restore return address
-@ret0=*+1
-	lda #$00
+@done:	; restore return address
+	lda @ret
 	pha
-@ret1=*+1
-	lda #$00
+	lda @ret+1
 	pha
 	rts
 .endproc

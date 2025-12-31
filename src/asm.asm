@@ -101,6 +101,8 @@ resulttype = zp::asmtmp+5 ; how to format line (ASM_COMMENT, ASM_OPCODE, etc.)
 opcode     = zp::asmtmp+6 ; opcode (if there was one)
 operand    = zp::asmtmp+7 ; operand (if there was one)
 
+savereg    = zp::text
+
 SEG_CODE = 1	; flag for CODE segment
 SEG_BSS  = 2	; flag for BSS segment (all data must be 0, PC not updated)
 
@@ -1946,6 +1948,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 .export __asm_include
 __asm_include:
 @fname=rc
+@err=savereg
 @readfile:
 	stxy @fname
 
@@ -2046,7 +2049,7 @@ __asm_include:
 	ldxy zp::virtualpc
 	jsr dbgi::newblock	; start a new block in original file
 @done:
-@err=*+1
+	lda @err
 	lda #$00	; get err code
 	cmp #$01	; set carry if >= 1
 	rts
@@ -2594,15 +2597,14 @@ __asm_include:
 ; APPEND CH
 ; Appends a character to the disassembled instruction
 @appendch:
-	sty @savey
+	sty savereg
 	ldy @nostr
 	bne :+
 	;ldy #$00
 	sta (@dst),y
 	incw @dst
 :
-@savey=*+1
-	ldy #$00
+	ldy savereg
 	rts
 .endproc
 

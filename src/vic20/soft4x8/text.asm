@@ -92,10 +92,12 @@
 ;  - .A:  the row to display the text at
 .proc _puts
 @txtbyte  = zp::text
+@txtleft  = zp::text+1
+@txtright = zp::text+3
+@txtdst   = zp::text+5
 @txtsrc   = zp::text+7
-@ysave	  = zp::text+9
-	stxy @txtsrc0
-	stxy @txtsrc1
+@cnt      = zp::text+9
+	stxy @txtsrc
 	asl
         asl
         asl
@@ -105,35 +107,33 @@
         sta @txtdst+1
 
 	ldy #$00
-@txtsrc0=*+1
-@l0:    ldx $f00d,y
+	sty @cnt
+@l0:    lda (@txtsrc),y
+	tax
 	iny
 	lda charaddrlo-32,x
 	sta @txtleft
 	lda charaddrhi-32,x
 	sta @txtleft+1
 
-@txtsrc1=*+1
-@right:	ldx $f00d,y
+@right:	lda (@txtsrc),y
+	tax
         iny
+	sty @cnt
 	lda charaddrlo-32,x
 	sta @txtright
 	lda charaddrhi-32,x
 	sta @txtright+1
 
-	ldx #8-1
-@l1:
-@txtleft=*+1
-	lda $f00d,x
+	ldy #8-1
+@l1:	lda (@txtleft),y
 	and #$f0
 	sta @txtbyte
-@txtright=*+1
-	lda $f00d,x
+	lda (@txtright),y
 	and #$0f
 	ora @txtbyte
-@txtdst=*+1
-	sta $f00d,x
-	dex
+	sta (@txtdst),y
+	dey
 	bpl @l1
 
         lda @txtdst
@@ -143,6 +143,7 @@
 	bcc @nextch
 	inc @txtdst+1
 @nextch:
+	ldy @cnt
 	cpy #40
 	bcc @l0
         rts

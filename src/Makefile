@@ -27,9 +27,11 @@ ifeq ($(TARGET),vic20)
 		KERNAL_JIFFY=JiffyDOS_VIC-20_PAL.bin
 		KERNAL=kernal.901486-07.bin
 	endif
+	LINK_FILE=link-vic20-$(EXPANSION)
 endif
 ifeq ($(TARGET),c64)
 	KERNAL=JiffyDOS_C64.bin
+	LINK_FILE=link-c64
 endif
 
 # get emulator flags based on REGION
@@ -72,7 +74,7 @@ MODE_SRC=$(wildcard $(TARGET)/$(SCREEN_MODE)/*.asm)
 # platform independent source files
 PI_SRC=$(wildcard *.asm)
 
-SRC=$(TARGET_SRC) $(PI_SRC) $(MODE_SRC) #$(TARGET_EXP_SRC)
+SRC=$(TARGET_SRC) $(PI_SRC) $(MODE_SRC) $(TARGET_EXP_SRC)
 TEST_TXTS=$(wildcard tests/*.txt)
 
 #UNIT=$(wildcard *.a65)
@@ -98,10 +100,10 @@ installer.prg: installer/install.asm
 	$(CL65) -t $(TARGET) -o $@ -C installer/link-installer.config $^
 
 monster-cart.prg: $(BOOTSRC) $(SRC)
-	$(CL65) -t $(TARGET) -o $@ --asm-define CART $(ASMFLAGS) -C link-$(TARGET)-cart.config $^ -Ln labels.txt -v -m map.txt
+	$(CL65) -t $(TARGET) -o $@ --asm-define CART $(ASMFLAGS) -C $(LINK_FILE)-cart.config $^ -Ln labels.txt -v -m map.txt
 
 monster-cart-test.prg: $(BOOTSRC) $(SRC) $(UNIT)
-	$(CL65) -t $(TARGET) -o $@ --asm-define TEST --asm-define CART $(ASMFLAGS) -C link-$(TARGET)-cart.config $^ -Ln labels.txt -v -m map.txt
+	$(CL65) -t $(TARGET) -o $@ --asm-define TEST --asm-define CART $(ASMFLAGS) -C $(LINK_FILE)-cart.config $^ -Ln labels.txt -v -m map.txt
 
 $(CART_IMAGE): monster-cart.prg
 	$(PYTHON) makecart.py labels.txt monster-cart.prg $(CART_IMAGE)
@@ -110,7 +112,7 @@ $(TEST_IMAGE): monster-cart-test.prg
 	$(PYTHON) makecart.py labels.txt monster-cart-test.prg $(TEST_IMAGE)
 
 monster-disk.prg: $(BOOTSRC) $(SRC)
-	$(CL65) -t $(TARGET) -o $@ $(ASMFLAGS) -C link-$(TARGET)-disk.config $^ -Ln labels.txt -v -m map.txt
+	$(CL65) -t $(TARGET) -o $@ $(ASMFLAGS) -C $(LINK_FILE)-disk.config $^ -Ln labels.txt -v -m map.txt
 
 boot.prg: monster-disk.prg
 ifeq ($(TARGET),vic20)

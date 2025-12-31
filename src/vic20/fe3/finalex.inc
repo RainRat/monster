@@ -9,6 +9,10 @@ VIC20_FINALEX_INC=1
 .import __ram_memcpy_bank
 .import __ram_get_byte
 .import __ram_store_byte
+
+.import __fe3_boot
+.import __fe3_init0
+.import __fe3_init1
 .import __fe3_push_bank
 .import __fe3_pop_bank
 
@@ -91,13 +95,15 @@ FINAL_BANK_FASTTEXT  = $a0|$e
 
 ;******************************************************************************
 .scope fe3
+	init0      = __fe3_init0
+	init1      = __fe3_init1
 	copy       = __ram_memcpy
 	copyline   = __ram_copy_line
-	store      = __ram_store_byte
-	store_off  = __ram_bank_store_rel
 	load       = __ram_load_byte
 	load_off   = __ram_load_byte_off
 	get_byte   = __ram_get_byte
+	store      = __ram_store_byte
+	store_off  = __ram_bank_store_rel
 .endscope
 
 .scope exp

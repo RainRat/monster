@@ -2,6 +2,8 @@
 ; ULTIMEM.ASM
 ;*******************************************************************************
 
+.include "../../zeropage.inc"
+
 ;*******************************************************************************
 .export __ultimem_select_bank
 .proc __ultimem_select_bank
@@ -19,8 +21,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_MAIN
-.proc _ultimem_use_MAIN
+.export __ultimem_use_MAIN
+.proc __ultimem_use_MAIN
 	lda #$00
 	sta $9ff8	; BLK1
 	lda #$01
@@ -33,8 +35,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_SOURCE0
-.proc _ultimem_use_SOURCE0
+.export __ultimem_use_SOURCE0
+.proc __ultimem_use_SOURCE0
 	lda #$04
 	sta $9ff8	; BLK1
 	lda #$05
@@ -47,8 +49,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_SOURCE1
-.proc _ultimem_use_SOURCE1
+.export __ultimem_use_SOURCE1
+.proc __ultimem_use_SOURCE1
 	lda #$08
 	sta $9ff8	; BLK1
 	lda #$09
@@ -61,8 +63,8 @@
 .endproc
 
 ;*******************************************************************************
-.export_ultimem_use_SOURCE2
-.proc _ultimem_use_SOURCE2
+.export __ultimem_use_SOURCE2
+.proc __ultimem_use_SOURCE2
 	lda #$0c
 	sta $9ff8	; BLK1
 	lda #$0d
@@ -75,8 +77,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_SOURCE3
-.proc _ultimem_use_SOURCE3
+.export __ultimem_use_SOURCE3
+.proc __ultimem_use_SOURCE3
 	lda #$10
 	sta $9ff8	; BLK1
 	lda #$11
@@ -89,8 +91,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_SOURCE4
-.proc _ultimem_use_SOURCE4
+.export __ultimem_use_SOURCE4
+.proc __ultimem_use_SOURCE4
 	lda #$14
 	sta $9ff8	; BLK1
 	lda #$15
@@ -103,8 +105,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_SOURCE5
-.proc _ultimem_use_SOURCE5
+.export __ultimem_use_SOURCE5
+.proc __ultimem_use_SOURCE5
 	lda #$18
 	sta $9ff8	; BLK1
 	lda #$19
@@ -117,8 +119,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_SOURCE6
-.proc _ultimem_use_SOURCE6
+.export __ultimem_use_SOURCE6
+.proc __ultimem_use_SOURCE6
 	lda #$1c
 	sta $9ff8	; BLK1
 	lda #$1d
@@ -131,8 +133,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_SOURCE7
-.proc _ultimem_use_SOURCE7
+.export __ultimem_use_SOURCE7
+.proc __ultimem_use_SOURCE7
 	lda #$20
 	sta $9ff8	; BLK1
 	lda #$21
@@ -145,8 +147,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_MACROS
-.proc _ultimem_use_MACROS
+.export __ultimem_use_MACROS
+.proc __ultimem_use_MACROS
 	lda #$24
 	sta $9ff8	; BLK1
 	lda #$25
@@ -159,8 +161,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_UDGEDIT
-.proc _ultimem_use_UDGEDIT
+.export __ultimem_use_UDGEDIT
+.proc __ultimem_use_UDGEDIT
 	lda #$28
 	sta $9ff8	; BLK1
 	lda #$29
@@ -173,8 +175,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_LINKER
-.proc _ultimem_use_LINKER
+.export __ultimem_use_LINKER
+.proc __ultimem_use_LINKER
 	lda #$2c
 	sta $9ff8	; BLK1
 	lda #$2d
@@ -187,8 +189,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_MONITOR
-.proc _ultimem_use_MONITOR
+.export __ultimem_use_MONITOR
+.proc __ultimem_use_MONITOR
 	lda #$30
 	sta $9ff8	; BLK1
 	lda #$31
@@ -201,8 +203,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_BUFF
-.proc _ultimem_use_BUFF
+.export __ultimem_use_BUFF
+.proc __ultimem_use_BUFF
 	lda #$34
 	sta $9ff8	; BLK1
 	lda #$35
@@ -215,8 +217,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_SYMBOLS
-.proc _ultimem_use_SYMBOLS
+.export __ultimem_use_SYMBOLS
+.proc __ultimem_use_SYMBOLS
 	lda #$38
 	sta $9ff8	; BLK1
 	lda #$39
@@ -229,8 +231,8 @@
 .endproc
 
 ;*******************************************************************************
-.export _ultimem_use_SYMVIEW
-.proc _ultimem_use_SYMVIEW
+.export __ultimem_use_SYMVIEW
+.proc __ultimem_use_SYMVIEW
 	lda #$3c
 	sta $9ff8	; BLK1
 	lda #$3d

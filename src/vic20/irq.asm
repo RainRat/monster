@@ -1,4 +1,4 @@
-.include "banks.inc"
+.include "expansion.inc"
 .include "prefs.inc"
 .include "settings.inc"
 .include "../beep.inc"
@@ -30,8 +30,14 @@ CYCLES_PER_ROW  = 8 * (CYCLES_PER_LINE - 2) - 25
 NUM_ROWS = 24
 
 ;*******************************************************************************
+.segment "SHAREBSS"
+savebank0: .byte 0
+savebank1: .byte 0
+tmp:       .res 2
+
+;*******************************************************************************
 .BSS
-rowcnt: .byte 0
+rowcnt:   .byte 0
 
 .segment "IRQ"
 ;*******************************************************************************
@@ -40,25 +46,23 @@ rowcnt: .byte 0
 ; It is located so that it may be called from any bank
 .proc sys_update
 	lda $9c02
-	sta @savebank
+	sta savebank0
 	lda #FINAL_BANK_MAIN
-	sta $9c02
+	SELECT_BANK_A
 	jsr stable_handler
-@savebank=*+1
-	lda #$00
-	sta $9c02
+	lda savebank0
+	SELECT_BANK_A
 	jmp $eb15
 .endproc
 
 .proc row_interrupt
 	lda $9c02
-	sta @savebank
+	sta savebank1
 	lda #FINAL_BANK_MAIN
-	sta $9c02
+	SELECT_BANK_A
 	jsr row_handler
-@savebank=*+1
-	lda #$00
-	sta $9c02
+	lda savebank1
+	SELECT_BANK_A
 	jmp $eb15
 .endproc
 
@@ -69,6 +73,8 @@ rowcnt: .byte 0
 ; STABLE_HANDLER
 .export stable_handler
 .proc stable_handler
+@savef5=tmp
+@savef6=tmp
 	cld
 	sec
 .ifdef PAL
@@ -128,11 +134,9 @@ rowcnt: .byte 0
 	jsr $ebba		; store to keyboard table
 
 @keydone:
-@savef5=*+1
-	lda #$00
+	lda @savef5
         sta $f5
-@savef6=*+1
-	lda #$00
+	lda @savef6
         sta $f6
 
 	jmp beep::update
