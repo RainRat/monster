@@ -2,8 +2,8 @@ TARGET ?= vic20
 REGION ?= NTSC
 
 # for Vic-20, which expansion to use
-# Valid values: fe3, ultimem
-EXPANSION ?= fe3
+# Valid values: FE3, ultimem
+EXPANSION ?= FE3
 
 # default device # (for cart image)
 DEFAULT_DEVICE=8
@@ -12,10 +12,10 @@ DEFAULT_DEVICE=8
 XVIC=xvic
 X64=x64sc
 
-SCREEN_MODE=soft4x8
-#SCREEN_MODE=hard8x8
+#SCREEN_MODE=soft4x8
+SCREEN_MODE=hard8x8
 
-ASMFLAGS=--asm-define $(TARGET) --asm-define $(REGION) --asm-define $(SCREEN_MODE) --asm-define DEFAULT_DEVICE=$(DEFAULT_DEVICE) --asm-define FE3
+ASMFLAGS=--asm-define $(TARGET) --asm-define $(REGION) --asm-define $(SCREEN_MODE) --asm-define DEFAULT_DEVICE=$(DEFAULT_DEVICE) --asm-define $(EXPANSION)
 
 # set KERNAL based on configured TARGET and REGION
 ifeq ($(TARGET),vic20)

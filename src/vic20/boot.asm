@@ -337,7 +337,6 @@ bootlogo:
 	; initialize screen
 	jsr scr::init
 	sei
-	jsr edit::clear
 	lda #$00
 	sta $c6			; clear keyboard buffer
 
@@ -372,6 +371,7 @@ bootlogo:
 	jsr asm::reset
 	jsr buff::clear		; clear copy buffer
 	jsr run::clr		; init user state (run BASIC startup proc)
+	jsr edit::clear
 
 	lda #$00
 	sta mem::linebuffer

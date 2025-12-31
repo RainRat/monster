@@ -180,6 +180,23 @@ FINAL_BANK_MAIN = $00
 .endproc
 
 ;*******************************************************************************
+; LOAD BYTE
+; Returns the byte in bank .A at address .YX
+; IN:
+;  - .XY: the address to read from
+;  - .A:  the bank to read from
+; OUT:
+;  - .A: the byte that was read
+.export	__ram_load_byte
+.proc __ram_load_byte
+	pha
+	lda #$00
+	sta zp::bankval
+	pla
+	; fall through
+.endproc
+
+;*******************************************************************************
 ; LOAD BYTE OFF
 ; Returns the byte in bank .A at address .YX plus a given offset
 ; IN:

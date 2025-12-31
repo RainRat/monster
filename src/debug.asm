@@ -89,13 +89,12 @@ DEBUG_IFACE_TEXT = 1	; text interface (returns to TUI)
 debugtmp = zp::debuggertmp	; scratchpad
 
 ;******************************************************************************
-.segment "BSS_NOINIT"
+.segment "VSYSRAM"
 ; $00-$200 is stored in the main BSS segment for faster access by the simulator
 .export prog00
 prog00:	.res $400	; $00-$0400
 .export dbg00
 dbg00:  .res $400	; $00-$400
-
 
 ;*******************************************************************************
 ; Program state variables

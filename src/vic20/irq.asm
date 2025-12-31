@@ -3,6 +3,7 @@
 .include "settings.inc"
 .include "../beep.inc"
 .include "../key.inc"
+.include "../layout.inc"
 .include "../macros.inc"
 .include "../memory.inc"
 
@@ -26,8 +27,6 @@ IRQ_START_LINE = $11
 .endif
 TIMER_VALUE     = LINES * CYCLES_PER_LINE - 2 ; timer value for stable raster int.
 CYCLES_PER_ROW  = 8 * (CYCLES_PER_LINE - 2) - 25
-
-NUM_ROWS = 24
 
 ;*******************************************************************************
 .BSS
@@ -174,7 +173,7 @@ rowcnt: .byte 0
 	lda mem::rowcolors,x
 	sta $900f
 
-	cpx #NUM_ROWS-1
+	cpx #SCREEN_HEIGHT-1
 	inc rowcnt
 	bcs :+
 	rts

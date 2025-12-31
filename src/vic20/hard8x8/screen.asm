@@ -3,7 +3,7 @@
 ;*******************************************************************************
 
 .include "../fastcopy.inc"
-.include "../finalex.inc"
+.include "../prefs.inc"
 .include "../../config.inc"
 .include "../../macros.inc"
 .include "../../memory.inc"
@@ -53,7 +53,7 @@ SCREEN_ROWS = 12	; number of physical rows per column
 	lda #$e2	; lowercase chars / screen @ $1800
 	sta $9005
 
-	lda #(BG_COLOR<<4 | BORDER_COLOR)
+	lda prefs::normal_color
 	sta $900f
 	rts
 .endproc

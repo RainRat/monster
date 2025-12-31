@@ -97,13 +97,6 @@ FINAL_BANK_FASTTEXT  = $a0|$e
 .scope fe3
 	init0      = __fe3_init0
 	init1      = __fe3_init1
-	copy       = __ram_memcpy
-	copyline   = __ram_copy_line
-	load       = __ram_load_byte
-	load_off   = __ram_load_byte_off
-	get_byte   = __ram_get_byte
-	store      = __ram_store_byte
-	store_off  = __ram_bank_store_rel
 .endscope
 
 .scope exp
