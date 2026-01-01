@@ -23,7 +23,11 @@ __str_null = *-1
 __str_endrep: .byte ".endrep"
 
 .export __str_breakpoints_title
+.ifdef hard8x8
+__str_breakpoints_title: .byte ESCAPE_SPACING,6, "breakpoints",0
+.else
 __str_breakpoints_title: .byte ESCAPE_SPACING,14, "breakpoints",0
+.endif
 
 .export __str_question_marks
 __str_question_marks: .byte "???",0
@@ -85,7 +89,11 @@ __str_linking: .byte "linking...",0
 __str_edit_file_save_failed: .byte "failed to save file; error ", ESCAPE_BYTE, 0
 
 .export __str_watches_title
+.ifdef hard8x8
+__str_watches_title: .byte ESCAPE_SPACING,8, "watches",0
+.else
 __str_watches_title: .byte ESCAPE_SPACING,16, "watches",0
+.endif
 
 .export __str_dir
 __str_dir: .byte "$",0
@@ -151,10 +159,14 @@ __str_watches_changed_line:
 .DATA
 ; <filename> l: <line no.> <symbol> : <addr>
 .export __str_breakpoints_line
-__str_breakpoints_line: .byte "  ", ESCAPE_BYTE," ", ESCAPE_STRING, " l:", ESCAPE_VALUE_DEC, " [", ESCAPE_STRING, "] $", ESCAPE_VALUE,0
-
 .export __str_breakpoints_line_noname
+.ifdef hard8x8
+__str_breakpoints_line: .byte "  ", ESCAPE_BYTE," ", ESCAPE_STRING, " l:", ESCAPE_VALUE_DEC, 0
+__str_breakpoints_line_noname: .byte "  ", ESCAPE_BYTE," ", " $", ESCAPE_VALUE,0
+.else
+__str_breakpoints_line: .byte "  ", ESCAPE_BYTE," ", ESCAPE_STRING, " l:", ESCAPE_VALUE_DEC, " [", ESCAPE_STRING, "] $", ESCAPE_VALUE,0
 __str_breakpoints_line_noname: .byte "  ", ESCAPE_BYTE," ", ESCAPE_STRING, " $", ESCAPE_VALUE,0
+.endif
 
 .export __str_watch_added
 __str_watch_added:

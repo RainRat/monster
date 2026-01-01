@@ -324,6 +324,13 @@ COLMEM_ADDR=$9400
 	cpx dbg::numbreakpoints
 	bcs @datadone
 
+@lineno:
+	ldx @offset
+	; check if there is a file ID for this breakpoint
+	lda dbg::breakpoint_fileids,x
+	cmp #$ff
+	bne :+
+
 	; push the address of the breakpoint
 	ldy dbg::breakpointshi,x
 	lda dbg::breakpointslo,x
@@ -331,32 +338,6 @@ COLMEM_ADDR=$9400
 	tax
 	tya
 	pha
-
-	; get/push the symbol name for this address (if there is one)
-	jsr lbl::by_addr
-	bcc @getname
-@noname:
-	lda #>strings::question_marks
-	pha
-	lda #<strings::question_marks
-	pha
-	jmp @lineno
-
-@getname:
-	lda #>@namebuff
-	pha
-	sta r0+1
-	lda #<@namebuff
-	pha
-	sta r0
-	jsr lbl::getname
-
-@lineno:
-	ldx @offset
-	; check if there is a file ID for this breakpoint
-	lda dbg::breakpoint_fileids,x
-	cmp #$ff
-	bne :+
 
 	ldxy #strings::breakpoints_line_noname
 	stxy @format_str
@@ -378,13 +359,12 @@ COLMEM_ADDR=$9400
 	ldxy #strings::breakpoints_line
 	stxy @format_str
 
-@print:
-	; display a symbol if the breakpoint is active
+@print: ; display a symbol if the breakpoint is active
 	ldx @offset
-	ldy #BREAKPOINT_OFF_CHAR
+	ldy #$20			; breakpoint OFF
 	lda dbg::breakpoint_flags,x
 	beq :+
-	dey				; ldy #BREAKPOINT_CHAR
+	ldy #$2a			; breakpoint ON
 :	sty strings::breakpoints_line
 
 	; push the breakpoint ID
@@ -451,10 +431,10 @@ COLMEM_ADDR=$9400
 
 	; push SPACE if not dirty or '!' if dirty
 	ldy #' '
-	txa				; get flags
-	and #WATCH_DIRTY		; dirty?
-	beq :+				; if NOT dirty, don't push previous value
-	ldy #'!'			; dirty
+	txa			; get flags
+	and #WATCH_DIRTY	; dirty?
+	beq :+			; if NOT dirty, don't push previous value
+	ldy #'!'		; dirty
 :	tya
 	pha
 
