@@ -4,6 +4,7 @@
 .include "../../debug.inc"
 .include "../../debuginfo.inc"
 .include "../../flags.inc"
+.include "../../format.inc"
 .include "../../labels.inc"
 .include "../../macros.inc"
 .include "../../memory.inc"
@@ -212,10 +213,11 @@ COLMEM_ADDR=$9400
 @filename=zp::text
 @tmp=zp::text
 @leftend=zp::text+2
-@columnstart=STATUS_COL+2
+@columnstart=STATUS_COL+3
 @linestart=STATUS_COL+5
 @sizestart=STATUS_COL+13
 @modestart=STATUS_COL
+@fmtstart=STATUS_COL+1
 	lda #' '
 	ldx #SCREEN_WIDTH
 @clr:	sta mem::statusline,x
@@ -255,6 +257,13 @@ COLMEM_ADDR=$9400
 @mode:	; add the editor mode
 	lda text::statusmode
 	sta mem::statusline+@modestart
+
+	lda fmt::enable
+	beq :+
+	lda #'f'+$20
+	skw
+:	lda #' '
+	sta mem::statusline+@fmtstart
 
 	ldy #$00
 @copyinfo:
