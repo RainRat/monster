@@ -4,7 +4,7 @@
 ; a user's programs
 ;*******************************************************************************
 
-.include "banks.inc"
+.include "expansion.inc"
 .include "fastcopy.inc"
 .include "prefs.inc"
 .include "settings.inc"
@@ -539,7 +539,7 @@ brkhandler2_size=*-brkhandler2
 stephandler:
 	; switch to USER bank
 	lda #FINAL_BANK_USER
-	sta $9c02
+	SELECT_BANK_A
 	pla
 	sta STEP_RESTORE_A
 
@@ -562,7 +562,7 @@ step_buffer:
 
 	; switch back to DEBUGGER bank
 	lda #FINAL_BANK_MAIN
-	sta $9c02
+	SELECT_BANK_A
 	pla
 	jmp step_done
 stephandler_size=*-stephandler

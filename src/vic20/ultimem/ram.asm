@@ -3,6 +3,7 @@
 ; This file contains routines for reading, writing, and executing code in
 ; different banks.
 ;******************************************************************************
+
 .include "../banks.inc"
 .include "../../config.inc"
 .include "../../inline.inc"
@@ -10,6 +11,7 @@
 .include "../../zeropage.inc"
 
 .import __ultimem_bank
+.import __ultimem_select_bank
 
 .segment "BANKCODE"
 
@@ -44,13 +46,15 @@
 @dst=zp::banktmp
 	stxy @dst
 
-	sta $9c02
+	jsr __ultimem_select_bank
 	lda zp::bankval
 	ldy zp::bankoffset
 	sta (@dst),y
 
-	ldx #$80
-	stx $9c02	; restore bank
+	pha
+	lda #FINAL_BANK_MAIN
+	jsr __ultimem_select_bank
+	pla
 	ldxy @dst
 	rts
 .endproc
@@ -87,11 +91,13 @@
 .proc __ram_load_byte_off
 @src=zp::banktmp
 	stxy @src
-	sta $9c02	; set bank
+	jsr __ultimem_select_bank	; set bank
 	ldy zp::bankval
 	lda (@src),y
-	ldx #$80
-	stx $9c02	; restore bank
+	pha
+	lda #FINAL_BANK_MAIN
+	jsr __ultimem_select_bank
+	pla
 	ldx @src
 	rts
 .endproc
@@ -102,7 +108,8 @@
 ; IN:
 ;  - .X: the bank to return to
 .proc return_to_x
-	stx $9c02	; restore bank
+	txa
+	jsr __ultimem_select_bank
 	rts
 .endproc
 
@@ -119,8 +126,9 @@
 ;   - .A: the last byte copied
 .export __ram_copy_line
 .proc __ram_copy_line
-	ldx $9c02	; get current bank
-	sta $9c02	; set bank to copy within
+	ldx __ultimem_bank		; get current bank
+	jsr __ultimem_select_bank	; set bank to copy within
+
 	ldy #$00
 :	lda (zp::bankaddr0),y
 	sta (zp::bankaddr1),y
@@ -248,7 +256,7 @@ __ram_copy_banked:
 .proc __ultimem_pop_bank
 	dec zp::banksp
 	ldx zp::banksp
-	lda zp::bankstack,x	; get the caller's bank
-	sta $9c02		; restore bank
+	lda zp::bankstack,x		; get the caller's bank
+	jsr __ultimem_select_bank	; restore bank
 	rts
 .endproc

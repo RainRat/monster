@@ -113,7 +113,6 @@ FINAL_BANK_FASTTEXT  = $a0|$e
 ; Activates the bank in .A
 .macro SELECT_BANK_A
 	jsr __ultimem_select_bank
-	sta $9c02
 .endmacro
 
 .endif
