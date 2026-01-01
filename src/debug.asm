@@ -208,6 +208,15 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	ldx #$ff
 	txs
 
+.ifdef hard8x8
+	ldx #REGISTERS_LINE
+	jsr draw::hiline
+	ldx #REGISTERS_LINE+2
+	jsr draw::hiline
+	ldx #SCREEN_HEIGHT-1
+	jsr draw::resetline
+.endif
+
 	jmp return_to_debugger		; enter the debugger
 .endproc
 
@@ -1393,11 +1402,13 @@ __debug_remove_breakpoint:
 
 	jsr ui::regs_contents
 
-	lda #REGISTERS_LINE+1
-
 .ifndef hard8x8
+	lda #REGISTERS_LINE+1
 	jmp text::print
 .else
+	lda #$00
+	sta mem::linebuffer2+16	; break the register contents line
+	lda #REGISTERS_LINE+1
 	jsr text::print
 
 	ldxy #strings::debug_registers2
@@ -1405,13 +1416,8 @@ __debug_remove_breakpoint:
 	jsr text::print
 
 	jsr ui::regs_contents
-	txa
-	clc
-	adc #17
-	tax
-	bcc :+
-	iny
-:	lda #REGISTERS_LINE+3
+	ldxy #mem::linebuffer2+17
+	lda #REGISTERS_LINE+3
 	jmp text::print
 .endif
 .endproc
