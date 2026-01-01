@@ -14,11 +14,13 @@
 .include "../../text.inc"
 .include "../../util.inc"
 .include "../../watches.inc"
+.include "../../vmem.inc"
 .include "../../zeropage.inc"
 
 COLMEM_ADDR=$9400
 
 .CODE
+
 ;*******************************************************************************
 ; REGS CONTENTS
 ; Returns a line containing the contents of the registers
@@ -185,7 +187,7 @@ COLMEM_ADDR=$9400
 
 @cpyclk:
 	lda $100,x
-	sta @buff+32,x
+	sta @buff+31,x
 	cpx #$07
 	inx
 	bcc @cpyclk
@@ -490,5 +492,83 @@ COLMEM_ADDR=$9400
 	lda @id
 	pha
 	jsr text::render
+	rts
+.endproc
+
+;*******************************************************************************
+; MEMLINE
+; Returns a line containing 8 bytes of the contents of the given address
+; along with a text rendering of those 8 bytes.
+; IN:
+;   - .XY: the address to get the memory rendering of
+; OUT:
+;   - mem::spare: the rendered memory data
+;   - .XY:        the rendered memory data
+BYTES_TO_DISPLAY=4
+.export __ui_memline
+.proc __ui_memline
+@src=ra
+@col=rc
+	stxy @src
+
+	; initialize line to empty (all spaces)
+	lda #' '
+	ldx #SCREEN_WIDTH-1
+:	sta mem::spare,x
+	dex
+	bpl :-
+
+@l0:	; draw the address of this line
+	lda @src+1
+	jsr util::hextostr
+	sty mem::spare
+	stx mem::spare+1
+	lda @src
+	jsr util::hextostr
+	sty mem::spare+2
+	stx mem::spare+3
+	lda #':'
+	sta mem::spare+4
+
+	ldx #$00
+@l1:	stx @col
+
+	; get a byte to display
+	ldy #$00
+	ldxy @src
+	jsr vmem::load
+	pha			; save the byte
+
+	incw @src		; update @src to the next byte
+
+@val2ch:
+	; get the character representation of the byte
+	cmp #$20
+	bcc :+
+	cmp #$80
+	bcc @cont
+:	lda #'.'	; use '.' for undisplayable chars
+
+@cont:	ldx @col
+	sta mem::spare+17,x	; write the character representation
+	pla			; get the byte we're rendering
+	jsr util::hextostr	; convert to hex characters
+	txa			; get LSB char
+	pha			; and save temporarily
+	lda @col		; get col*3 (column to draw byte)
+	asl
+	adc @col
+	tax
+	pla			; restore LSB char to render
+	sta mem::spare+6,x	; store to text buffer
+	tya			; get MSB
+	sta mem::spare+5,x	; store to text buffer
+	ldx @col
+	inx
+	cpx #BYTES_TO_DISPLAY	; have we drawn all columns?
+	bcc @l1			; repeat until we have
+
+	ldx #<mem::spare
+	ldy #>mem::spare
 	rts
 .endproc

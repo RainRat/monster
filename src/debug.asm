@@ -1394,7 +1394,26 @@ __debug_remove_breakpoint:
 	jsr ui::regs_contents
 
 	lda #REGISTERS_LINE+1
+
+.ifndef hard8x8
 	jmp text::print
+.else
+	jsr text::print
+
+	ldxy #strings::debug_registers2
+	lda #REGISTERS_LINE+2
+	jsr text::print
+
+	jsr ui::regs_contents
+	txa
+	clc
+	adc #17
+	tax
+	bcc :+
+	iny
+:	lda #REGISTERS_LINE+3
+	jmp text::print
+.endif
 .endproc
 
 ;*******************************************************************************

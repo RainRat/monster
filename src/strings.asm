@@ -35,7 +35,15 @@ __str_debug_brk_line: .byte "brk in ", ESCAPE_STRING, " line ",ESCAPE_VALUE_DEC,
 __str_debug_brk_addr: .byte "brk @ ", ESCAPE_VALUE, "  ", ESCAPE_STRING,0
 
 .export __str_debug_registers
+.ifdef hard8x8
+__str_debug_registers: .byte " pc  a  x  y  sp",0
+__str_debug_registers2: .byte "nv-bdizc addr      clk",0
+.else
 __str_debug_registers: .byte " pc  a  x  y  sp nv-bdizc addr      clk",0
+__str_debug_registers2: .byte 0
+.endif
+
+.export __str_debug_registers2
 
 .export __str_debug_stop_debugging
 __str_debug_stop_debugging: .byte "stop debugging? (press 'y' to quit)",0
@@ -153,7 +161,12 @@ __str_watch_added:
 .byte "watch added @ ", $fe, 0
 
 .export __str_memview_title
-__str_memview_title: .byte "          memory[$1000]",0
+__str_memview_title:
+.ifdef hard8x8
+.byte "    memory[$1000]",0
+.else
+.byte "          memory[$1000]",0
+.endif
 
 .export __str_symview_title
 __str_symview_title: .byte "symbols",0

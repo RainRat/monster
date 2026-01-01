@@ -5,6 +5,7 @@
 .import __str_debug_brk_line
 .import __str_debug_brk_addr
 .import __str_debug_registers
+.import __str_debug_registers2
 .import __str_debug_stop_debugging
 .import __str_buffers
 .import __str_deleting
@@ -56,6 +57,7 @@
 	debug_brk_line          = __str_debug_brk_line
 	debug_brk_addr          = __str_debug_brk_addr
 	debug_registers         = __str_debug_registers
+	debug_registers2        = __str_debug_registers2
 	debug_stop_debugging    = __str_debug_stop_debugging
 	deleting                = __str_deleting
 	device_not_present      = __str_device_not_present

@@ -707,6 +707,21 @@ __mon_default_start_set: .byte 0
 	jsr mon::puts
 	CALLMAIN ui::regs_contents
 	jsr mon::puts
+
+.ifdef hard8x8
+	ldxy #strings::debug_registers2
+	jsr mon::puts
+
+	CALLMAIN ui::regs_contents
+	txa
+	clc
+	adc #17
+	tax
+	bcc :+
+	iny
+:	jsr mon::puts
+.endif
+
 	clc
 @done:	rts
 .endproc
@@ -916,7 +931,7 @@ __mon_default_start_set: .byte 0
 @l0:	lda mon::int
 	bne @done		; SIGINT, quit
 	ldxy @addr
-	CALLMAIN view::memline
+	CALLMAIN ui::memline
 	jsr mon::puts
 
 	; move to address for next row
