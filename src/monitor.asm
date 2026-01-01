@@ -552,14 +552,14 @@ screen: .res LINESIZE*HEIGHT
 ; The NMI handler - simply sets the INT signal
 @nmi_handler:
 	pha
-	lda $9c02
+	lda exp::bank
 	pha			; save current bank
 	lda #FINAL_BANK_MONITOR
-	sta $9c02
+	SELECT_BANK_A
 	lda #$01
 	sta __monitor_int	; set INT flag
 	pla
-	sta $9c02		; restore bank
+	SELECT_BANK_A		; restore bank
 	pla
 	rti
 @nmi_handler_end:

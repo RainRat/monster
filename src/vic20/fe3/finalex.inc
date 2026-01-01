@@ -10,6 +10,7 @@ VIC20_FINALEX_INC=1
 .import __ram_get_byte
 .import __ram_store_byte
 
+.import __fe3_bank
 .import __fe3_boot
 .import __fe3_init0
 .import __fe3_init1
@@ -95,13 +96,14 @@ FINAL_BANK_FASTTEXT  = $a0|$e
 
 ;******************************************************************************
 .scope fe3
-	init0      = __fe3_init0
-	init1      = __fe3_init1
+	init0 = __fe3_init0
+	init1 = __fe3_init1
 .endscope
 
 .scope exp
-	push_bank   = __fe3_push_bank
-	pop_bank    = __fe3_pop_bank
+	bank      = __fe3_bank
+	push_bank = __fe3_push_bank
+	pop_bank  = __fe3_pop_bank
 .endscope
 
 ;*******************************************************************************
@@ -109,7 +111,6 @@ FINAL_BANK_FASTTEXT  = $a0|$e
 ; Activates the bank from the given string
 .macro SELECT_BANK str
 .endmacro
-
 
 ;*******************************************************************************
 ; SELECT BANK A

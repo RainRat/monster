@@ -38,26 +38,26 @@ rowcnt: .byte 0
 ; This is the main IRQ for this program. It handles updating the beeper.
 ; It is relocated to a place where it may be called from any bank
 .proc sys_update
-	lda $9c02
+	lda exp::bank
 	sta @savebank
 	lda #FINAL_BANK_MAIN
-	sta $9c02
+	SELECT_BANK_A
 	jsr stable_handler
 @savebank=*+1
 	lda #$00
-	sta $9c02
+	SELECT_BANK_A
 	jmp $eb15
 .endproc
 
 .proc row_interrupt
-	lda $9c02
+	lda exp::bank
 	sta @savebank
 	lda #FINAL_BANK_MAIN
-	sta $9c02
+	SELECT_BANK_A
 	jsr row_handler
 @savebank=*+1
 	lda #$00
-	sta $9c02
+	SELECT_BANK_A
 	jmp $eb15
 .endproc
 
@@ -293,7 +293,7 @@ rowcnt: .byte 0
 ; BRK HANDLER
 .proc brk_handler
 	lda #FINAL_BANK_MAIN
-	sta $9c02
+	SELECT_BANK_A
 	jmp @brk
 
 .PUSHSEG

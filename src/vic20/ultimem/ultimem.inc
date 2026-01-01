@@ -1,6 +1,7 @@
 .ifndef ULTIMEM_ULTIMEM_INC
 ULTIMEM_ULTIMEM_INC = 1
 
+.import __ultimem_bank
 .import __ultimem_push_bank
 .import __ultimem_pop_bank
 .import __ultimem_select_bank
@@ -13,6 +14,7 @@ ULTIMEM_ULTIMEM_INC = 1
 .import __ram_bank_store_rel
 
 .scope exp
+	bank        = __ultimem_bank
 	push_bank   = __ultimem_push_bank
 	pop_bank    = __ultimem_pop_bank
 	copy        = __ram_memcpy
@@ -110,6 +112,7 @@ FINAL_BANK_FASTTEXT  = $a0|$e
 ; SELECT BANK A
 ; Activates the bank in .A
 .macro SELECT_BANK_A
+	jsr __ultimem_select_bank
 	sta $9c02
 .endmacro
 

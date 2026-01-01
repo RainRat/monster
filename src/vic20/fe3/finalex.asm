@@ -98,6 +98,8 @@ TOTAL_SIZE = __SETUP_SIZE__+__BANKCODE_SIZE__+__BANKCODE2_SIZE__+__DATA_SIZE__+\
 	     __OBJCODE_SIZE__
 .linecont -
 
+.export __fe3_bank
+__fe3_bank = $9c02
 
 ;*******************************************************************************
 ; RELOC

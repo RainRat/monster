@@ -1,4 +1,4 @@
-.include "banks.inc"
+.include "expansion.inc"
 .include "../debug.inc"
 .include "../debuginfo.inc"
 .include "../edit.inc"
@@ -147,7 +147,7 @@ data: .res BUFFER_SIZE
 
 @cont:	; switch to the bank that contains the source buffer's data
 	lda __src_bank
-	sta $9c02
+	SELECT_BANK_A
 
 	; move one byte from the end of the gap to the start
 	ldy #$00
@@ -158,8 +158,10 @@ data: .res BUFFER_SIZE
 	incw poststartzp
 
 	; switch back to main bank
-	ldx #FINAL_BANK_MAIN
-	stx $9c02
+	pha
+	lda #FINAL_BANK_MAIN
+	SELECT_BANK_A
+	pla
 
 	cmp #$0d
 	bne @done
@@ -187,7 +189,7 @@ data: .res BUFFER_SIZE
 
 	; switch to the bank that contains the source buffer's data
 	lda __src_bank
-	sta $9c02
+	SELECT_BANK_A
 
 	; move one byte from the start of the gap to the end
 	ldy #$00
@@ -204,8 +206,11 @@ data: .res BUFFER_SIZE
 	incw cursorzp
 
 	; switch back to main bank
-	ldx #FINAL_BANK_MAIN
-	stx $9c02
+	pha
+	lda #FINAL_BANK_MAIN
+	SELECT_BANK_A
+	pla
+
 	RETURN_OK
 .endproc
 
@@ -239,13 +244,17 @@ data: .res BUFFER_SIZE
 	cmp #$80
 	bcs @done		; not displayable, don't insert
 
-@store:	ldy __src_bank
-	sty $9c02
+@store:	pha
+	lda __src_bank
+	SELECT_BANK_A
+	pla
 	ldy #$00
 	sta (end),y
 	incw end
-	ldy #FINAL_BANK_MAIN
-	sty $9c02		; switch back to main bank
+	pha
+	lda #FINAL_BANK_MAIN
+	SELECT_BANK_A		; switch back to main bank
+	pla
 @done:	RETURN_OK
 .endproc
 .POPSEG

@@ -9,6 +9,8 @@
 .include "../../macros.inc"
 .include "../../zeropage.inc"
 
+.import __ultimem_bank
+
 .segment "BANKCODE"
 
 ;*******************************************************************************
@@ -67,6 +69,7 @@
 	lda #$00
 	sta zp::bankval
 	pla
+
 	; fall through
 .endproc
 
@@ -99,7 +102,7 @@
 ; IN:
 ;  - .X: the bank to return to
 .proc return_to_x
-@done:	stx $9c02	; restore bank
+	stx $9c02	; restore bank
 	rts
 .endproc
 
@@ -231,7 +234,7 @@ __ram_copy_banked:
 ; Saves the current RAM bank
 .export __ultimem_push_bank
 .proc __ultimem_push_bank
-	lda $9c02		; get current bank
+	lda __ultimem_bank	; get current bank
 	ldx zp::banksp
 	inc zp::banksp
 	sta zp::bankstack,x	; save current bank
