@@ -50,7 +50,7 @@ __str_debug_registers2: .byte 0
 .export __str_debug_registers2
 
 .export __str_debug_stop_debugging
-__str_debug_stop_debugging: .byte "stop debugging? (press 'y' to quit)",0
+__str_debug_stop_debugging: .byte "stop debugging? y/n",0
 
 .export __str_device_not_present
 __str_device_not_present: .byte "device not present",0
@@ -59,13 +59,13 @@ __str_device_not_present: .byte "device not present",0
 __str_edit_line_err: .byte ESCAPE_STRING, " l", ESCAPE_VALUE_DEC,":", ESCAPE_STRING,0
 
 .export __str_edit_file_load_failed
-__str_edit_file_load_failed: .byte "failed to load file; error $",ESCAPE_BYTE,0
+__str_edit_file_load_failed: .byte "load error $",ESCAPE_BYTE,0
 
 .export __str_edit_file_delete_failed
-__str_edit_file_delete_failed: .byte "failed to delete file; error ", ESCAPE_BYTE, 0
+__str_edit_file_delete_failed: .byte "delete error $", ESCAPE_BYTE, 0
 
 .export __str_file_open_failed
-__str_file_open_failed: .byte "failed to open file; error ", ESCAPE_BYTE, 0
+__str_file_open_failed: .byte "open error $", ESCAPE_BYTE, 0
 
 .export __str_no_file
 __str_no_file: .byte "no input file specified", 0
@@ -132,7 +132,11 @@ __str_jam_detected: .byte "jam detected",0
 __str_illegal_detected: .byte "illegal detected",0
 
 .export __str_vital_addr_clobber_detected
+.ifdef hard8x8
+__str_vital_addr_clobber_detected: .byte "dangerous write:$", ESCAPE_VALUE, "",0
+.else
 __str_vital_addr_clobber_detected: .byte "dangerous write detected ($", ESCAPE_VALUE, ")",0
+.endif
 
 .export __str_saveall
 __str_saveall: .byte "save all buffers? ", yes_no, 0
