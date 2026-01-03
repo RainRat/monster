@@ -211,42 +211,6 @@ cart_start:
 .endproc
 
 ;*******************************************************************************
-; drawlogo
-.macro drawlogo
-	; set all color to blue
-	lda #$06
-	ldx #$00
-:	sta $9400,x
-	dex
-	bne :-
-
-.ifdef NTSC
-	ldx #$08
-	ldy #$30
-.else
-	ldx #$10
-	ldy #$30
-.endif
-	stx $9000		; horizontal centering
-
-	lda #$30
-	sta $9001
-
-	; draw the boot screen
-	ldx #18*7
-:	lda bootlogo-1,x
-	sta $1000-1,x
-	dex
-	bne :-
-
-	; now update the # of rows and columns to make the screen visible
-	lda #18			; # of columns
-	sta $9002
-	lda #7<<1		; # of rows
-	sta $9003
-.endmacro
-
-;*******************************************************************************
 ; START
 ; Entrypoint to program
 .export __boot_start
@@ -258,8 +222,6 @@ cart_start:
 	; set default device number
 	lda #DEFAULT_DEVICE
 	sta zp::device
-
-	drawlogo
 
 	; enable all memory
 	lda #FINAL_BANK_MAIN
@@ -317,10 +279,6 @@ cart_start:
 
 	jmp lowinit
 .endproc
-
-;*******************************************************************************
-bootlogo:
-	.include "bootlogo.dat"
 
 .CODE
 ;*******************************************************************************
