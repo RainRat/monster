@@ -28,12 +28,6 @@ VSCREEN_ADDR = $1a00
 VSCREEN_W = 40
 
 SCREEN_ROWS = 12	; number of physical rows per column
-
-.segment "VSCREEN"
-.segment "VSCREEN_BSS"
-.segment "FASTTEXT"
-.segment "FASTTEXT_BSS"
-
 .segment "SETUP"
 ;*******************************************************************************
 .export __text_init

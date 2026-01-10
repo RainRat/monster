@@ -82,10 +82,8 @@ __label_set_addr         = setaddr
 .else
 ;******************************************************************************
 ; Label JUMP table
-.macro LBLJUMP proc_id
-	pha
-	lda #proc_id
-	bpl do_label_proc
+.macro LBLJUMP proc
+	JUMP FINAL_BANK_SYMBOLS, proc
 .endmacro
 
 .enum proc_ids
@@ -123,49 +121,32 @@ LOAD
 procs_lo: .lobytes procs
 procs_hi: .hibytes procs
 
-__label_clr: LBLJUMP proc_ids::CLR
-__label_add: LBLJUMP proc_ids::ADD
-__label_find: LBLJUMP proc_ids::FIND
-__label_by_addr: LBLJUMP proc_ids::BY_ADDR
-__label_by_id: LBLJUMP proc_ids::BY_ID
-__label_name_by_id: LBLJUMP proc_ids::NAME_BY_ID
-__label_isvalid: LBLJUMP proc_ids::IS_VALID
-__label_get_name: LBLJUMP proc_ids::GET_NAME
-__label_get_addr: LBLJUMP proc_ids::GETADDR
-__label_is_local: LBLJUMP proc_ids::IS_LOCAL
-__label_set: LBLJUMP proc_ids::SET
-__label_del: LBLJUMP proc_ids::DEL
-__label_address: LBLJUMP proc_ids::ADDRESS
-__label_address_by_id: LBLJUMP proc_ids::ADDRESS_BY_ID
-__label_setscope: LBLJUMP proc_ids::SET_SCOPE
-__label_addanon: LBLJUMP proc_ids::ADD_ANON
-__label_get_fanon: LBLJUMP proc_ids::GET_FANON
-__label_get_banon: LBLJUMP proc_ids::GET_BANON
-__label_index: LBLJUMP proc_ids::INDEX
-__label_id_by_addr_index: LBLJUMP proc_ids::ID_BY_ADDR_INDEX
-__label_addrmode: LBLJUMP proc_ids::ADDRMODE
-__label_get_segment: LBLJUMP proc_ids::GET_SEGMENT
-__label_set_addr: LBLJUMP proc_ids::SET_ADDR
-__label_dump: LBLJUMP proc_ids::DUMP
-__label_load: LBLJUMP proc_ids::LOAD
+__label_clr:              LBLJUMP clr
+__label_add:              LBLJUMP add
+__label_find:             LBLJUMP find
+__label_by_addr:          LBLJUMP by_addr
+__label_by_id:            LBLJUMP by_id
+__label_name_by_id:       LBLJUMP name_by_id
+__label_isvalid:          LBLJUMP is_valid
+__label_get_name:         LBLJUMP get_name
+__label_get_addr:         LBLJUMP getaddr
+__label_is_local:         LBLJUMP is_local
+__label_set:              LBLJUMP set
+__label_del:              LBLJUMP del
+__label_address:          LBLJUMP address
+__label_address_by_id:    LBLJUMP address_by_id
+__label_setscope:         LBLJUMP set_scope
+__label_addanon:          LBLJUMP add_anon
+__label_get_fanon:        LBLJUMP get_fanon
+__label_get_banon:        LBLJUMP get_banon
+__label_index:            LBLJUMP index
+__label_id_by_addr_index: LBLJUMP id_by_addr_index
+__label_addrmode:         LBLJUMP addrmode
+__label_get_segment:      LBLJUMP get_segment
+__label_set_addr:         LBLJUMP setaddr
+__label_dump:             LBLJUMP dump
+__label_load:             LBLJUMP load
 
-;******************************************************************************
-; Entrypoint for label routines
-.proc do_label_proc
-@savex=zp::banktmp+1
-	stx @savex
-	tax
-	lda procs_lo,x
-	sta @vec
-	lda procs_hi,x
-	sta @vec+1
-	ldx @savex
-	pla
-	jsr __ram_call
-	.byte FINAL_BANK_SYMBOLS
-@vec:	.word $f00d
-	rts
-.endproc
 .endif
 
 ;******************************************************************************
@@ -174,7 +155,13 @@ __label_load: LBLJUMP proc_ids::LOAD
 ; which contains the value (address) for the label name.
 .segment "LABELNAMES"
 .export labels
+.ifdef ultimem
+; The Ultimem can actually hold more labels than this, but we only bank in
+; $2000 bytes at a time
+labels: .res $2000
+.else
 labels: .res MAX_LABELS*MAX_LABEL_NAME_LEN
+.endif
 
 ;******************************************************************************
 ; SEGMENT IDS
@@ -387,13 +374,22 @@ anon_addrs: .res MAX_ANON*2
 	lda @tmp
 	beq @found
 
-@next:	lda @search
+@next:
+	lda @search
 	clc
 	adc #MAX_LABEL_LEN
 	sta @search
 	bcc :+
 	inc @search+1
-:	incw @cnt
+:
+.ifdef ultimem
+	lda @search+1
+	bpl :+
+	; move to the next bank
+	incw $9ffc
+:
+.endif
+	incw @cnt
 	ldxy @cnt
 	cmpw numlabels
 	bne @seek
@@ -1642,6 +1638,24 @@ anon_addrs: .res MAX_ANON*2
 	rol @addr
 	asl		; *32
 	rol @addr
+
+.ifdef ultimem
+	; get the bank of the symbol (%$2000)
+	pha
+
+	; % $2000
+	lda @addr+1
+:	cmp #$80	; > end of of BLK3?
+	bcc :+
+	sbc #$20
+	lda #$60	; start of BLK3
+	sta @addr+1
+	inc $9ffc	; next bank
+	bne :-
+
+:	pla
+.endif
+
 	adc #<labels
 	tax
 	lda @addr
@@ -1929,7 +1943,7 @@ anon_addrs: .res MAX_ANON*2
 	sta @num+1
 	asl @num
 	rol @num+1
-	jmp @quicksort		; enter the sort routine
+	jmp @quicksort	; enter the sort routine
 
 @quicksort0:
 	tsx
@@ -2218,6 +2232,12 @@ anon_addrs: .res MAX_ANON*2
 	sta @sym
 	bcc :+
 	inc @sym+1
+.ifdef ultimem
+	bpl :+
+	inc $9ffc	; next bank
+	lda #$60	; start of BLK3
+	sta @sym+1
+.endif
 :	rts
 .endproc
 

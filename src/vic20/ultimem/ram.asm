@@ -4,7 +4,7 @@
 ; different banks.
 ;******************************************************************************
 
-.include "../banks.inc"
+.include "banks.inc"
 .include "../../config.inc"
 .include "../../inline.inc"
 .include "../../macros.inc"
@@ -12,6 +12,8 @@
 
 .import __ultimem_bank
 .import __ultimem_select_bank
+.import __ram_src
+.import __ram_dst
 
 .segment "BANKCODE"
 
@@ -162,19 +164,6 @@
 .endproc
 
 ;*******************************************************************************
-; COPY BANK 2 BANK
-; Entrypoint to copy from one bank to another
-; IN:
-;  - .A:  the source bank
-;  - .XY: the number of bytes to copy
-;  - r2:  the source address
-;  - r4:  the destination address
-;  - r7:  the destination bank
-.export __ram_copy_banked
-__ram_copy_banked:
-	skw	; don't overwrite destination bank
-
-;*******************************************************************************
 ; MEMCPY
 ; Writes the memory from (tmp0) to (tmp2)
 ; The number of bytes is given in .YX and the block # to write to is given in .A
@@ -187,17 +176,14 @@ __ram_copy_banked:
 ;  - r4:  the destination address
 .export __ram_memcpy
 .proc __ram_memcpy
-@size=r0
-@src=r2
-@dst=r4
-@bank=r6
-@bankdst=r7
-	sta @bankdst	; use source bank as dest as well
-	sta @bank
-
-	cmpw #$00
-	beq @done
+@size    = r0
+@src     = __ram_src
+@dst     = __ram_dst
+@bank    = __ram_src+2
+@bankdst = __ram_dst+2
 	stxy @size
+	iszero @size
+	beq @done
 
 	decw @size
 

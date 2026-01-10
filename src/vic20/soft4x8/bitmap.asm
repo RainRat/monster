@@ -7,7 +7,7 @@
 ; This configuration is popularly known as MINIGRAFIK, created by Mike
 ;*******************************************************************************
 
-.include "../banks.inc"
+.include "../expansion.inc"
 .include "../prefs.inc"
 .include "../fastcopy.inc"
 .include "../../draw.inc"

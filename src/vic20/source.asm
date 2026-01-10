@@ -64,8 +64,6 @@ data: .res BUFFER_SIZE
 ;  - $120-$130: may be clobbered if newline is inserted
 .export __src_insert
 .proc __src_insert
-@src=r2
-@dst=r4
 	cmp #$0d
 	beq :+
 	cmp #$0a
@@ -96,12 +94,12 @@ data: .res BUFFER_SIZE
 @ok:	; gap is closed, create a new one
 	; copy data[poststart] to data[poststart + GAPSIZE]
 	ldxy cursorzp
-	stxy @src
+	stxy ram::src
 
 	inc poststartzp+1
 	inc end+1		; increase size by $100
 	ldxy poststartzp
-	stxy @dst
+	stxy ram::dst
 
 	; get number of bytes to copy
 	ldxy end

@@ -46,7 +46,6 @@
 .include "sim6502.inc"
 .include "settings.inc"
 .include "source.inc"
-.include "state.inc"
 .include "string.inc"
 .include "strings.inc"
 .include "symview.inc"
@@ -143,7 +142,7 @@ autoindent: .byte 0		; auto-indent enable flag (0=don't auto-indent)
 	stx debugging
 
 	inx			; ldx #$01
-	stx state::verify	; don't assemble code (just check syntax)
+	stx zp::verify		; don't assemble code (just check syntax)
 	stx fmt::enable		; enable formatting
 
 	stx format		; enable formatting
@@ -580,7 +579,7 @@ main:	jsr key::getch
 
 	jsr clrerror
 	lda #$01
-	sta state::verify	; re-enable verify
+	sta zp::verify		; re-enable verify
 
 	lda errlog::numerrs
 	beq @printresult
@@ -5144,8 +5143,7 @@ __edit_gotoline:
 .proc report_typein_error
 	jsr err::get
 	jsr text::info
-	jsr beep::short
-	jmp key::waitch
+	jmp beep::short
 .endproc
 
 ;*******************************************************************************

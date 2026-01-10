@@ -7,10 +7,12 @@
 ;******************************************************************************
 
 .include "layout.inc"
+.include "macros.inc"
+.include "memory.inc"
 .include "string.inc"
 .include "text.inc"
 
-.ifdef FE3
+.ifdef fe3
 .RODATA
 .else
 .segment "ERRORS"
@@ -295,9 +297,37 @@ err_unknown_err: .byte $aa,$ce,$7d,$ce,$d9,$52,$93,$d2,$0
 	ldy #>err_unknown_err
 	ldx #<err_unknown_err
 	rts
+:
+.ifdef ultimem
+@err=r0
+@compressed_buff=mem::spare+120
+	; bank in the errors
+	lda $9ffe
+	pha
+	lda #14
+	sta $9ffe	; bring errors into BLK5
 
-:	ldy errorshi,x
+	; copy the error to a buffer
+	lda errorslo,x
+	sta @err
+	lda errorshi,x
+	sta @err+1
+	ldy #$00
+@l0:	lda (@err),y
+	sta @compressed_buff,y
+	beq :+
+	iny
+	bne @l0
+
+:	pla
+	sta $9ffe
+	ldxy #@compressed_buff
+	jmp str::uncompress
+
+.else
+	ldy errorshi,x
 	lda errorslo,x
 	tax
 	jmp str::uncompress
+.endif
 .endproc

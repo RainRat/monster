@@ -7,9 +7,9 @@ jmpaddr = $02		; JMP instruction
 jmpvec  = $03 		; JMP vector for calling vectors
 
 banksp      = $05	; bank stack pointer
-bankval     = $07	; the value written by store_byte
-bankjmpaddr = $08	; JMP in struction for banked calls
-bankjmpvec  = $09	; JMP vector
+bankval     = $06	; the value written by store_byte
+bankjmpaddr = $07	; JMP in struction for banked calls
+bankjmpvec  = $08	; JMP vector
 
 memsrc      = $0a	; temporary pointer for memory operations
 memdst      = $0c	; temporary pointer for memory operations

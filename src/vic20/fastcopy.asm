@@ -1,4 +1,4 @@
-.include "banks.inc"
+.include "expansion.inc"
 .include "../macros.inc"
 .include "../ram.inc"
 .include "../screen.inc"
@@ -16,21 +16,11 @@ JMP_RETURN_ADDR = RETURN_ADDR-5
 .export dbg9000
 .export dbg9400
 
-;******************************************************************************
-.enum proc_ids
-SAVE_DEBUG_STATE = 0
-SAVE_PROG_STATE
-RESTORE_PROG_STATE
-RESTORE_PROG_VISUAL
-RESTORE_DEBUG_STATE
-.endenum
-
-.linecont +
-.define copytab save_debug_state, save_prog_state, restore_prog_state, \
-	restore_prog_visual, restore_debug_state
-.linecont -
-
+.ifdef ultimem
+.segment "SIMRAM_1000"
+.else
 .SEGMENT "FASTCOPY_BSS"
+.endif
 
 ;******************************************************************************
 ; PROG
@@ -45,13 +35,10 @@ prog9400: .res $f0	; $9400-$94f0
 ; DBG
 ; backup for debugger/editor memory
 ; we back up less for debug because we can just re-init some state
+.export dbg1000
 dbg1000: .res $1000	; $1000-$2000
 dbg9000: .res $10	; $9000-$9010
 dbg9400: .res $f0	; $9400-$94f0
-
-.RODATA
-copytablo: .lobytes copytab
-copytabhi: .hibytes copytab
 
 .CODE
 
@@ -60,8 +47,7 @@ copytabhi: .hibytes copytab
 ; Saves the state of the debugger's zeropage
 .export __fastcopy_save_debug_state
 .proc __fastcopy_save_debug_state
-	ldx #proc_ids::SAVE_DEBUG_STATE
-	skw
+	JUMP FINAL_BANK_FASTCOPY, save_debug_state
 .endproc
 
 ;******************************************************************************
@@ -69,8 +55,7 @@ copytabhi: .hibytes copytab
 ; Saves memory clobbered by the debugger (screen, VIC registers and color)
 .export __fastcopy_save_prog_state
 .proc __fastcopy_save_prog_state
-	ldx #proc_ids::SAVE_PROG_STATE
-	skw
+	JUMP FINAL_BANK_FASTCOPY, save_prog_state
 .endproc
 
 ;******************************************************************************
@@ -78,8 +63,7 @@ copytabhi: .hibytes copytab
 ; Restores the saved program state
 .export __fastcopy_restore_prog_state
 .proc __fastcopy_restore_prog_state
-	ldx #proc_ids::RESTORE_PROG_STATE
-	skw
+	JUMP FINAL_BANK_FASTCOPY, restore_prog_state
 .endproc
 
 ;******************************************************************************
@@ -88,8 +72,7 @@ copytabhi: .hibytes copytab
 ; the VIC registers at $9000-$9010)
 .export __fastcopy_restore_prog_visual
 .proc __fastcopy_restore_prog_visual
-	ldx #proc_ids::RESTORE_PROG_VISUAL
-	skw
+	JUMP FINAL_BANK_FASTCOPY, restore_prog_visual
 .endproc
 
 ;******************************************************************************
@@ -99,19 +82,14 @@ copytabhi: .hibytes copytab
 restore_debug_visual:
 .export __fastcopy_restore_debug_state
 .proc __fastcopy_restore_debug_state
-	ldx #proc_ids::RESTORE_DEBUG_STATE
+	JUMP FINAL_BANK_FASTCOPY, restore_debug_state
 .endproc
-	; entry point for routines
-	lda copytablo,x
-	sta @vec
-	lda copytabhi,x
-	sta @vec+1
-	jsr __ram_call
-	.byte FINAL_BANK_FASTCOPY
-@vec:	.word $f00d
-	rts
 
+.ifdef ultimem
+.segment "SIM"
+.else
 .SEGMENT "FASTCOPY"
+.endif
 
 ;******************************************************************************
 ; RESTORE DEBUG STATE
@@ -120,6 +98,8 @@ restore_debug_visual:
 .proc restore_debug_state
 @vicsave=dbg9000
 @colorsave=dbg9400
+@src=r0
+@dst=r2
 	; disable NMI/IRQs (we will be clobbering their vectors)
 	lda #$7f
 	sta $911e
@@ -131,29 +111,30 @@ restore_debug_visual:
 	dex
 	bne :-
 
-	ldx #$f0
+	ldy #$f0
 ; save $9400-$94f0
 :	lda @colorsave-1,x
 	sta $9400-1,x
-	dex
+	dey
 	bne :-
+
+	sty @dst
 
 ; restore $1000-$2000
 	lda #>dbg1000
-	sta @addr+1
+	sta @src+1
+	lda #<dbg1000
+	sta @src
 	lda #$10
-	sta @addr2+1		; start from $1000
+	sta @dst+1		; start from $1000
 
-:
-@addr=*+1
-	lda dbg1000,x
-@addr2=*+1
-	sta $1000,x
-	dex
+:	lda (@src),y
+	sta (@dst),y
+	dey
 	bne :-
-	inc @addr+1		; next page
-	inc @addr2+1
-	lda @addr2+1
+	inc @src+1		; next page
+	inc @dst+1
+	lda @dst+1
 	cmp #$20		; at $2000 yet?
 	bne :-			; loop until we are
 
@@ -171,6 +152,8 @@ save_debug_visual:
 .proc save_debug_state
 @vicsave=dbg9000
 @colorsave=dbg9400
+@src=r0
+@dst=r2
 	ldx #$10
 @savevic:
 	lda $9000-1,x
@@ -189,19 +172,21 @@ save_debug_visual:
 ; save $1000-$2000
 @savescreen:
 	lda #>dbg1000
-	sta @addr2+1
+	sta @dst+1
+	lda #<dbg1000
+	sta @dst
 	lda #$10
-	sta @addr+1		; start from $1000
-:
-@addr=*+1
-	lda $1000,x
-@addr2=*+1
-	sta dbg1000,x
-	dex
+	sta @src+1		; start from $1000
+
+	ldy #$00
+	sty @src
+:	lda (@src),y
+	sta (@dst),y
+	dey
 	bne :-
-	inc @addr+1		; next page
-	inc @addr2+1
-	lda @addr+1
+	inc @src+1		; next page
+	inc @dst+1
+	lda @src+1
 	cmp #$20		; at $2000 yet?
 	bne :-			; loop until we are
 
@@ -227,27 +212,33 @@ save_debug_visual:
 ; RESTORE PROG VISUAL
 .proc restore_prog_visual
 ; restore $9000-$9010
-	ldx #$10
-:	lda prog9000-1,x
-	sta $9000-1,x
-	dex
+@src=r0
+@dst=r2
+	ldy #$10
+:	lda prog9000-1,y
+	sta $9000-1,y
+	dey
 	bne :-
+
+	; set LSB of @src and @dst to 0
+	sty @dst
 
 ; restore $1000-$2000
 	lda #>prog1000
-	sta @addr+1
+	sta @src+1
+	lda #<prog1000
+	sta @src
 	lda #$10
-	sta @addr2+1		; start from $1000
-:
-@addr=*+1
-	lda prog1000,x
-@addr2=*+1
-	sta $1000,x
-	dex
+	sta @dst+1		; start from $1000
+
+:	lda (@src),y
+	sta (@dst),y
+	dey
 	bne :-
-	inc @addr+1		; next page
-	inc @addr2+1
-	lda @addr2+1
+
+	inc @src+1		; next page
+	inc @dst+1
+	lda @dst+1
 	cmp #$20		; at $2000 yet?
 	bne :-			; loop until we are
 
@@ -267,24 +258,28 @@ save_debug_visual:
 .proc save_prog_state
 @internalmem=prog1000
 @colorsave=prog9400
+@src=r0
+@dst=r2
 ; save $1000-$2000
 @savescreen:
 	lda #$10
-	sta @addr+1		; start from $1000
+	sta @src+1		; start from $1000
 	lda #>prog1000
-	sta @addr2+1
+	sta @dst+1
+	lda #<prog1000
+	sta @dst
 
-	ldx #$00
-:
-@addr=*+1
-	lda $1000,x
-@addr2=*+1
-	sta prog1000,x
-	dex
+	ldy #$00
+	sty @src
+
+:	lda (@src),y
+	sta (@dst),y
+	dey
 	bne :-
-	inc @addr+1		; next page
-	inc @addr2+1
-	lda @addr+1
+
+	inc @src+1		; next page
+	inc @dst+1
+	lda @src+1
 	cmp #$20		; at $2000 yet?
 	bne :-			; loop until we are
 

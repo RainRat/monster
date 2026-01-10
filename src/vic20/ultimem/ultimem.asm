@@ -22,71 +22,42 @@ __ultimem_bank: .byte 0
 .segment "ULTICFG"
 
 ;*******************************************************************************
+; SELECT BANK
+; Selects the given logical bank, configuring BLK 1,2,3, and 5 with the
+; preset RAM/ROM configuration for that "bank".
+; Takes 70 cycles (counting the JSR to call this routine)
+; IN:
+;   - .A: the bank to activate
 .export __ultimem_select_bank
 .proc __ultimem_select_bank
-	stx @savex
-	sta @savea
-	tax
+	sta __ultimem_bank	; 4 (4)
+	stx @savex		; 4 (8)
+	sta @savea		; 4 (12)
+	tax			; 2 (14)
 
-	lda cfglo,x
-	sta $9ff1
-	lda cfghi,x
-	sta $9ff2
-	lda iolo,x
-	sta $9ff6
-	lda iohi,x
-	sta $9ff7
-	lda blk1lo,x
-	sta $9ff8
-	lda blk1hi,x
-	sta $9ff9
-	lda blk2lo,x
-	sta $9ffa
-	lda blk2hi,x
-	sta $9ffb
-	lda blk3hi,x
-	sta $9ffc
-	lda blk3hi,x
-	sta $9ffd
-	lda blk5lo,x
-	sta $9ffe
-	lda blk5hi,x
-	sta $9fff
+	lda cfg-1,x		; 4 (18)
+	sta $9ff2		; 4 (22)
+	lda blk1-1,x		; 4 (26)
+	sta $9ff8		; 4 (30)
+	lda blk2-1,x		; 4 (34)
+	sta $9ffa		; 4 (38)
+	lda blk3-1,x		; 4 (42)
+	sta $9ffc		; 4 (46)
+	lda blk5-1,x		; 4 (50)
+	sta $9ffe		; 4 (54)
 
 @savex=*+1
-	ldx #$00
+	ldx #$00		; 2 (56)
 @savea=*+1
-	lda #$00
-	rts
+	lda #$00		; 2 (58)
+	rts			; 6 (64)
 .endproc
 
 ;*******************************************************************************
-;             MAIN   SRC0   SRC1   SRC2   SRC3   SRC4   SRC5   SRC6   SRC7
-;             MACS   UDGS   LINK   MON    BUFF   SYMS   SYMV   ERRS
-.linecont +
-.define io   $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, \
-             $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000
-.define blk1 $0001, $0002, $0005, $0008, $000b, $000e, $0011, $0014, $0017, \
-             $001a, $0001, $0005, $0008, $000b, $000e, $0011, $0014
-.define blk2 $0002, $0003, $0006, $0009, $000c, $000f, $0012, $0015, $0018, \
-             $001b, $0002, $0005, $0008, $000b, $000e, $0011, $0014
-.define blk3 $0003, $0001, $0007, $000a, $000d, $0010, $0013, $0016, $0019, \
-             $001c, $0001, $0005, $0008, $000b, $000e, $0011, $0014
-.define blk5 $0001, $0004, $0004, $0004, $0004, $0004, $0004, $0004, $0004, \
-             $0005, $0006, $0007, $0008, $0009, $000a, $000b, $0014
-.define cfg  $6a15, $9515, $9515, $9515, $9515, $9515, $9515, $9515, $9515, \
-             $9515, $9515, $9515, $9515, $9515, $9515, $9515, $9515
-.linecont -
+;VIRTUAL BANK CONFIG MAP
+blk1: .byte $01, $02, $05, $05, $08, $0b, $0e, $11, $14, $17, $1a, $0f, $1f
+blk2: .byte $02, $03, $06, $06, $09, $0c, $0f, $12, $15, $18, $1b, $10, $20
+blk3: .byte $03, $04, $07, $07, $0a, $0d, $10, $13, $16, $19, $1c, $11, $21
+blk5: .byte $04, $05, $06, $06, $07, $08, $09, $0a, $0b, $0c, $0d, $12, $22
+cfg:  .byte $55, $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f, $55, $ff
 
-iolo:   .lobytes io
-iohi:   .hibytes io
-blk1lo: .lobytes blk1
-blk1hi: .hibytes blk1
-blk2lo: .lobytes blk2
-blk2hi: .hibytes blk2
-blk3lo: .lobytes blk3
-blk3hi: .hibytes blk3
-blk5lo: .lobytes blk5
-blk5hi: .hibytes blk5
-cfglo:  .lobytes cfg
-cfghi:  .hibytes cfg

@@ -14,7 +14,7 @@
 ;*******************************************************************************
 
 .include "bitmap.inc"
-.include "../banks.inc"
+.include "../expansion.inc"
 .include "../../cursor.inc"
 .include "../../key.inc"
 .include "../../keycodes.inc"

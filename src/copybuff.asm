@@ -43,10 +43,8 @@ __buff_num_lines_copied:	.byte 0
 
 ;*******************************************************************************
 .linecont +
-.macro COPYBUFFJUMP proc_id
-	pha
-	lda #proc_id
-	bpl do_buff_proc
+.macro COPYBUFFJUMP proc
+	JUMP FINAL_BANK_BUFF, proc
 .endmacro
 
 .enum buff_proc_ids
@@ -70,35 +68,16 @@ buff_procs_hi: .hibytes buff_procs
 .CODE
 ;*******************************************************************************
 ; Copy Buff JUMP table
-__buff_putch:        COPYBUFFJUMP buff_proc_ids::PUTCH
-__buff_getch:        COPYBUFFJUMP buff_proc_ids::GETCH
-__buff_getline:      COPYBUFFJUMP buff_proc_ids::GETLINE
-__buff_clear:        COPYBUFFJUMP buff_proc_ids::CLEAR
-__buff_lastline:     COPYBUFFJUMP buff_proc_ids::LASTLINE
-__buff_lines_copied: COPYBUFFJUMP buff_proc_ids::LINES_COPIED
-__buff_push:         COPYBUFFJUMP buff_proc_ids::PUSH
-__buff_pop:          COPYBUFFJUMP buff_proc_ids::POP
-__buff_len:          COPYBUFFJUMP buff_proc_ids::LEN
-__buff_reverse:      COPYBUFFJUMP buff_proc_ids::REVERSE
-
-;*******************************************************************************
-; Entrypoint for copy buffer routines
-.proc do_buff_proc
-@savex=zp::banktmp+1
-	stx @savex
-	tax
-	lda buff_procs_lo,x
-	sta @vec
-	lda buff_procs_hi,x
-	sta @vec+1
-	ldx @savex
-	pla
-	jsr __ram_call
-	.byte FINAL_BANK_BUFF
-@vec:	.word $f00d
-	rts
-.endproc
-.linecont -
+__buff_putch:        COPYBUFFJUMP putch
+__buff_getch:        COPYBUFFJUMP getch
+__buff_getline:      COPYBUFFJUMP getline
+__buff_clear:        COPYBUFFJUMP clear
+__buff_lastline:     COPYBUFFJUMP lastline
+__buff_lines_copied: COPYBUFFJUMP lines_copied
+__buff_push:         COPYBUFFJUMP push
+__buff_pop:          COPYBUFFJUMP pop
+__buff_len:          COPYBUFFJUMP len
+__buff_reverse:      COPYBUFFJUMP reverse
 
 .else
 __buff_putch        = putch

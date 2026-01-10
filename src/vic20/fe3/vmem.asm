@@ -1,3 +1,4 @@
+.include "banks.inc"
 .include "finalex.inc"
 .include "../ram.inc"
 .include "../vaddrs.inc"

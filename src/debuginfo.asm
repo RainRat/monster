@@ -48,38 +48,9 @@ SIZEOF_BLOCK_HEADER     = 14
 SIZEOF_BLOCK_HEADER_OBJ = 10	; .O header doesn't contain line prog start/stop
 
 ;*******************************************************************************
-.macro BANKJUMP proc_id
-	pha
-	lda #proc_id
-	bpl do_proc
+.macro BANKJUMP proc
+	JUMP FINAL_BANK_DEBUG, proc
 .endmacro
-
-.enum dbgi_proc_ids
-ADDR2LINE
-LINE2ADDR
-END_BLOCK
-INIT
-INITONCE
-GET_FILENAME
-NEW_BLOCK
-SET_FILE
-SET_NAME
-STORE_LINE
-PUSH_BLOCK
-POP_BLOCK
-GET_FILEID
-SET_SEG_ID
-INCREMENT_AT
-.endenum
-
-.RODATA
-.linecont +
-.define dbgi_procs addr2line, line2addr, end_block, init, initonce, \
-	get_filename, new_block, set_file, set_name, store_line, push_block, \
-	pop_block, get_fileid, set_seg_id
-.linecont -
-dbgi_procs_lo: .lobytes dbgi_procs
-dbgi_procs_hi: .hibytes dbgi_procs
 
 ;*******************************************************************************
 ; Debug info pointers
@@ -125,10 +96,15 @@ numfiles:   .byte 0
 ; the block in question
 .export debuginfo
 
-.ifdef vic20
-debuginfo: .res $6000
-.else
 debuginfo:
+.ifdef vic20
+.ifdef ultimem
+.res $2000	; only $2000 is banked in at a time on the Ultimem
+.else
+.res $6000
+.endif
+
+.else
 .endif
 
 .segment "DEBUGINFO_CODE"
@@ -166,41 +142,24 @@ debuginfo:
 	__debuginfo_get_fileid    = get_fileid
 	__debuginfo_set_seg_id    = set_seg_id
 .else
+
 .PUSHSEG
 .RODATA
 
-__debug_addr2line:        BANKJUMP dbgi_proc_ids::ADDR2LINE
-__debug_line2addr:        BANKJUMP dbgi_proc_ids::LINE2ADDR
-__debug_end_block:        BANKJUMP dbgi_proc_ids::END_BLOCK
-__debuginfo_init:         BANKJUMP dbgi_proc_ids::INIT
-__debuginfo_initonce:     BANKJUMP dbgi_proc_ids::INITONCE
-__debug_get_filename:     BANKJUMP dbgi_proc_ids::GET_FILENAME
-__debug_new_block:        BANKJUMP dbgi_proc_ids::NEW_BLOCK
-__debug_set_file:         BANKJUMP dbgi_proc_ids::SET_FILE
-__debug_set_name:         BANKJUMP dbgi_proc_ids::SET_NAME
-__debug_store_line:       BANKJUMP dbgi_proc_ids::STORE_LINE
-__debug_push_block:       BANKJUMP dbgi_proc_ids::PUSH_BLOCK
-__debug_pop_block:        BANKJUMP dbgi_proc_ids::POP_BLOCK
-__debuginfo_get_fileid:   BANKJUMP dbgi_proc_ids::GET_FILEID
-__debuginfo_set_seg_id:   BANKJUMP dbgi_proc_ids::SET_SEG_ID
-
-;*******************************************************************************
-; Entrypoint for routines
-.proc do_proc
-@savex=zp::banktmp+1
-	stx @savex
-	tax
-	lda dbgi_procs_lo,x
-	sta @vec
-	lda dbgi_procs_hi,x
-	sta @vec+1
-	ldx @savex
-	pla
-	jsr __ram_call
-	.byte FINAL_BANK_DEBUG
-@vec:	.word $f00d
-	rts
-.endproc
+__debug_addr2line:        BANKJUMP addr2line
+__debug_line2addr:        BANKJUMP line2addr
+__debug_end_block:        BANKJUMP end_block
+__debuginfo_init:         BANKJUMP init
+__debuginfo_initonce:     BANKJUMP initonce
+__debug_get_filename:     BANKJUMP get_filename
+__debug_new_block:        BANKJUMP new_block
+__debug_set_file:         BANKJUMP set_file
+__debug_set_name:         BANKJUMP set_name
+__debug_store_line:       BANKJUMP store_line
+__debug_push_block:       BANKJUMP push_block
+__debug_pop_block:        BANKJUMP pop_block
+__debuginfo_get_fileid:   BANKJUMP get_fileid
+__debuginfo_set_seg_id:   BANKJUMP set_seg_id
 
 .POPSEG
 .endif
@@ -211,8 +170,8 @@ __debuginfo_set_seg_id:   BANKJUMP dbgi_proc_ids::SET_SEG_ID
 numblocks:  .byte 0	; number of blocks that we have debug info for
 block_open: .byte 0	; if !0, we are creating a block, when this is set
 			; creating a new block will first close the open one
-freeptr: .word 0	; pointer to next available address in debuginfo
-blocksp: .byte 0	; stack pointer for block stack
+freeptr:    .word 0	; pointer to next available address in debuginfo
+blocksp:    .byte 0	; stack pointer for block stack
 
 ; file table (stored as table of 0-terminated filenames)
 .export __debug_filenames
@@ -227,7 +186,7 @@ blockstack: .res $100	; stack for line program state machine
 
 ; table of headers for each block
 .export blockheaders
-blockheaders: .res MAX_BLOCKS * SIZEOF_BLOCK_HEADER
+blockheaders: .res MAX_BLOCKS*SIZEOF_BLOCK_HEADER
 
 ; table of line program's start addresses for each block.
 ; these will map to somewhere in the debuginfo buffer
@@ -1060,9 +1019,11 @@ get_filename = get_filename_addr
 	inx
 	ldy #$00
 	lda #FINAL_BANK_DEBUG			; dest bank
-	sta r7
+	sta ram::dst+2
 	lda #FINAL_BANK_MAIN			; source bank
-	CALLMAIN ram::copybanked
+	sta ram::src+2
+	CALLMAIN ram::copy
+
 .else
 :	lda (@filename),y
 	sta (@dst),y

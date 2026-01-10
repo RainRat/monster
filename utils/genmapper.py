@@ -8,12 +8,12 @@ appropriate RAM/ROM and block selection.
 class Rom:
 	def __init__(self, i):
 		self.val = i
-		self.cfg = 0x02
+		self.cfg = 0x01	# %01
 
 class Ram:
 	def __init__(self, i):
 		self.val = i
-		self.cfg = 0x03
+		self.cfg = 0x03	# %11
 
 class Bank:
 	def __init__(self, blk1, blk2, blk3, blk5):
@@ -27,25 +27,25 @@ segments = {
 		blk1 = Rom(1),
 		blk2 = Rom(2),
 		blk3 = Rom(3),
-		blk5 = Ram(1)
+		blk5 = Rom(4)
 	),
 	"DEBUG": Bank(
 		blk1 = Ram(2),
 		blk2 = Ram(3),
 		blk3 = Ram(4),
-		blk5 = Rom(4)
+		blk5 = Rom(5)
 	),
 	"UDGEDIT": Bank(
 		blk1 = Ram(5),
 		blk2 = Ram(6),
 		blk3 = Ram(7),
-		blk5 = Rom(5)
+		blk5 = Rom(6)
 	),
 	"EXPR": Bank(
 		blk1 = Ram(5),
 		blk2 = Ram(6),
 		blk3 = Ram(7),
-		blk5 = Rom(5)
+		blk5 = Rom(6)
 	),
 	"MACRO": Bank(
 		blk1 = Ram(8),
@@ -76,7 +76,32 @@ segments = {
 		blk2 = Ram(21),
 		blk3 = Ram(22),
 		blk5 = Rom(11),
-	)
+	),
+	"VSCREEN": Bank(
+		blk1 = Ram(23),
+		blk2 = Ram(24),
+		blk3 = Ram(25),
+		blk5 = Rom(12),
+	),
+	"VSYS": Bank(
+		blk1 = Ram(26),
+		blk2 = Ram(27),
+		blk3 = Ram(28),
+		blk5 = Rom(13),
+	),
+	"FTXT": Bank(
+		blk1 = Rom(15),
+		blk2 = Rom(16),
+		blk3 = Rom(17),
+		blk5 = Rom(18),
+	),
+	# bank 30 is used for more SIM
+	"USER": Bank(
+		blk1 = Ram(31),
+		blk2 = Ram(32),
+		blk3 = Ram(33),
+		blk5 = Ram(34),
+	),
 }
 
 print("\n;*******************************************************************************")

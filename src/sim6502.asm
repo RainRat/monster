@@ -150,7 +150,11 @@ msave_src=*+1
 	cli
 	RETURN_OK
 
+.ifdef ultimem
+.segment "SIM"
+.else
 .segment "DEBUGGER"
+.endif
 
 ;*******************************************************************************
 ; STEP

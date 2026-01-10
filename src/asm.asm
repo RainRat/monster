@@ -76,7 +76,6 @@
 .include "text.inc"
 .include "source.inc"
 .include "util.inc"
-.include "state.inc"
 .include "strings.inc"
 .include "target.inc"
 .include "vmem.inc"
@@ -454,7 +453,7 @@ num_illegals = *-illegal_opcodes
 
 	; disable VERIFY (assemble)
 	lda #$00
-	sta state::verify
+	sta zp::verify
 	sta top			; set top of program to 0
 	sta top+1
 	sta origin
@@ -689,7 +688,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	beq :+
 	jsr util::is_whitespace	; anon label must be followed by whitespace
 	bne @retlabel		; if not whitespace, go on
-:	lda state::verify
+:	lda zp::verify
 	bne @label_done		; if verifying, don't add a label
 	lda zp::pass
 	ldxy zp::virtualpc
@@ -720,7 +719,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	jsr line::process_word	; read past the label name
 	ldxy zp::line
 
-	lda state::verify
+	lda zp::verify
 	bne @retlabel		; if verifying, don't bother assembling rest
 	jsr @assemble		; assemble the rest of the line
 	bcs @ret0		; return error
@@ -770,7 +769,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	bcc @eval_anon_done
 
 @evalfailed:
-	ldx state::verify
+	ldx zp::verify
 	beq :+
 
 	; did eval fail while verifying due to undefined label?
@@ -1103,7 +1102,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	ldxy zp::line
 	jsr lbl::setscope	; set the non-local label as the new scope
 
-:	lda state::verify
+:	lda zp::verify
 	bne @ok			; if verifying, don't add/check label
 
 	lda zp::pass
@@ -1831,7 +1830,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 @offset=r0
 @size=r0
 @size_specified=r2
-	lda state::verify
+	lda zp::verify
 	beq @cont
 
 	; don't include a file when verifying
@@ -1952,7 +1951,7 @@ __asm_include:
 @readfile:
 	stxy @fname
 
-	lda state::verify
+	lda zp::verify
 	beq @inc
 	lda #ASM_DIRECTIVE	; format type
 	clc			; don't include a file when verifying
@@ -2240,7 +2239,7 @@ __asm_include:
 	lda zp::pass
 	cmp #$02
 	bcs @done		; done, macros are defined in pass 1
-	lda state::verify
+	lda zp::verify
 	bne @done		; and only when NOT verifying
 
 	; copy .ENDMAC to the context
@@ -2977,7 +2976,7 @@ __asm_include:
 @savey=rf
 	sta zp::bankval
 
-	lda state::verify
+	lda zp::verify
 	bne @ok			; if just verifying, don't write
 
 	lda pcset

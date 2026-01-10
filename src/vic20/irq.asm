@@ -6,6 +6,7 @@
 .include "../layout.inc"
 .include "../macros.inc"
 .include "../memory.inc"
+.include "../util.inc"
 
 ;*******************************************************************************
 ; CONSTANTS
@@ -25,11 +26,16 @@ IRQ_START_LINE = $11
 .endif
 
 .endif
-TIMER_VALUE     = LINES * CYCLES_PER_LINE - 2 ; timer value for stable raster int.
+
+; timer value for stable raster interrupt
+TIMER_VALUE     = LINES * CYCLES_PER_LINE - 2
 CYCLES_PER_ROW  = 8 * (CYCLES_PER_LINE - 2) - 25
 
 ;*******************************************************************************
-.BSS
+.segment "SHAREBSS"
+savebank: .byte 0
+savef5:   .byte 0
+savef6:   .byte 0
 rowcnt: .byte 0
 
 .segment "IRQ"
@@ -38,31 +44,52 @@ rowcnt: .byte 0
 ; This is the main IRQ for this program. It handles updating the beeper.
 ; It is relocated to a place where it may be called from any bank
 .proc sys_update
-	lda exp::bank
-	sta @savebank
-	lda #FINAL_BANK_MAIN
+.ifndef ultimem
+	lda exp::bank		; 4 (4)
+	sta savebank		; 4 (8)
+	lda #FINAL_BANK_MAIN	; 2 (10)
+	SELECT_BANK_A		; 4 (14)
+.else
+	; kill 14 cycles
+	pha
+	pla
+	pha
+	pla
+.endif
+	jsr stable_handler	; 6 (20) / (6 - ultimem)
+
+.ifndef ultimem
+	lda savebank
 	SELECT_BANK_A
-	jsr stable_handler
-@savebank=*+1
-	lda #$00
-	SELECT_BANK_A
+.endif
 	jmp $eb15
 .endproc
 
 .proc row_interrupt
+.ifndef ultimem
 	lda exp::bank
-	sta @savebank
+	sta savebank
 	lda #FINAL_BANK_MAIN
 	SELECT_BANK_A
+.else
+	; kill 14 cycles
+	pha
+	pla
+	pha
+	pla
+.endif
 	jsr row_handler
-@savebank=*+1
-	lda #$00
+.ifndef ultimem
+	lda savebank
 	SELECT_BANK_A
+.endif
 	jmp $eb15
 .endproc
 
 ;*******************************************************************************
+.ifndef ultimem
 .CODE
+.endif
 
 ;*******************************************************************************
 ; STABLE_HANDLER
@@ -111,9 +138,9 @@ rowcnt: .byte 0
 
 	; save $f5-$f6
         lda $f5
-	sta @savef5
+	sta savef5
         lda $f6
-	sta @savef6
+	sta savef6
 
 	jsr $eb1e               ; scan keyboard
 
@@ -127,14 +154,16 @@ rowcnt: .byte 0
 	jsr $ebba		; store to keyboard table
 
 @keydone:
-@savef5=*+1
-	lda #$00
+	lda savef5
         sta $f5
-@savef6=*+1
-	lda #$00
+	lda savef6
         sta $f6
 
+.ifndef ultimem
 	jmp beep::update
+.else
+	rts
+.endif
 .endproc
 
 ;*******************************************************************************
@@ -146,7 +175,7 @@ rowcnt: .byte 0
 	cld
 	sec
 
-	;lda #$4+3+4+2+4+6+2+2+8+$10+ 24
+	;lda #$4+3+4+2+4+6+2+2+8+$10+24
 	lda #$be
 
 	sbc $9128	; add signed overflow value from timer
@@ -328,6 +357,30 @@ rowcnt: .byte 0
 	sta $1e00
 	lda #$28	; (
 	sta $1e01
+
+	; show BRK address on stack
+	tsx
+	lda $102,x
+	jsr util::hextostr
+	sty $1e00+20
+	stx $1e00+21
+	tsx
+	lda $101,x
+	jsr util::hextostr
+	sty $1e00+22
+	stx $1e00+23
+
+	; show address of last procedure
+	tsx
+	lda $104,x
+	jsr util::hextostr
+	sty $1e00+(20*2)
+	stx $1e00+(20*2)+1
+	tsx
+	lda $103,x
+	jsr util::hextostr
+	sty $1e00+(20*2)+2
+	stx $1e00+(20*2)+3
 
 	jmp *
 .POPSEG

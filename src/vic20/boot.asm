@@ -16,6 +16,7 @@
 .include "../edit.inc"
 .include "../irq.inc"
 .include "../io.inc"
+.include "../kernal.inc"
 .include "../key.inc"
 .include "../labels.inc"
 .include "../macros.inc"
@@ -33,89 +34,8 @@
 .include "fastcopy.inc"
 .include "vic20.inc"
 
-.import __SETUP_LOAD__
-.import __SETUP_RUN__
-.import __SETUP_SIZE__
-
-.import __BANKCODE_LOAD__
-.import __BANKCODE_RUN__
-.import __BANKCODE_SIZE__
-
-.import __BANKCODE2_LOAD__
-.import __BANKCODE2_RUN__
-.import __BANKCODE2_SIZE__
-
 .import __BSS_LOAD__
 .import __BSS_SIZE__
-
-.import __DATA_LOAD__
-.import __DATA_RUN__
-.import __DATA_SIZE__
-
-.import __DEBUGINFO_CODE_LOAD__
-.import __DEBUGINFO_CODE_RUN__
-.import __DEBUGINFO_CODE_SIZE__
-
-.import __FASTTEXT_LOAD__
-.import __FASTTEXT_SIZE__
-.import __FASTTEXT_RUN__
-
-.import __MACROCODE_LOAD__
-.import __MACROCODE_RUN__
-.import __MACROCODE_SIZE__
-
-.import __VSCREEN_LOAD__
-.import __VSCREEN_RUN__
-.import __VSCREEN_SIZE__
-
-.import __IRQ_LOAD__
-.import __IRQ_RUN__
-.import __IRQ_SIZE__
-
-.import __LINKER_LOAD__
-.import __LINKER_RUN__
-.import __LINKER_SIZE__
-
-.import __OBJCODE_LOAD__
-.import __OBJCODE_RUN__
-.import __OBJCODE_SIZE__
-
-.import __LABELS_LOAD__
-.import __LABELS_RUN__
-.import __LABELS_SIZE__
-
-.import __FASTCOPY_LOAD__
-.import __FASTCOPY_RUN__
-.import __FASTCOPY_SIZE__
-
-.import __EXPR_LOAD__
-.import __EXPR_RUN__
-.import __EXPR_SIZE__
-
-.import __UDGEDIT_LOAD__
-.import __UDGEDIT_RUN__
-.import __UDGEDIT_SIZE__
-
-.import __CONSOLE_LOAD__
-.import __CONSOLE_RUN__
-.import __CONSOLE_SIZE__
-
-.import __COPYBUFF_LOAD__
-.import __COPYBUFF_RUN__
-.import __COPYBUFF_SIZE__
-
-.import __RODATA_LOAD__
-.import __RODATA_RUN__
-.import __RODATA_SIZE__
-
-.linecont +
-TOTAL_SIZE = __SETUP_SIZE__+__BANKCODE_SIZE__+__BANKCODE2_SIZE__+__DATA_SIZE__+\
-	     __FASTTEXT_SIZE__+__MACROCODE_SIZE__+__VSCREEN_SIZE__+ \
-	     __IRQ_SIZE__+__LINKER_SIZE__+__LABELS_SIZE__+__UDGEDIT_SIZE__+ \
-	     __EXPR_SIZE__ + __CONSOLE_SIZE__+__COPYBUFF_SIZE__+ \
-	     __RODATA_SIZE__ + __DEBUGINFO_CODE_SIZE__+__FASTCOPY_SIZE__+ \
-	     __OBJCODE_SIZE__
-.linecont -
 
 .ifndef CART	; DISK
 .segment "SETUP"
@@ -148,6 +68,9 @@ TOTAL_SIZE = __SETUP_SIZE__+__BANKCODE_SIZE__+__BANKCODE2_SIZE__+__DATA_SIZE__+\
 
 ; copy cart binary ($0000-$6000) to RAM
 cart_start:
+	ldx #$ff
+	txs
+
 	jsr $fd52	; init vectors
 	jsr $fdf9	; init I/O
 
@@ -163,11 +86,11 @@ cart_start:
 	sta $9002
 	sta $9003
 
-.ifdef FE3
-	.include "fe3/boot.s"
-.else
+.ifdef ultimem
+	jsr ultim::init
 	jmp __boot_start
 .endif
+
 ;-----------------------
 .segment "SETUP"
 .endif	; CART
@@ -182,8 +105,9 @@ cart_start:
 	sta zp::curtmr
 
 .ifdef CART
-.ifdef FE3
+.ifdef fe3
 	jsr fe3::init1
+.elseif .defined(ultimem)
 .endif
 	jmp enter
 
@@ -249,7 +173,7 @@ cart_start:
 	cpx #>(__BSS_LOAD__+__BSS_SIZE__-1)
 	bne @zerobss
 
-.ifdef FE3
+.ifdef fe3
 	jsr fe3::init0
 .endif
 

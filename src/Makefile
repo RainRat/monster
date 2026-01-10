@@ -2,8 +2,8 @@ TARGET ?= vic20
 REGION ?= NTSC
 
 # for Vic-20, which expansion to use
-# Valid values: FE3, ultimem
-EXPANSION ?= FE3
+# Valid values: fe3, ultimem
+EXPANSION ?= fe3
 
 # default device # (for cart image)
 DEFAULT_DEVICE=8
@@ -12,8 +12,8 @@ DEFAULT_DEVICE=8
 XVIC=xvic
 X64=x64sc
 
-#SCREEN_MODE=soft4x8
-SCREEN_MODE=hard8x8
+SCREEN_MODE=soft4x8
+#SCREEN_MODE=hard8x8
 
 ASMFLAGS=--asm-define $(TARGET) --asm-define $(REGION) --asm-define $(SCREEN_MODE) --asm-define DEFAULT_DEVICE=$(DEFAULT_DEVICE) --asm-define $(EXPANSION)
 
@@ -94,6 +94,9 @@ test-disk: monster-disk.prg test.d81
 
 cart: monster.bin
 
+ultimem: monster.bin
+	$(PYTHON) make-ultimem-cart.py monster-cart.prg $(CART_IMAGE)
+
 suite: $(TEST_IMAGE)
 
 installer.prg: installer/install.asm
@@ -139,9 +142,8 @@ install.d81: installer.prg $(CART_IMAGE)
 	$(C1541) -format install,1 d81 install.d81 -attach install.d81 -write installer.prg -write $(CART_IMAGE)
 
 start-cart: $(CART_IMAGE) test.d81
-	# test the cartridge binary
 	$(C1541) -format disk,1 d81 empty.d81
-	$(XVIC) -default -kernal $(KERNAL) +warp -sound -cartfe $(CART_IMAGE) -memory all $(EMU_REGION) -drive8type 1581 -8 test.d81 -dos1581 JiffyDOS_1581.bin -8 empty.d81 -moncommands moncommands
+	$(XVIC) -default -kernal $(KERNAL) +warp -sound -cartfe $(CART_IMAGE) -memory all $(EMU_REGION) -dos1581 JiffyDOS_1581.bin -drive8type 1581 -8 test.d81 -moncommands moncommands
 
 start-cart-jiffy: $(CART_IMAGE) test.d81
 	$(C1541) -format disk,1 d81 empty.d81

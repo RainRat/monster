@@ -1,6 +1,3 @@
-.ifndef VIC20_BANKS_INC
-.define VIC20_BANSK_INC
-
 ;******************************************************************************
 ; BANK LAYOUT
 ; These definitions describe which banks store the code/data for their
@@ -77,5 +74,3 @@ FINAL_BANK_FASTCOPY  = $a0|$f
 
 ; FASTTEXT lives at the top 4k ($b000-$c000) of the FASTCOPY2 bank
 FINAL_BANK_FASTTEXT  = $a0|$e
-
-.endif

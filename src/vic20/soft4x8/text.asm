@@ -1,5 +1,5 @@
 .include "bitmap.inc"
-.include "../banks.inc"
+.include "../expansion.inc"
 .include "../../macros.inc"
 .include "../../ram.inc"
 .include "../../zeropage.inc"
@@ -287,6 +287,7 @@ num_chars = (*-charmap)/8
 .export __text_init
 .proc __text_init
 @addr=r0
+.ifdef fe3
 	ldxy #charmap
 	stxy @addr
 
@@ -306,6 +307,7 @@ num_chars = (*-charmap)/8
 :	inx
 	cpx #num_chars
 	bne @l0
+.endif
 
 	rts
 .endproc
@@ -319,18 +321,29 @@ bmcolumnslo: .lobytes cols
 bmcolumnshi: .hibytes cols
 
 ;******************************************************************************
+.ifdef ultimem
+.segment "FASTTEXT"
+charaddrlo:
+.repeat  num_chars, i
+	.byte <((charmap)+(i*8))
+.endrepeat
+.else
 .segment "FASTTEXT_BSS"
-charaddrlo: .res num_chars
-; generated table
-;.repeat  num_chars, i
-;	.byte <((charmap)+(i*8))
-;.endrepeat
+charaddrlo:
+	; generated table
+	.res num_chars
+.endif
 
-charaddrhi: .res num_chars
-; generated table
-;.repeat num_chars, i
-;	.byte >((charmap)+(i*8))
-;.endrepeat
+.ifdef ultimem
+charaddrhi:
+.repeat num_chars, i
+	.byte >((charmap)+(i*8))
+.endrepeat
+.else
+charaddrhi:
+	; generated table
+	.res num_chars
+.endif
 
 .CODE
 ;*******************************************************************************
