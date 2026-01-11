@@ -159,12 +159,7 @@ savebank2: .byte 0
         sta $f5
 	lda savef6
         sta $f6
-
-.ifndef ultimem
 	jmp beep::update
-.else
-	rts
-.endif
 .endproc
 
 ;*******************************************************************************

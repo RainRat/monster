@@ -62,6 +62,7 @@ bank = zp::banktmp
 	lda @a			; restore .A
 	ldx @x			; restore .X
 	jsr zp::bankjmpaddr	; call the target routine
+	php
 	sta @a			; save .A
 	stx @x			; save .X
 
@@ -69,6 +70,7 @@ bank = zp::banktmp
 
 	lda @a			; restore .A
 	ldx @x			; restore .X
+	plp
 	rts
 .endproc
 

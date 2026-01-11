@@ -728,6 +728,7 @@ blockaddresseshi: .res MAX_FILES
 @addr=r2
 @cnt=r4
 	SELECT_BANK "DEBUGINFO"
+
 	stxy @addr
 	lda #$00
 	sta @cnt
@@ -1005,8 +1006,13 @@ get_filename = get_filename_addr
 ;   - .XY: the filename to set for the handle
 ;   - .C:  set if there is no file for the given ID
 .proc set_name
+.ifdef vic20
+@filename = ram::src
+@dst      = ram::dst
+.else
 @filename=r2
 @dst=r4
+.endif
 	stxy @filename
 	jsr get_filename_addr	; get the destination address for ID
 	stxy @dst
@@ -1023,8 +1029,8 @@ get_filename = get_filename_addr
 	lda #FINAL_BANK_MAIN			; source bank
 	sta ram::src+2
 	CALLMAIN ram::copy
-
 .else
+
 :	lda (@filename),y
 	sta (@dst),y
 	dey

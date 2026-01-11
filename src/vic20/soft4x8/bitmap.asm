@@ -7,6 +7,7 @@
 ; This configuration is popularly known as MINIGRAFIK, created by Mike
 ;*******************************************************************************
 
+.include "layout.inc"
 .include "../expansion.inc"
 .include "../prefs.inc"
 .include "../fastcopy.inc"
@@ -158,7 +159,7 @@ VSCREEN_WIDTH = 80	; virtual screen size (in 8-pixel characters)
 	stx @dst
 	sty @dst+1
 
-	ldx #20
+	ldx #(SCREEN_WIDTH/2)+1
 @l0:	ldy #$07
 	lda #$00
 @l1:	sta (@dst),y

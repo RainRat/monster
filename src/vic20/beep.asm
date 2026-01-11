@@ -33,6 +33,9 @@ beep_tmr: .byte 0
 	rts
 .endproc
 
+.ifdef ultimem
+.segment "BANKCODE"
+.endif
 ;******************************************************************************
 ; BEEP_UPDATE
 ; Runs one step of the sound player. Call this every frame if you are playing

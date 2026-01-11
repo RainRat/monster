@@ -5235,9 +5235,9 @@ __edit_gotoline:
 	beq :-		; -> rts (jumplist is empty)
 	dec jumpptr
 
-	; use -2 offset because we loaded jumpptr before DEC'ing
-	ldy jumplist_hi,x
-	lda jumplist_lo,x
+	; use -1 offset because we loaded jumpptr before DEC'ing
+	ldy jumplist_hi-1,x
+	lda jumplist_lo-1,x
 	tax
 	jmp gotoline
 .endproc

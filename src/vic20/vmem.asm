@@ -4,6 +4,8 @@
 
 .import __vmem_translate
 
+.CODE
+
 ;*******************************************************************************
 ; LOAD
 ; Reads a byte from the physical address associated with the given virtual

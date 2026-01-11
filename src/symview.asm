@@ -42,14 +42,17 @@ tmp      = zp::tmp16
 name     = $100
 
 ;*******************************************************************************
-.RODATA
+.DATA
+; these strings are modified depending on the address mode
+; ESCAPE_BYTE replaces the ESCAPE_VALUE for zeropage symbols
 sym_line:
 .byte "$", ESCAPE_VALUE, " ", ESCAPE_STRING, " ", ESCAPE_GOTO, 22, ESCAPE_STRING
 .byte " ", "l:", ESCAPE_VALUE_DEC, 0
-
 sym_line_no_file:
 .byte "$", ESCAPE_VALUE, " ", ESCAPE_STRING, 0
 
+;*******************************************************************************
+.RODATA
 sort_by_name_msg: .byte "f1 sort by name",0
 sort_by_addr_msg: .byte "f1 sort by addr",0
 

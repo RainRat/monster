@@ -391,7 +391,6 @@ msave_src=*+1
 
 @rti:	; fully simulate RTI:
 	; "pull" status then return address
-	; TODO: check this
 	ldy __sim_reg_sp
 	lda prog00+$100+1,y
 	sta __sim_reg_p
@@ -531,12 +530,17 @@ msave_src=*+1
 	bpl :-
 	; .Z = 0
 @done:	rts
+
+.ifndef ultimem
 .PUSHSEG
 .RODATA
+.endif
 @jamops:
 .byte $02, $12, $22, $32, $42, $52, $62, $72, $92, $B2, $D2, $F2
 @numjams=*-@jamops
+.ifndef ultimem
 .POPSEG
+.endif
 .endproc
 
 ;*******************************************************************************
@@ -838,8 +842,10 @@ msave_src=*+1
 	sec
 	rts
 
+.ifndef ultimem
 .PUSHSEG
 .RODATA
+.endif
 .if .defined(vic20)
 	.define safety_addrs $0316, $0317, $0318, $0319
 .elseif .defined(c64)
@@ -848,10 +854,14 @@ msave_src=*+1
 	@safeaddrs_lo: .lobytes safety_addrs
 	@safeaddrs_hi: .hibytes safety_addrs
 	@num_safe_addrs=*-@safeaddrs_hi
+.ifndef ultimem
 .POPSEG
+.endif
 .endproc
 
+.ifndef ultimem
 .RODATA
+.endif
 ;*******************************************************************************
 ; OERATION SIDE EFFECTS TABLE
 ; This table contains all opcodes and what state they affect.
