@@ -94,8 +94,10 @@ readonly:  .byte 0	; if !0 no edits are allowed to be made via the editor
 __edit_debugging:
 debugging: .byte 0	; if !0, debugger is active
 
-jumplist: .res 8*2	; line #'s between jumps
-jumpptr:  .byte 0	; offset to jumplist
+; jump list lines and current index
+jumplist_lo: .res MAX_JUMPS
+jumplist_hi: .res MAX_JUMPS
+jumpptr:  .byte 0
 
 visual_start_line:	.word 0	; the line # a selection began at
 visual_start_x:		.byte 0	; the x-position a selection began at
@@ -5197,36 +5199,31 @@ __edit_gotoline:
 ; Adds a jump point at the current source position
 .proc add_jump_point
 @end=r0
-	lda jumpptr
-	cmp #MAX_JUMPS
+	ldx jumpptr
+	cpx #MAX_JUMPS
 	bcc @cont
-	asl
-	sta @end
 
+	; shift all existing jumps down
 	ldx #$00
-; shift all existing jumps down
-:	lda jumplist+2,x
-	sta jumplist,x
-	lda jumplist+3,x
-	sta jumplist+1,x
+:	lda jumplist_hi+1,x
+	sta jumplist_hi,x
+	lda jumplist_lo+1,x
+	sta jumplist_lo,x
 	inx
-	inx
-	cpx @end
+	cpx jumpptr
 	bcc :-
 
 	dec jumpptr
+	ldx #MAX_JUMPS-1
 
 ; add the new jump to the end of the jumplist
-@cont:	lda jumpptr
-	asl
-	tax
-	lda src::line
-	sta jumplist,x
+@cont:	lda src::line
+	sta jumplist_lo,x
 	lda src::line+1
-	sta jumplist+1,x
+	sta jumplist_hi,x
 
 	inc jumpptr
-	rts
+:	rts		; <- jumpback
 .endproc
 
 ;*******************************************************************************
@@ -5234,17 +5231,13 @@ __edit_gotoline:
 ; Jumps back to the last source position the user has jumped from
 .export jumpback
 .proc jumpback
-	lda jumpptr
-	bne :+
-	rts		; jumplist is empty
-
-:	dec jumpptr
-	asl
-	tax
+	ldx jumpptr
+	beq :-		; -> rts (jumplist is empty)
+	dec jumpptr
 
 	; use -2 offset because we loaded jumpptr before DEC'ing
-	ldy jumplist+1-2,x
-	lda jumplist-2,x
+	ldy jumplist_hi,x
+	lda jumplist_lo,x
 	tax
 	jmp gotoline
 .endproc
