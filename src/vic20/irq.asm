@@ -33,10 +33,11 @@ CYCLES_PER_ROW  = 8 * (CYCLES_PER_LINE - 2) - 25
 
 ;*******************************************************************************
 .segment "SHAREBSS"
-savebank: .byte 0
-savef5:   .byte 0
-savef6:   .byte 0
-rowcnt: .byte 0
+savef5:    .byte 0
+savef6:    .byte 0
+rowcnt:    .byte 0
+savebank:  .byte 0
+savebank2: .byte 0
 
 .segment "IRQ"
 ;*******************************************************************************
@@ -68,7 +69,7 @@ rowcnt: .byte 0
 .proc row_interrupt
 .ifndef ultimem
 	lda exp::bank
-	sta savebank
+	sta savebank2
 	lda #FINAL_BANK_MAIN
 	SELECT_BANK_A
 .else
@@ -80,7 +81,7 @@ rowcnt: .byte 0
 .endif
 	jsr row_handler
 .ifndef ultimem
-	lda savebank
+	lda savebank2
 	SELECT_BANK_A
 .endif
 	jmp $eb15

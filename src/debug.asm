@@ -89,10 +89,16 @@ DEBUG_IFACE_TEXT = 1	; text interface (returns to TUI)
 debugtmp = zp::debuggertmp	; scratchpad
 
 ;******************************************************************************
+.ifdef ultimem
+.segment "SIMRAM_00"
+.else
 .segment "VSYSRAM"
+.endif
 ; $00-$200 is stored in the main BSS segment for faster access by the simulator
 .export prog00
 prog00:	.res $400	; $00-$0400
+
+; backup for low RAM when the user's values (prog00) are swapped in
 .export dbg00
 dbg00:  .res $400	; $00-$400
 
@@ -168,7 +174,11 @@ __debug_breakpoint_flags:
 breakpoint_flags: .res MAX_BREAKPOINTS ; active state of breakpoints
 breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 
+.ifdef ultimem
+.segment "DEBUGGER"
+.else
 .CODE
+.endif
 
 ;******************************************************************************
 ; START
@@ -1525,6 +1535,14 @@ __debug_remove_breakpoint:
 ;  - .XY: the resturn address (the stack s clobbered by this procedure)
 .export __debug_save_user_zp
 .proc __debug_save_user_zp
+@ret=mem::spare
+.ifdef ultimem
+	; bank in the area containing prog00
+	lda #SIMRAM_00_BANK
+	sta $9ffe
+	lda #$d5
+	sta $9ff2
+.endif
 	stxy @ret
 
 	ldx #$00
@@ -1539,8 +1557,14 @@ __debug_remove_breakpoint:
 	dex
 	bne :-
 
-@ret=*+1
-	jmp $f00d
+.ifdef ultimem
+	; reset BLK5 RAM area
+	lda #$04
+	sta $9ffe
+	lda #$55
+	sta $9ff2
+.endif
+	jmp (@ret)
 .endproc
 
 ;******************************************************************************
@@ -1550,6 +1574,14 @@ __debug_remove_breakpoint:
 ;  - .XY: the resturn address (the stack s clobbered by this procedure)
 .export __debug_restore_user_zp
 .proc __debug_restore_user_zp
+@ret=mem::spare
+.ifdef ultimem
+	; bank in the area containing prog00
+	lda #SIMRAM_00_BANK
+	sta $9ffe
+	lda #$d5
+	sta $9ff2
+.endif
 	stxy @ret
 
 	ldx #$00
@@ -1564,8 +1596,14 @@ __debug_remove_breakpoint:
 	dex
 	bne :-
 
-@ret=*+1
-	jmp $f00d
+.ifdef ultimem
+	; reset BLK5 RAM area
+	lda #$04
+	sta $9ffe
+	lda #$55
+	sta $9ff2
+.endif
+	jmp (@ret)
 .endproc
 
 ;*****************************************************************************
@@ -1573,11 +1611,25 @@ __debug_remove_breakpoint:
 ; Restores the $00-$100 values forthe debugger
 .export __debug_restore_debug_zp
 .proc __debug_restore_debug_zp
+.ifdef ultimem
+	; bank in the area containing prog00
+	lda #SIMRAM_00_BANK
+	sta $9ffe
+	lda #$d5
+	sta $9ff2
+.endif
 	ldx #$00
 :	lda dbg00,x
 	sta $00,x
 	dex
 	bne :-
+.ifdef ultimem
+	; reset BLK5 RAM area
+	lda #$04
+	sta $9ffe
+	lda #$55
+	sta $9ff2
+.endif
 	rts
 .endproc
 
@@ -1588,6 +1640,14 @@ __debug_remove_breakpoint:
 ;   - .XY: the return address (stack can't be used)
 .export __debug_restore_debug_low
 .proc __debug_restore_debug_low
+@ret=mem::spare
+.ifdef ultimem
+	; bank in the area containing prog00
+	lda #SIMRAM_00_BANK
+	sta $9ffe
+	lda #$d5
+	sta $9ff2
+.endif
 	stxy @ret
 
 	ldx #$00
@@ -1610,9 +1670,15 @@ __debug_remove_breakpoint:
 	sta $300,x
 	dex
 	bpl :-
+.ifdef ultimem
+	; reset BLK5 RAM area
+	lda #$04
+	sta $9ffe
+	lda #$55
+	sta $9ff2
+.endif
 
-@ret=*+1
-	jmp	$f00d
+	jmp (@ret)
 .endproc
 
 ;******************************************************************************
@@ -1623,6 +1689,14 @@ __debug_remove_breakpoint:
 .export __debug_save_debug_zp
 .proc __debug_save_debug_zp
 @zp=dbg00
+@ret=mem::spare
+.ifdef ultimem
+	; bank in the area containing prog00
+	lda #SIMRAM_00_BANK
+	sta $9ffe
+	lda #$d5
+	sta $9ff2
+.endif
 	stxy @ret
 	ldx #$00
 @l0:	lda $00,x
@@ -1635,8 +1709,15 @@ __debug_remove_breakpoint:
 	sta @zp+$300,x
 	dex
 	bne @l0
-@ret=*+1
-	jmp	$f00d
+
+.ifdef ultimem
+	; reset BLK5 RAM area
+	lda #$04
+	sta $9ffe
+	lda #$55
+	sta $9ff2
+.endif
+	jmp (@ret)
 .endproc
 
 .RODATA

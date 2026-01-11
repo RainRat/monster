@@ -10,6 +10,8 @@
 
 .include "../../zeropage.inc"
 
+NUM_BANKS = $0d
+
 .segment "ULTIREGS"
 ;*******************************************************************************
 ; BANK
@@ -30,7 +32,22 @@ __ultimem_bank: .byte 0
 ;   - .A: the bank to activate
 .export __ultimem_select_bank
 .proc __ultimem_select_bank
-	sta __ultimem_bank	; 4 (4)
+	cmp #NUM_BANKS
+	bcc :+
+
+	; if id is above last virutal bank index, treat as raw bank value
+	; this is used for source buffers
+	sta $9ff8
+	;sec
+	adc #$00
+	sta $9ffa
+	adc #$01
+	sta $9ffc
+	lda #$7f		; RAM in BLK1,2,3
+	sta $9ff2
+	rts
+
+:	sta __ultimem_bank	; 4 (4)
 	stx @savex		; 4 (8)
 	sta @savea		; 4 (12)
 	tax			; 2 (14)

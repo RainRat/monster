@@ -12,6 +12,8 @@
 .import __src_mark_dirty
 .import __src_on_last_line
 
+.macpack longbranch
+
 buffstate   = zp::srccur
 cursorzp    = zp::srccur
 poststartzp = zp::srccur2
@@ -71,9 +73,9 @@ data: .res BUFFER_SIZE
 	cmp #$09
 	beq :+
 	cmp #$20
-	bcc @done
+	jcc @done
 	cmp #$80
-	bcs @done	; not displayable
+	jcs @done	; not displayable
 
 :	pha
 	jsr __src_mark_dirty
@@ -106,15 +108,18 @@ data: .res BUFFER_SIZE
 	sub16 poststartzp
 
 	lda __src_bank
-	sta r7		; destination bank
+	sta ram::dst+2
 	jsr ram::copy
 
 @ins:	pla
 	ldy cursorzp+1
 	bmi @done	; out of range
 
+.ifndef ultimem
 	sta24 __src_bank, cursorzp
-
+.else
+	jsr insert
+.endif
 	cmp #$0d
 	bne @insdone
 	incw line
@@ -145,7 +150,11 @@ data: .res BUFFER_SIZE
 
 @cont:	; switch to the bank that contains the source buffer's data
 	lda __src_bank
+.ifndef ultimem
 	SELECT_BANK_A
+.else
+	jsr activate_source
+.endif
 
 	; move one byte from the end of the gap to the start
 	ldy #$00
@@ -187,7 +196,11 @@ data: .res BUFFER_SIZE
 
 	; switch to the bank that contains the source buffer's data
 	lda __src_bank
+.ifndef ultimem
 	SELECT_BANK_A
+.else
+	jsr activate_source
+.endif
 
 	; move one byte from the start of the gap to the end
 	ldy #$00
@@ -244,7 +257,11 @@ data: .res BUFFER_SIZE
 
 @store:	pha
 	lda __src_bank
+.ifndef ultimem
 	SELECT_BANK_A
+.else
+	jsr activate_source
+.endif
 	pla
 	ldy #$00
 	sta (end),y
@@ -300,6 +317,9 @@ data: .res BUFFER_SIZE
 	jmp dbg::shift_breakpointsd
 .endproc
 
+.ifdef ultimem
+.segment "BANKCODE"
+.endif
 ;*******************************************************************************
 ; ATCURSOR
 ; Returns the character at the cursor position.
@@ -308,7 +328,66 @@ data: .res BUFFER_SIZE
 .export __src_atcursor
 .proc __src_atcursor
 	decw cursorzp
+.ifndef ultimem
 	lda24 __src_bank, cursorzp
+.else
+	jsr activate_source
+	ldy #$00
+	lda (cursorzp),y
+	jsr deactivate_source
+.endif
 	incw cursorzp
 	rts
 .endproc
+
+.ifdef ultimem
+;*******************************************************************************
+; ACTIVATE SOURCE
+.proc activate_source
+	; bank in the source buffer
+	pha
+	lda __src_bank
+	sta $9ff8
+	clc
+	adc #$01
+	sta $9ffa
+	adc #$01
+	sta $9ffc
+	lda #$3f
+	sta $9ff2
+	pla
+	rts
+.endproc
+
+;*******************************************************************************
+; DEACTIVATE SOURCE
+.proc deactivate_source
+	; restore MAIN bank
+	pha
+	lda #FINAL_BANK_MAIN
+	SELECT_BANK_A
+	pla
+	rts
+.endproc
+
+;*******************************************************************************
+; INSERT
+.proc insert
+	jsr activate_source
+	ldy #$00
+	sta (cursorzp),y
+	jmp deactivate_source
+.endproc
+
+.segment "BANKCODE"
+;*******************************************************************************
+; COPY LINE
+.export src_copyline
+.proc src_copyline
+@src=zp::bankaddr0
+@target=zp::bankaddr1
+	jsr activate_source
+	COPY_Y @src, @target
+	jmp deactivate_source
+.endproc
+.endif
