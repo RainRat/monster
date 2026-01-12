@@ -47,8 +47,6 @@ num    = zp::guitmp
 height = zp::guitmp+1
 guitmp = zp::guitmp+2
 
-type: .byte 0
-
 ;*******************************************************************************
 ; GUISTACK
 ; The guistack holds the gui data for each active window.

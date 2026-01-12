@@ -114,20 +114,14 @@ __debug_interface: .byte DEBUG_IFACE_GUI
 
 ;*******************************************************************************
 ; previous values for registers etc.
-prev_pc:     .word 0
-
 .export __debug_sw_valid
-__debug_sw_valid:	.byte 0    ; if !0, stopwatch is valid
+__debug_sw_valid: .byte 0	; if !0, stopwatch is valid
 
 breakpoints_active: .byte 0	; if !0 breakpoints are installed
 
 lineset: .byte 0	; not zero if we know the line number we're on
 
-aux_mode:       .byte 0	; the active auxiliary view
-highlight_line: .word 0 ; the line we are highlighting
-highlight_file: .word 0	; filename of line we are highlighting
-
-brkcond: .word 0	; if !0, address to handler to break TRACE on
+aux_mode: .byte 0	; the active auxiliary view
 
 ; set if interrupt was triggered by BRK
 .export __debug_is_brk
@@ -194,7 +188,6 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 
 	; set the simulator's initial PC value
 	stxy sim::pc
-	stxy prev_pc
 
 	; init state
 	lda #$00
@@ -575,8 +568,6 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 ; Runs the user program at the line the cursor is currently on
 .proc jump
 	ldxy sim::pc
-	stxy prev_pc
-
 	jsr edit::currentfile	; get current line # (.XY) and file ID (.A)
 	jsr dbgi::line2addr
 	bcs @done		; couldn't resolve address

@@ -46,6 +46,6 @@
 ; This macro saves Vic-20 specific I/O (VIAs etc.) upon returning to the
 ; debugger from a "GO" command
 .macro SAVE_IO
-	lda $912e
-	sta sim::via2+$e
+	;lda $912e
+	;sta sim::via2+$e
 .endmacro

@@ -11,7 +11,7 @@
 .segment "SPARE"
 .export __mem_spare
 .export __mem_spareend
-__mem_spare: .res $900
+__mem_spare: .res $400
 __mem_spareend:
 
 ;*******************************************************************************

@@ -1038,8 +1038,7 @@ __mon_default_start_set: .byte 0
 	bcs :-
 
 @cont:	stx @offset
-	ldxy #sim::reg_sp
-	jsr getb
+	lda sim::reg_sp
 	sec			; +1
 	adc @offset
 	sta @sp
@@ -1429,14 +1428,8 @@ __mon_default_start_set: .byte 0
 ; Prints the instruction at the .PC
 .proc put_instruction
 	; disassemble the instruction that we're at now
-	ldxy #sim::pc
-	jsr getb
-	pha
-	ldxy #sim::pc+1
-	jsr getb
-	tay
-	pla
-	tax
+	ldx sim::pc
+	ldy sim::pc+1
 	lda #<$100
 	sta r0
 	lda #>$100
@@ -1460,11 +1453,8 @@ __mon_default_start_set: .byte 0
 ;  - .C: set if the user is debugging a program
 .proc debugging
 	; get the debugging flag
-	ldxy #edit::debugging
-	jsr getb
-	cmp #$01
-	bcs :+
-
+	lda edit::debugging
+	bne :+
 	ldxy #@not_debugging_msg
 	jsr mon::puts
 	clc
@@ -1521,13 +1511,6 @@ __mon_default_start_set: .byte 0
 ; Calls vmem::store
 .proc vmem_store
 	JUMPMAIN vmem::store
-.endproc
-
-;*******************************************************************************
-; GETB
-; Calls "ram::get_byte"
-.proc getb
-	JUMPMAIN ram::get_byte
 .endproc
 
 ;*******************************************************************************

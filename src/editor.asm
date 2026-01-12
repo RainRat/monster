@@ -86,13 +86,14 @@ mode = zp::editor_mode	; editor mode (COMMAND, INSERT)
 .export __edit_height
 __edit_height = height
 
-.BSS
-;*******************************************************************************
-readonly:  .byte 0	; if !0 no edits are allowed to be made via the editor
-
+.segment "SHAREBSS"
 .export __edit_debugging
 __edit_debugging:
 debugging: .byte 0	; if !0, debugger is active
+
+.BSS
+;*******************************************************************************
+readonly:  .byte 0	; if !0 no edits are allowed to be made via the editor
 
 ; jump list lines and current index
 jumplist_lo: .res MAX_JUMPS

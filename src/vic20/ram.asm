@@ -33,10 +33,6 @@ bank = zp::banktmp
 	sta @a
 
 	jsr inline::setup
-
-	lda #$4c
-	sta zp::bankjmpaddr	; write the JMP instruction
-
 	jsr exp::push_bank	; save current bank
 	jsr inline::getarg_b	; get bank byte
 	sta bank
@@ -92,10 +88,6 @@ bank = zp::banktmp
 	sta @a
 
 	jsr inline::setup
-
-	lda #$4c
-	sta zp::bankjmpaddr	; write the JMP instruction
-
 	jsr exp::push_bank	; save current bank
 	jsr inline::getarg_b	; get bank byte
 	sta bank

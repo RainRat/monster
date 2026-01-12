@@ -52,8 +52,6 @@ TITLE_ADDR_START = 18
 
 .BSS
 ;*******************************************************************************
-dirtybuff: .res TOTAL_BYTES
-
 .export __view_addr
 __view_addr:
 memaddr: .word 0

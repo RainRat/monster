@@ -21,7 +21,7 @@
 .import write_step
 
 ;*******************************************************************************
-.BSS
+.segment "SHAREBSS"
 
 .export __sim_register_state
 .export __sim_pc
@@ -87,10 +87,6 @@ __sim_effective_addr: .word 0
 .export __sim_stopwatch
 __sim_stopwatch: .res 3
 
-.export __sim_via2
-__sim_via2: .res $10
-
-.export save_sp
 save_sp: .byte 0
 
 ; the debugger's value for the byte that was swapped in for a step (if any)
@@ -150,11 +146,7 @@ msave_src=*+1
 	cli
 	RETURN_OK
 
-.ifdef ultimem
-.segment "SIM"
-.else
 .segment "DEBUGGER"
-.endif
 
 ;*******************************************************************************
 ; STEP
@@ -267,6 +259,7 @@ msave_src=*+1
 
 	; execute the instruction
 	pha
+	jmp *
 	jmp STEP_HANDLER_ADDR
 
 ;---------------------------------------
@@ -531,16 +524,12 @@ msave_src=*+1
 	; .Z = 0
 @done:	rts
 
-.ifndef ultimem
 .PUSHSEG
 .RODATA
-.endif
 @jamops:
 .byte $02, $12, $22, $32, $42, $52, $62, $72, $92, $B2, $D2, $F2
 @numjams=*-@jamops
-.ifndef ultimem
 .POPSEG
-.endif
 .endproc
 
 ;*******************************************************************************
@@ -839,13 +828,11 @@ msave_src=*+1
 
 @err:	; an important memory location will be clobbered
 	inc __sim_vital_addr_clobbered
-	sec
+	;sec
 	rts
 
-.ifndef ultimem
 .PUSHSEG
 .RODATA
-.endif
 .if .defined(vic20)
 	.define safety_addrs $0316, $0317, $0318, $0319
 .elseif .defined(c64)
@@ -854,14 +841,9 @@ msave_src=*+1
 	@safeaddrs_lo: .lobytes safety_addrs
 	@safeaddrs_hi: .hibytes safety_addrs
 	@num_safe_addrs=*-@safeaddrs_hi
-.ifndef ultimem
 .POPSEG
-.endif
 .endproc
 
-.ifndef ultimem
-.RODATA
-.endif
 ;*******************************************************************************
 ; OERATION SIDE EFFECTS TABLE
 ; This table contains all opcodes and what state they affect.

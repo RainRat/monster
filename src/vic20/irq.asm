@@ -200,8 +200,7 @@ savebank2: .byte 0
 
 	cpx #SCREEN_HEIGHT-1
 	inc rowcnt
-	bcs :+
-	rts
+	bcc @ret
 
 :	; reinstall main IRQ handler
 	lda #$00
@@ -210,8 +209,10 @@ savebank2: .byte 0
 	stxy $0314
 	lda #$00|$20		; disable T2 interrupts
 	sta $912e
-	rts
+@ret:	rts
 .endproc
+
+.CODE
 
 ;*******************************************************************************
 ; IRQ ON
