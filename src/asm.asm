@@ -177,71 +177,71 @@ AAA_JMP_IND = $03
 
 opcodes:
 ; cc = 00
-.byt $ff,$ff,$ff ; unused
-.byt "bit" ; 001 3
-.byt "jmp" ; 010 4
-.byt "jmp" ; 011 5
-.byt "sty" ; 100 6
-.byt "ldy" ; 101 7
-.byt "cpy" ; 110 8
-.byt "cpx" ; 111 9
+.byte $ff,$ff,$ff ; unused
+.byte "bit" ; 001 3
+.byte "jmp" ; 010 4
+.byte "jmp" ; 011 5
+.byte "sty" ; 100 6
+.byte "ldy" ; 101 7
+.byte "cpy" ; 110 8
+.byte "cpx" ; 111 9
 ;cc = 01
-.byt "ora" ; 000 a
-.byt "and" ; 001 b
-.byt "eor" ; 010 c
-.byt "adc" ; 011 d
-.byt "sta" ; 100 e
-.byt "lda" ; 101 f
-.byt "cmp" ; 110 10
-.byt "sbc" ; 111 11
+.byte "ora" ; 000 a
+.byte "and" ; 001 b
+.byte "eor" ; 010 c
+.byte "adc" ; 011 d
+.byte "sta" ; 100 e
+.byte "lda" ; 101 f
+.byte "cmp" ; 110 10
+.byte "sbc" ; 111 11
 ;cc = 10
-.byt "asl" ; 000 12
-.byt "rol" ; 001 13
-.byt "lsr" ; 010 14
-.byt "ror" ; 011 15
-.byt "stx" ; 100 16
-.byt "ldx" ; 101 17
-.byt "dec" ; 110 18
-.byt "inc" ; 111 19
+.byte "asl" ; 000 12
+.byte "rol" ; 001 13
+.byte "lsr" ; 010 14
+.byte "ror" ; 011 15
+.byte "stx" ; 100 16
+.byte "ldx" ; 101 17
+.byte "dec" ; 110 18
+.byte "inc" ; 111 19
 opcode_branches:
 ; branch $10, $30, $50...
-.byt "bpl"
-.byt "bmi"
-.byt "bvc"
-.byt "bvs"
-.byt "bcc"
-.byt "bcs"
-.byt "bne"
-.byt "beq"
+.byte "bpl"
+.byte "bmi"
+.byte "bvc"
+.byte "bvs"
+.byte "bcc"
+.byte "bcs"
+.byte "bne"
+.byte "beq"
 
 ;implied + jsr
 opcode_singles_strings:
-.byt "brk"
-.byt "jsr"
-.byt "rti"
-.byt "rts"
-.byt "php"
-.byt "plp"
-.byt "pha"
-.byt "pla"
-.byt "dey"
-.byt "tay"
-.byt "iny"
-.byt "inx"
-.byt "clc"
-.byt "sec"
-.byt "cli"
-.byt "sei"
-.byt "tya"
-.byt "clv"
-.byt "cld"
-.byt "sed"
-.byt "txa"
-.byt "txs"
-.byt "tax"
-.byt "tsx"
-.byt "dex"
-.byt "nop"
+.byte "brk"
+.byte "jsr"
+.byte "rti"
+.byte "rts"
+.byte "php"
+.byte "plp"
+.byte "pha"
+.byte "pla"
+.byte "dey"
+.byte "tay"
+.byte "iny"
+.byte "inx"
+.byte "clc"
+.byte "sec"
+.byte "cli"
+.byte "sei"
+.byte "tya"
+.byte "clv"
+.byte "cld"
+.byte "sed"
+.byte "txa"
+.byte "txs"
+.byte "tax"
+.byte "tsx"
+.byte "dex"
+.byte "nop"
 
 ;*******************************************************************************
 ; OPCODETAB
@@ -249,12 +249,12 @@ opcode_singles_strings:
 ; the encoding of the other instructions well.
 ; They are thus considered separately during assembly/disassembly
 opcodetab:
-.byt $10, $30, $50, $70, $90, $B0, $D0, $F0 	;branches
+.byte $10, $30, $50, $70, $90, $B0, $D0, $F0 	;branches
 opcode_singles:
-.byt $00, $20, $40, $60				; BRK, JSR, RTI, RTS
-.byt $08, $28, $48, $68, $88, $A8, $C8, $E8	; PHP, PLP, PHA, PLA, DEY, TAY, INY, INX
-.byt $18, $38, $58, $78, $98, $B8, $D8, $F8	; CLC, SEC, CLI, SEI, TYA, CLV, CLD, SED
-.byt $8A, $9A, $AA, $BA, $CA, $EA		; TXA, TXS, TAX, TSX, DEX, NOP
+.byte $00, $20, $40, $60			; BRK, JSR, RTI, RTS
+.byte $08, $28, $48, $68, $88, $A8, $C8, $E8	; PHP, PLP, PHA, PLA, DEY, TAY, INY, INX
+.byte $18, $38, $58, $78, $98, $B8, $D8, $F8	; CLC, SEC, CLI, SEI, TYA, CLV, CLD, SED
+.byte $8A, $9A, $AA, $BA, $CA, $EA		; TXA, TXS, TAX, TSX, DEX, NOP
 num_opcode_singles=*-opcode_singles
 
 ;*******************************************************************************
@@ -262,25 +262,25 @@ num_opcode_singles=*-opcode_singles
 DIRECTIVE_ELSE = 9
 DIRECTIVE_ENDIF = 10
 directives:
-.byte "db",0
-.byte "eq",0
-.byte "dw",0
-.byte "inc",0
-.byte "org",0
-.byte "rorg",0
-.byte "rep",0
-.byte "mac",0
-.byte "if",0
-.byte "else",0
-.byte "endif",0
-.byte "ifdef",0
-.byte "endmac",0
-.byte "endrep",0
-.byte "incbin",0
-.byte "import",0
-.byte "export",0
-.byte "seg",0
-.byte "segzp",0
+	.byte "db",0
+	.byte "eq",0
+	.byte "dw",0
+	.byte "inc",0
+	.byte "org",0
+	.byte "rorg",0
+	.byte "rep",0
+	.byte "mac",0
+	.byte "if",0
+	.byte "else",0
+	.byte "endif",0
+	.byte "ifdef",0
+	.byte "endmac",0
+	.byte "endrep",0
+	.byte "incbin",0
+	.byte "import",0
+	.byte "export",0
+	.byte "seg",0
+	.byte "segzp",0
 directives_len=*-directives
 
 ;*******************************************************************************
@@ -475,7 +475,7 @@ num_illegals = *-illegal_opcodes
 .endproc
 
 ;*******************************************************************************
-; TOKENIZE_PASS
+; TOKENIZE PASS
 ; Based on the current pass (zp::pass), calls the appropriate routine to
 ; handle assembly for that pass
 ; IN:
@@ -492,7 +492,7 @@ num_illegals = *-illegal_opcodes
 .endproc
 
 ;*******************************************************************************
-; TOKENIZE_PASS2
+; TOKENIZE PASS2
 ; Calls tokenize and generated debug info (if enabled)
 ; IN:
 ;  - .A:  the bank that the line to assemble resides in
@@ -1128,7 +1128,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 .endproc
 
 ;*******************************************************************************
-; IS_ANONREF
+; IS ANONREF
 ; Returns .Z set if zp::line points to an anonymous label reference
 ; OUT:
 ;  - .Z: Set if zp::line is on an anonymous label reference
