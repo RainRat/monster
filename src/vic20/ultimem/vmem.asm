@@ -6,6 +6,7 @@
 .segment "BANKCODE"
 
 addr=zp::banktmp
+savey=zp::banktmp+2
 
 ;*******************************************************************************
 ; LOAD
@@ -19,7 +20,7 @@ addr=zp::banktmp
 .proc __vmem_load
 	jsr translate
 	lda (addr),y
-	rts
+	jmp vmem_done
 .endproc
 
 ;*******************************************************************************
@@ -33,13 +34,11 @@ addr=zp::banktmp
 ;  - .A: the byte at the physical address
 .export __vmem_load_off
 .proc __vmem_load_off
-	pha
-	sta zp::bankval
+	sta zp::bankoffset
 	jsr translate
-	pla
-	tay
+	ldy zp::bankoffset
 	lda (addr),y
-	rts
+	jmp vmem_done
 .endproc
 
 ;*******************************************************************************
@@ -51,10 +50,11 @@ addr=zp::banktmp
 ;  - .A:  the byte to store
 .export __vmem_store
 .proc __vmem_store
-	sta zp::bankval
+	pha
 	jsr translate
+	pla
 	sta (addr),y
-	rts
+	jmp vmem_done
 .endproc
 
 ;*******************************************************************************
@@ -67,12 +67,28 @@ addr=zp::banktmp
 ;  - zp::bankval: the value to store
 .export __vmem_store_off
 .proc __vmem_store_off
-	pha
 	sta zp::bankoffset
 	jsr translate
-	pla
-	tay
+	ldy zp::bankoffset
+	lda zp::bankval
 	sta (addr),y
+
+	; fall through to vmem_done
+.endproc
+
+;*******************************************************************************
+; VMEM DONE
+; Restores BLK1 to the MAIN bank, restores .Y, and returns
+.proc vmem_done
+	; restore BLK1
+	pha
+	lda #$01
+	sta $9ff8
+	lda #$55
+	sta $9ff2
+	pla
+
+	ldy savey
 	rts
 .endproc
 
@@ -86,22 +102,27 @@ addr=zp::banktmp
 ;  - .XY: the physical address
 ;  - .A:  the bank number of the physical address
 .proc translate
-@addr=r0
-	stx addr
+	sty savey
+	stx addr		; store address LSB as is
 
-	; get most significant 3 bits to get bank offset
+	; get most significant 3 bits to get the bank to use
 	tya
 	lsr
 	lsr
 	lsr
 	lsr
 	lsr
-	sta $9ff8	; bank in the virutal memory (BLK1)
+	clc
+	adc #SIMRAM_00_BANK
+	sta $9ff8		; bank in the virutal memory (BLK1)
 
-	; mask lower 13 bits (offset from bank)
 	tya
-	and #$1f
+	and #$1f		; get lower 5 bits of MSB (offset from bank)
+	;clc
+	adc #$20		; add BLK1 base ($2000)
 	sta addr+1
+	lda #$57
+	sta $9ff2		; make BLK1 RAM (r/w)
 	ldy #$00
 	rts
 .endproc

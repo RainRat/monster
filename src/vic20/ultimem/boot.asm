@@ -190,6 +190,9 @@
 	sta $028b	; set repeat timer
 
 	; activate the main CODE bank and begin the app
+	lda #$4c		; JMP
+	sta zp::jmpaddr
+	sta zp::bankjmpaddr
 	JUMP FINAL_BANK_MAIN, enter
 .endproc
 

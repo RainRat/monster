@@ -544,6 +544,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 ;  - .C: set if an error occurred
 .export __asm_tokenize
 .proc __asm_tokenize
+@tmp=r0
 	; copy the line to the main RAM bank and make it uppercase (assembly is
 	; case-insensitive)
 	stxy zp::bankaddr0
@@ -951,7 +952,6 @@ __asm_tokenize_pass1 = __asm_tokenize
 	bne @err
 
 :	; convert operand to relative address (operand - zp::asmresult)
-@tmp=r0
 	lda zp::asmresult
 	clc
 	adc #$02
@@ -1057,14 +1057,14 @@ __asm_tokenize_pass1 = __asm_tokenize
 	jsr readb
 	ora @optmp
 
-; finally, check for invalid instructions ("gaps" in the ISA)
+	; finally, check for invalid instructions ("gaps" in the ISA)
 	ldx #num_illegals-1
 :	cmp illegal_opcodes,x
 	beq @err
 	dex
 	bpl :-
 
-; if instruction is not illegal (invalid), write out its opcode
+	; if instruction is valid, write out its opcode
 	jsr writeb
 	bcc @noerr
 	rts		; return err
@@ -1242,7 +1242,6 @@ __asm_tokenize_pass1 = __asm_tokenize
 .export getaddrmode
 .proc getaddrmode
 	lda operandsz
-	cmp #$00
 	beq @impl
 	cmp #$02
 	beq @abs
@@ -1258,6 +1257,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	beq :+
 	dex
 	bpl :+
+
 	; error- indirect zeropage not a valid addressing mode
 @illegalmode:
 	RETURN_ERR ERR_ILLEGAL_ADDRMODE
@@ -1289,8 +1289,10 @@ __asm_tokenize_pass1 = __asm_tokenize
 	lda #IMMEDIATE
 	RETURN_OK
 
-@impl:	lda #IMPLIED
+@impl:	;lda #IMPLIED (0)
 @done:	RETURN_OK
+
+;------------------
 @oversized:
 	lda zp::pass
 	cmp #$01
