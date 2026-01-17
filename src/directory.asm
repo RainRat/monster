@@ -413,9 +413,14 @@
 ; Opens the directory "file" for loading
 .proc open_dir
 	ldxy #strings::dir
+	jsr file::exists
+	bcs :+
+	ldxy #strings::dir
 	jsr file::open_r_prg
-	tax
-	jmp krn::chkin
+	bcs :+
+	jsr krn::chkin
+	clc			; ok
+:	rts
 .endproc
 
 ;*******************************************************************************

@@ -155,7 +155,8 @@ start-disk-jiffy20: test.d81
 	$(XVIC) +warp -kernal JiffyDOS_VIC-20_6.01_NTSC.bin -sound -cartfe $(FE3BIN) -memory all $(EMU_REGION) -drive8type 1581 -dos1581 JiffyDOS_1581.bin -8 test.d81 -moncommands moncommands
 
 start-disk-jiffy64: test.d81
-	$(X64) -default +warp -kernal JiffyDOS_C64.bin -sound $(EMU_REGION) -drive8type 1581 -dos1581 JiffyDOS_1581.bin -reu -reusize 16384  -moncommands moncommands -8 test.d81
+	$(X64) -default +warp -kernal JiffyDOS_C64.bin -sound $(EMU_REGION) -drive8type 1581 -reu -reusize 16384  -moncommands moncommands -8 test.d81
+	#$(X64) -default +warp -kernal JiffyDOS_C64.bin -sound $(EMU_REGION) -drive8type 1581 -dos1581 JiffyDOS_1581.bin -reu -reusize 16384  -moncommands moncommands -8 test.d81
 
 
 start-install: install.d81
