@@ -153,9 +153,7 @@
 
 	; read the disk name into the name buffer
 	ldxy #@namebuff+@dirmsglen-1
-	jmp *
 	jsr read_disk_name
-	jmp *
 
 	; draw the disk name
 	ldxy #@namebuff
@@ -414,6 +412,9 @@
 ; OPEN DIR
 ; Opens the directory "file" for loading
 .proc open_dir
+	ldxy #strings::dir
+	jsr file::exists
+	bcs :+
 	ldxy #strings::dir
 	jsr file::open_r_prg
 	bcs :+
