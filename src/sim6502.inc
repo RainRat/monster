@@ -20,6 +20,7 @@
 .import __sim_effective_addr
 .import __sim_stopwatch
 .import __sim_at_brk
+.import __sim_via2
 .import __sim_vital_addr_clobbered
 
 .scope sim
@@ -46,5 +47,6 @@
 	reg_sp         = __sim_reg_sp
 	reg_p          = __sim_reg_p
 
+	via2                 = __sim_via2
 	vital_addr_clobbered =__sim_vital_addr_clobbered
 .endscope

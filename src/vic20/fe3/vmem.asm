@@ -1,7 +1,7 @@
 .include "banks.inc"
 .include "finalex.inc"
-.include "../ram.inc"
 .include "../vaddrs.inc"
+.include "../../ram.inc"
 .include "../../macros.inc"
 .include "../../memory.inc"
 

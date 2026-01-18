@@ -87,6 +87,9 @@ __sim_effective_addr: .word 0
 .export __sim_stopwatch
 __sim_stopwatch: .res 3
 
+.export __sim_via2
+__sim_via2: .res $10
+
 save_sp: .byte 0
 
 ; the debugger's value for the byte that was swapped in for a step (if any)
