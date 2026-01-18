@@ -41,7 +41,7 @@ HEIGHT = SCREEN_HEIGHT
 
 .segment "SHAREBSS"
 .export CMD_BUFF
-CMD_BUFF: .res 40		; written by edit::gets
+CMD_BUFF: .res LINESIZE		; written by edit::gets
 
 .segment "CONSOLE_VARS"
 .export __monitor_line

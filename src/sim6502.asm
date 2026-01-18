@@ -875,6 +875,9 @@ msave_src=*+1
 .POPSEG
 .endproc
 
+.ifndef ultimem
+.RODATA
+.endif
 ;*******************************************************************************
 ; OERATION SIDE EFFECTS TABLE
 ; This table contains all opcodes and what state they affect.

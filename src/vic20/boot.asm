@@ -87,14 +87,14 @@ cart_start:
 	sta $9003
 
 .ifdef ultimem
-	jsr ultim::init
-	jmp __boot_start
+	jmp ultim::init
 .endif
 
 ;-----------------------
 .segment "SETUP"
 .endif	; CART
 
+.ifndef ultimem
 ;*******************************************************************************
 ; LOWINIT
 ; Code that is sensitive to initialization order
@@ -105,13 +105,9 @@ cart_start:
 	sta zp::curtmr
 
 .ifdef CART
-.ifdef fe3
 	jsr fe3::init1
-.elseif .defined(ultimem)
 .endif
-	jmp enter
 
-.else
 ; DISK init code; load the application from file
 	; load the app and enter it
 	lda #FINAL_BANK_MAIN
@@ -131,7 +127,6 @@ cart_start:
 	jmp enter
 @mainprg: .byte "masm.prg"
 @mainprg_len=*-@mainprg
-.endif
 .endproc
 
 ;*******************************************************************************
@@ -203,6 +198,7 @@ cart_start:
 
 	jmp lowinit
 .endproc
+.endif
 
 .CODE
 ;*******************************************************************************
@@ -216,8 +212,6 @@ cart_start:
 	lda #$4c
 	sta zp::bankjmpaddr	; write the JMP instruction
 
-	; initialize screen
-	jsr scr::init
 	sei
 	lda #$00
 	sta $c6			; clear keyboard buffer

@@ -90,7 +90,6 @@
 	sta $9ff7
 
 	; init MSB's of bank selection registers and I/O bank
-	lda #$00
 	sta $9ff9
 	sta $9ffb
 	sta $9ffd
