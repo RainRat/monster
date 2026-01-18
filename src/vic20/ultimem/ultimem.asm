@@ -8,9 +8,36 @@
 ; bank.
 ;*******************************************************************************
 
+.include "banks.inc"
 .include "../../zeropage.inc"
 
-NUM_BANKS = $0d
+.segment "BANKCODE"
+
+;*******************************************************************************
+; SELECT PROG 00
+; Maps the prog00 virtual RAM area to BLK5, leaving all other regions as is
+.export __ultimem_select_prog00
+.proc __ultimem_select_prog00
+	; bank in the area containing prog00
+	lda #SIMRAM_00_BANK
+	sta $9ffe
+	lda #$d5
+	sta $9ff2
+	rts
+.endproc
+
+;*******************************************************************************
+; RESET BLK5
+; Restores BLK5 to the default ROM bank. All other banks are unaffected
+.export __ultimem_reset_blk5
+.proc __ultimem_reset_blk5
+	; reset BLK5 RAM area
+	lda #$04
+	sta $9ffe
+	lda #$55
+	sta $9ff2
+	rts
+.endproc
 
 .segment "ULTIREGS"
 ;*******************************************************************************

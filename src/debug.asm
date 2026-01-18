@@ -1688,6 +1688,7 @@ __debug_remove_breakpoint:
 	lda #$d5
 	sta $9ff2
 .endif
+
 	stxy @ret
 	ldx #$00
 @l0:	lda $00,x

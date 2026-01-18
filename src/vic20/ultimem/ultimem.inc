@@ -7,6 +7,7 @@ ULTIMEM_ULTIMEM_INC = 1
 .import __ultimem_push_bank
 .import __ultimem_pop_bank
 .import __ultimem_select_bank
+.import __ultimem_select_prog00
 .import __ram_memcpy
 .import __ram_copy_line
 .import __ram_load_byte
@@ -15,6 +16,7 @@ ULTIMEM_ULTIMEM_INC = 1
 .import __ram_store_byte
 .import __ram_bank_store_rel
 .import __ultimem_init
+.import __ultimem_reset_blk5
 
 .scope exp
 	bank        = __ultimem_bank
@@ -30,7 +32,9 @@ ULTIMEM_ULTIMEM_INC = 1
 .endscope
 
 .scope ultim
-	init = __ultimem_init
+	init          = __ultimem_init
+	reset_blk5    = __ultimem_reset_blk5
+	select_prog00 = __ultimem_select_prog00
 .endscope
 
 ;*******************************************************************************

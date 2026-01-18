@@ -5,8 +5,10 @@
 
 .segment "BANKCODE"
 
-addr=zp::banktmp
-savey=zp::banktmp+2
+addr     = zp::bankaddr0
+savey    = zp::banktmp
+savecfg  = zp::banktmp+1
+saveblk1 = zp::banktmp+2
 
 ;*******************************************************************************
 ; LOAD
@@ -80,12 +82,14 @@ savey=zp::banktmp+2
 ; VMEM DONE
 ; Restores BLK1 to the MAIN bank, restores .Y, and returns
 .proc vmem_done
-	; restore BLK1
 	pha
-	lda #$01
-	sta $9ff8
-	lda #$55
+
+	; restore BLK1 and its config
+	lda savecfg
 	sta $9ff2
+	lda saveblk1
+	sta $9ff8
+
 	pla
 
 	ldy savey
@@ -102,6 +106,12 @@ savey=zp::banktmp+2
 ;  - .XY: the physical address
 ;  - .A:  the bank number of the physical address
 .proc translate
+	; save current banks
+	lda $9ff2
+	sta savecfg
+	lda $9ff8
+	sta saveblk1
+
 	cpy #$c0		; in ROM?
 	bcc @ram
 

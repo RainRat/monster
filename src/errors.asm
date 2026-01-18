@@ -299,12 +299,13 @@ err_unknown_err: .byte $aa,$ce,$7d,$ce,$d9,$52,$93,$d2,$0
 	rts
 :
 .ifdef ultimem
+	.include "vic20/ultimem/banks.inc"
 @err=r0
 @compressed_buff=mem::spare+120
 	; bank in the errors
 	lda $9ffe
 	pha
-	lda #14
+	lda #ERRORS_BANK
 	sta $9ffe	; bring errors into BLK5
 
 	; copy the error to a buffer

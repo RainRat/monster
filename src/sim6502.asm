@@ -143,6 +143,11 @@ msave_src=*+1
 
 :	ldx save_sp
 	txs
+
+.ifdef ultimem
+	jsr ultim::reset_blk5
+.endif
+
 	cli
 	RETURN_OK
 
@@ -171,8 +176,16 @@ msave_src=*+1
 	sta @sz
 	stxy @op
 
+.ifdef ultimem
+	jsr ultim::select_prog00
+.endif
+
 	jsr @getnextpc
 	bcc @ok
+
+.ifdef ultimem
+	jsr ultim::reset_blk5
+.endif
 	rts
 
 @ok:	; check if opcode uses indexed/indrect addressing
@@ -508,6 +521,11 @@ msave_src=*+1
 	; eat return address
 	pla
 	pla
+
+.ifdef ultimem
+	jsr ultim::reset_blk5
+.endif
+
 	clc
 	rts
 

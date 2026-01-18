@@ -24,6 +24,7 @@ FINAL_BANK_FASTTEXT = $0c
 FINAL_BANK_USER     = $0d
 NUM_BANKS           = $0d
 
+ERRORS_BANK        = 14
 SIMRAM_00_BANK     = 29
 FINAL_BANK_SOURCE0 = 36
 .endif
