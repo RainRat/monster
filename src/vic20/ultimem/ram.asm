@@ -147,8 +147,7 @@
 
 ;*******************************************************************************
 ; GET BYTE
-; When called from a non-MAIN bank, returns the value from the MAIN bank for the
-; the given address.
+; Reads the value at the given address
 ; IN:
 ;   - .XY: the address to get the value of
 ; OUT:

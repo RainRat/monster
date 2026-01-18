@@ -33,7 +33,7 @@
 ; NOTE: the user program cannot use the space occupied by these handlers
 ;
 ;  |----------------------------------------------------|
-;  |  TRAMPOLINE  |   STEP    |     NMI    |     BRK    | $8000
+;  |  TRAMPOLINE  |   STEP    |     NMI    |     BRK    | $A000
 ;  |----------------------------------------------------|
 ;
 
@@ -462,23 +462,24 @@ step_handler:
 	lda #SIMRAM_00_BANK+4
 	sta $9ffe		; BLK5
 
+	; set RAM123 and IO2/3 to RAM (r/w)
+	; TODO: write protect IO region
+	; TODO: use a dedicated RAM1,2,3 / IO bank for this handler + user RAM
+	;lda #$3f
+	;sta $9ff1
+
 	; set BLK 1,2,3, and 5 to RAM (r/w)
 	lda #$ff
 	sta $9ff2
 
-	; set RAM123 and IO2/3 to RAM (r/w)
-	; TODO: write protect IO region
-	lda #$3f
-	sta $9ff2
-
 	pla
-	sta STEP_RESTORE_A
+	sta @restore_a
 
 	pla			; get status flags
 	ora #$04		; set I flag
 	pha			; push altered status
 
-STEP_RESTORE_A=*+1
+@restore_a=*+1
 	lda #$00		; SMC - restore A
 	plp			; restore altered status flags
 
@@ -488,16 +489,23 @@ STEP_EXEC_BUFFER:
 	nop
 	nop
 
-	php
-	pha
-	sei			; disable IRQs
+	php			; save new status register
+	pha			; save .A
 
 	; switch back to DEBUGGER bank
-	lda #FINAL_BANK_MAIN
-	SELECT_BANK_A
-	pla
-	jmp step_done
-step_handler_size=*-step_handler
+	lda #$01
+	sta $9ff8		; BLK1
+	lda #$02
+	sta $9ffa		; BLK2
+	lda #$03
+	sta $9ffc		; BLK3
+	lda #$04
+	sta $9ffe		; BLK5
+	lda #$55
+	sta $9ff2
+
+	pla			; restore .A
+	jmp step_done		; continue to finish up step
 
 ;******************************************************************************
 ; TRAMPOLINE

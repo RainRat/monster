@@ -127,11 +127,16 @@ msave: .byte 0
 	ldxy __sim_effective_addr
 	jsr is_internal_address
 	bne :+			; if address wasn't "swapped in" -> skip
-	stxy msave_src
 .endproc
 
+.ifdef ultimem
+	jsr exp::get_byte
+	ldxy __sim_effective_addr
+.else
+	stxy msave_src
 msave_src=*+1
 	lda $f00d		; get the affected user byte
+.endif
 	jsr vmem::store		; save it to its buffer
 
 	; restore the byte that was clobbered at the effective address
@@ -415,7 +420,7 @@ msave_src=*+1
 	cmp #$58		; CLI
 	bne :+
 	lda __sim_reg_p
-	ora #$04
+	and #$04^$ff
 	sta __sim_reg_p
 	incw __sim_pc
 	jmp @step_handled
@@ -423,7 +428,7 @@ msave_src=*+1
 :	cmp #$78		; SEI
 	bne :+
 	lda __sim_reg_p
-	and #$04^$ff
+	ora #$04
 	sta __sim_reg_p
 	incw __sim_pc
 	jmp @step_handled
@@ -645,7 +650,13 @@ msave_src=*+1
 
 	; get effective target address of this instruction and save it
 	; we will save/restore state before/after a BRK using this
+.ifdef ultimem
+	jsr ultim::select_prog00
+.endif
 	jsr get_effective_addr
+.ifdef ultimem
+	jsr ultim::reset_blk5
+.endif
 	stxy __sim_effective_addr
 
 @done:	rts
