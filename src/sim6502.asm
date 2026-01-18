@@ -259,7 +259,6 @@ msave_src=*+1
 
 	; execute the instruction
 	pha
-	jmp *
 	jmp STEP_HANDLER_ADDR
 
 ;---------------------------------------
@@ -421,7 +420,7 @@ msave_src=*+1
 
 	; BRK is never executed/simulated, we use this to return to the debugger
 	inc __sim_at_brk
-	sec
+	;sec
 	rts
 
 :	; check if opcode is a relative branch

@@ -609,3 +609,37 @@ trampoline_size=*-trampoline
 
 	rts
 .endproc
+
+;******************************************************************************
+; WRITE STEP
+; Writes a step to the "step buffer" for execution
+; IN:
+;   sim::op[0:2]: the instruction to write
+; OUT:
+;   STEP_EXEC_BUFFER: contains the instruction
+.export write_step
+.proc write_step
+@write_instruction:
+@sz=r2
+@cnt=r3
+	stx @sz
+
+	; copy the instruction to the execution buffer, appending
+	; NOPs as needed to fill the 3 byte space
+	lda #$00
+	sta @cnt
+@l0:	ldx @cnt
+	lda sim::op,x
+	cpx @sz
+	bcc :+
+	lda #$ea		; NOP
+:	sta zp::bankval
+	ldxy #STEP_EXEC_BUFFER
+	lda @cnt
+	jsr vmem::store_off	; write the instruction to the buffer
+	inc @cnt
+	lda @cnt
+	cmp #$03
+	bne @l0
+	rts
+.endproc

@@ -393,6 +393,34 @@ go_pre_run:
 .endproc
 
 ;******************************************************************************
+; WRITE STEP
+; Writes a step to the "step buffer" for execution
+; IN:
+;   sim::op[0:2]: the instruction to write
+; OUT:
+;   STEP_EXEC_BUFFER: contains the instruction
+.export write_step
+.proc write_step
+@write_instruction:
+@sz=r2
+@cnt=r3
+	stx @sz
+
+	; copy the instruction to the execution buffer, appending
+	; NOPs as needed to fill the 3 byte space
+	ldx #$00
+@l0:	lda sim::op,x
+	cpx @sz
+	bcc :+
+	lda #$ea		; NOP
+:	sta STEP_EXEC_BUFFER,x
+	inx
+	cpx #$03
+	bne @l0
+	rts
+.endproc
+
+;******************************************************************************
 ; INTERRUPT HANDLERS
 .segment "INTS"
 interrupt_handlers:
@@ -425,8 +453,23 @@ nmi_handler_size=*-nmi_handler
 .import step_done
 step_handler:
 	; switch to USER bank
-	lda #FINAL_BANK_USER
-	SELECT_BANK_A
+	lda #SIMRAM_00_BANK+1
+	sta $9ff8		; BLK1
+	lda #SIMRAM_00_BANK+2
+	sta $9ffa		; BLK2
+	lda #SIMRAM_00_BANK+3
+	sta $9ffc		; BLK3
+	lda #SIMRAM_00_BANK+4
+	sta $9ffe		; BLK5
+
+	; set BLK 1,2,3, and 5 to RAM (r/w)
+	lda #$ff
+	sta $9ff2
+
+	; set RAM123 and IO2/3 to RAM (r/w)
+	; TODO: write protect IO region
+	lda #$3f
+	sta $9ff2
 
 	pla
 	sta STEP_RESTORE_A

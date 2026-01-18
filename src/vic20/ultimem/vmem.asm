@@ -102,7 +102,17 @@ savey=zp::banktmp+2
 ;  - .XY: the physical address
 ;  - .A:  the bank number of the physical address
 .proc translate
-	sty savey
+	cpy #$c0		; in ROM?
+	bcc @ram
+
+@rom:	; ROM doesn't need to be translated and will be read
+	; directly
+	stxy addr
+	ldy #$00
+	lda #SIMRAM_00_BANK	; any bank (doesn't really matter)
+	rts
+
+@ram:	sty savey
 	stx addr		; store address LSB as is
 
 	; get most significant 3 bits to get the bank to use
