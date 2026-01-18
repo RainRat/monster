@@ -54,13 +54,13 @@ __ultimem_bank: .byte 0
 ; SELECT BANK
 ; Selects the given logical bank, configuring BLK 1,2,3, and 5 with the
 ; preset RAM/ROM configuration for that "bank".
-; Takes 70 cycles (counting the JSR to call this routine)
+; Takes 69+6=75 cycles (counting the JSR to call this routine)
 ; IN:
 ;   - .A: the bank to activate
 .export __ultimem_select_bank
 .proc __ultimem_select_bank
-	cmp #NUM_BANKS
-	bcc :+
+	cmp #NUM_BANKS		; 2 (2)
+	bcc :+			; 3 (5)
 
 	; if id is above last virutal bank index, treat as raw bank value
 	; this is used for source buffers
@@ -74,27 +74,27 @@ __ultimem_bank: .byte 0
 	sta $9ff2
 	rts
 
-:	sta __ultimem_bank	; 4 (4)
-	stx @savex		; 4 (8)
-	sta @savea		; 4 (12)
-	tax			; 2 (14)
+:	sta __ultimem_bank	; 4 (9)
+	stx @savex		; 4 (13)
+	sta @savea		; 4 (17)
+	tax			; 2 (19)
 
-	lda cfg-1,x		; 4 (18)
-	sta $9ff2		; 4 (22)
-	lda blk1-1,x		; 4 (26)
-	sta $9ff8		; 4 (30)
-	lda blk2-1,x		; 4 (34)
-	sta $9ffa		; 4 (38)
-	lda blk3-1,x		; 4 (42)
-	sta $9ffc		; 4 (46)
-	lda blk5-1,x		; 4 (50)
-	sta $9ffe		; 4 (54)
+	lda cfg-1,x		; 4 (23)
+	sta $9ff2		; 4 (27)
+	lda blk1-1,x		; 4 (31)
+	sta $9ff8		; 4 (35)
+	lda blk2-1,x		; 4 (39)
+	sta $9ffa		; 4 (43)
+	lda blk3-1,x		; 4 (47)
+	sta $9ffc		; 4 (51)
+	lda blk5-1,x		; 4 (55)
+	sta $9ffe		; 4 (59)
 
 @savex=*+1
-	ldx #$00		; 2 (56)
+	ldx #$00		; 2 (61)
 @savea=*+1
-	lda #$00		; 2 (58)
-	rts			; 6 (64)
+	lda #$00		; 2 (63)
+	rts			; 6 (69)
 .endproc
 
 ;*******************************************************************************
