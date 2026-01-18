@@ -84,9 +84,9 @@ segments = {
 		blk5 = Rom(12),
 	),
 	"VSYS": Bank(
-		blk1 = Ram(26),
-		blk2 = Ram(27),
-		blk3 = Ram(28),
+		blk1 = Ram(29),	# $0000-$2000    (virtual internal)
+		blk2 = Ram(33), # $9000-$a000    (virutal I/O)
+		blk3 = Ram(29), # mirror of BLK1 (unused)
 		blk5 = Rom(13),
 	),
 	"FTXT": Bank(

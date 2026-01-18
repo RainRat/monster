@@ -17,26 +17,40 @@ JMP_RETURN_ADDR = RETURN_ADDR-5
 .export dbg9400
 
 .ifdef ultimem
-.segment "SIMRAM_1000"
+.segment "SIMRAM_INTERNAL"
 .else
 .SEGMENT "FASTCOPY_BSS"
 .endif
+
+; backup for debugger's internal RAM ($1000-$2000)
+.export dbg1000
+dbg1000: .res $1000	; $1000-$2000
 
 ;******************************************************************************
 ; PROG
 ; backup for the user's program during debug
 progsave:
 prog1000: .res $1000	; $1000-$2000
+
+
+.ifdef ultimem
+.segment "SIMRAM_IO"
+.endif
+
 prog9000: .res $10	; $9000-$9010
 prog9110: .res $20	; $9110-$9130
+
+.ifdef ultimem
+	; padding between VIAs and color RAM
+	.res $9400-$9130
+.endif
+
 prog9400: .res $f0	; $9400-$94f0
 
 ;******************************************************************************
 ; DBG
 ; backup for debugger/editor memory
 ; we back up less for debug because we can just re-init some state
-.export dbg1000
-dbg1000: .res $1000	; $1000-$2000
 dbg9000: .res $10	; $9000-$9010
 dbg9400: .res $f0	; $9400-$94f0
 
@@ -113,8 +127,8 @@ restore_debug_visual:
 
 	ldy #$f0
 ; save $9400-$94f0
-:	lda @colorsave-1,x
-	sta $9400-1,x
+:	lda @colorsave-1,y
+	sta $9400-1,y
 	dey
 	bne :-
 
