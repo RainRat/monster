@@ -21,7 +21,19 @@
 .import write_step
 
 ;*******************************************************************************
-.segment "SHAREBSS"
+; SIMBSS
+; This segment must not be clobbered by the simulator when stepping.
+; The effective address and "msave" value are used to save/restore internal
+; memory state.
+; The following platforms handle this in various ways:
+;  - vic 20 (FE3): this segment is in the "MAIN" bank and is banked out when
+;                  executing a step
+;  - vic 20 (Ultimem): this segment is in the I/O 2/3 2/3 space, which is
+;                      considered "dangerous" and the simulator will prohibit
+;                      clobbering.
+;  - c64: this segment is DMA swapped by the REU for each step
+;         (TODO: no it's not)
+.segment "SIMBSS"
 
 .export __sim_register_state
 .export __sim_pc
@@ -130,14 +142,13 @@ msave: .byte 0
 	ldxy __sim_effective_addr
 	jsr is_internal_address
 	bne :+			; if address wasn't "swapped in" -> skip
-.endproc
 
 .ifdef ultimem
 	jsr exp::get_byte
 	ldxy __sim_effective_addr
 .else
-	stxy msave_src
-msave_src=*+1
+	stxy @msave_src
+@msave_src=*+1
 	lda $f00d		; get the affected user byte
 .endif
 	jsr vmem::store		; save it to its buffer
@@ -158,6 +169,7 @@ msave_src=*+1
 
 	cli
 	RETURN_OK
+.endproc
 
 .segment "DEBUGGER"
 
@@ -845,6 +857,16 @@ msave_src=*+1
 ; OUT:
 ;   - .C: set if the address is not safe to write to
 .proc is_write_safe
+.ifdef vic20
+	; on C64, disallow writes to IO2/3 ($9800-$9fff)
+	cpy #$98
+	bcc :+
+	cpy #$a0
+	bcc @err
+
+:
+.endif
+
 	ldx #@num_safe_addrs-1
 @l0:	lda __sim_effective_addr
 	cmp @safeaddrs_lo,x

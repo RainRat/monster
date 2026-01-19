@@ -7,6 +7,15 @@
 FINAL_BANK_MAIN = $00
 
 ;*******************************************************************************
+.BSS
+; COPY SRC/DST
+; These 24-bit addresses are used by __ram_copy
+.export __ram_src
+__ram_src = reu::move_src
+.export __ram_dst
+__ram_dst = reu::move_dst
+
+;*******************************************************************************
 .CODE
 
 ;*******************************************************************************
@@ -235,28 +244,16 @@ __ram_copy_banked:
 
 ;*******************************************************************************
 ; MEMCPY
-; Writes the memory from (tmp0) to (tmp2)
-; The number of bytes is given in .YX and the block # to write to is given in .A
+; Copies data from ram::src to ram::dst
+; The number of bytes is given in .YX
 ; This routine assumes that IF the memory overlaps, that it will do so from
 ; the TOP. (dst > src)
-; IN:
-;  - .A:  the source/destination bank
+; NOTE: ram::src and ram::dst are 24 bit addresses.  The MSB is the bank.
+;  - ram::src: the address of the data to copy
+;  - ram::dst: the address to copy to
 ;  - .XY: the number of bytes to copy
-;  - r2:  the source address
-;  - r4:  the destination address
 .export __ram_memcpy
 .proc __ram_memcpy
-@size=r0
-@src=r2
-@dst=r4
-@bank=r6
-@bankdst=r7
-	sta reu::move_src+2
-	sta reu::move_dst+2
-	stxy reu::move_size
-	ldxy @src
-	stxy reu::move_src
-	ldxy @dst
-	stxy reu::move_dst
+	stxy reu::txlen
 	jmp reu::move
 .endproc

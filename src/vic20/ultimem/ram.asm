@@ -164,15 +164,15 @@
 
 ;*******************************************************************************
 ; MEMCPY
-; Writes the memory from (tmp0) to (tmp2)
-; The number of bytes is given in .YX and the block # to write to is given in .A
+; Copies data from ram::src to ram::dst
+; The number of bytes is given in .YX
 ; This routine assumes that IF the memory overlaps, that it will do so from
 ; the TOP. (dst > src)
+; NOTE: ram::src and ram::dst are 24 bit addresses.  The MSB is the bank.
 ; IN:
-;  - .A:  the source/destination bank
+;  - ram::src: the address of the data to copy
+;  - ram::dst: the address to copy to
 ;  - .XY: the number of bytes to copy
-;  - r2:  the source address
-;  - r4:  the destination address
 .export __ram_memcpy
 .proc __ram_memcpy
 @size    = r0
