@@ -197,13 +197,7 @@ __ram_dst = reu::move_dst
 ; OUT:
 ;  - .A: the byte that was read
 .export	__ram_load_byte
-.proc __ram_load_byte
-	pha
-	lda #$00
-	sta zp::bankval
-	pla
-	; fall through
-.endproc
+__ram_load_byte = reu::load1
 
 ;*******************************************************************************
 ; LOAD BYTE OFF
@@ -217,10 +211,18 @@ __ram_dst = reu::move_dst
 ;  - .Y: contains the offset (same that was given as zp::bankval)
 .export	__ram_load_byte_off
 .proc __ram_load_byte_off
-	; TODO:
-	; add the offset
-	jsr reu::load1
-	rts
+@tmp=zp::banktmp
+	pha
+	stx @tmp
+	lda zp::bankval
+	clc
+	adc @tmp
+	bcc :+
+	iny
+:	tax
+
+	pla
+	jmp reu::load1
 .endproc
 
 ;*******************************************************************************
