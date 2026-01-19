@@ -610,7 +610,8 @@ trampoline_size=*-trampoline
 	rts
 .endproc
 
-;******************************************************************************
+.segment "DEBUGGER"
+;*******************************************************************************
 ; WRITE STEP
 ; Writes a step to the "step buffer" for execution
 ; IN:

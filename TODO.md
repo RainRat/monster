@@ -16,6 +16,7 @@
 - [ ] Save/restore raster position while debugging
 
 ### TODO V1
+- [ ] Ultimem: allow lablels, objects, debug info, source buffers to occupy N banks
 - [x] fix weird off-by-1 cursor issue (on some newlines???)
 - [x] allow formatting to be disabled
 - [x] don't format if afterwards line will be too long
@@ -24,13 +25,13 @@
 - [x] fix GUI reactivation/stack manipulation
 - [x] fix oversized operand regression (lda #$ffff doesn't trigger error)
 - [x] Crash Recovery (recover user program/source buffers/etc.)
-- [ ] .D files (binaries with precompiled debug info)
+- [x] .D files (binaries with precompiled debug info)
 - [x] Linker
    - [x] parse LINK files
    - [x] generate object code
    - [x] link object code
    - [x] generate debug-info
-   - [ ] link debug-info
+   - [x] link debug-info
 - [x] Rework expression parsing to support relocation emission
 - [x] Startup animation
 - [x] Symbolic disassembly

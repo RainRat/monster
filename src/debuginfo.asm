@@ -99,7 +99,8 @@ numfiles:   .byte 0
 debuginfo:
 .ifdef vic20
 .ifdef ultimem
-.res $2000	; only $2000 is banked in at a time on the Ultimem
+; only $2000 is banked in at a time on the Ultimem
+.res $2000
 .else
 .res $6000
 .endif
@@ -446,10 +447,10 @@ blockaddresseshi: .res MAX_FILES
 	; store new end of line program
 	ldy #BLOCK_PROG_STOP_ADDR
 	lda progstop
-	STOREB_Y block	; right the LSB of stop address to the block header
+	STOREB_Y block	; write LSB of stop address to block header
 	iny
 	lda progstop+1
-	STOREB_Y block	; right the MSB of stop address to the block header
+	STOREB_Y block	; write MSB of stop address to block header
 
 	; check if progstop > freeptr and set freeptr to progstop if it is
 	; TODO: won't this always be the case?
@@ -487,8 +488,35 @@ blockaddresseshi: .res MAX_FILES
 @dline=r4
 @daddr=r6
 @isize=r8
+.macro INC_LINE
+	jsr inc_line_and_count
+.endmacro
+
+.macro DEC_LINE
+.ifdef ultimem
+.local @done
+	lda line
+	bne @done
+	dec line+1
+	cmp #$20
+	bcs @done
+
+	lda #$20
+	sta line+1	; limit line+1 to $20
+	dec $9ff8
+@done:	dec line
+.else
+	decw line
+.endif
+	rts
+.endmacro
+
 	SELECT_BANK "DEBUGINFO"
 	stxy @line
+
+.ifdef ultimem
+	; TODO: add (line % $2000) to get the bank for line
+.endif
 
 	; get the line and address delta for our new line (dline = new - prev)
 	lda @line
@@ -534,36 +562,31 @@ blockaddresseshi: .res MAX_FILES
 	asl
 	ora @dline
 	STOREB_Y line		; write the encoded instruction
-	lda #$01		; advance 1 byte
-	sta @isize
-	bne @done
+	INC_LINE
+	jmp @done
 
 @extended:
-	ldy #$00
-@advanceline:
 	lda @dline
 	ora @dline+1
 	beq @advanceaddr	; skip if line delta is 0
 
+@advanceline:
 	lda #$00		; extended instruction opcode byte 0
 	STOREB_Y line
 
 	; get 16 bit signed offset for target line
-	iny
+	INC_LINE
 	lda #OP_ADVANCE_LINE	; extended instruction opcode byte 1
 	STOREB_Y line
 
-	iny
+	INC_LINE
 	lda @dline
 	STOREB_Y line		; write LSB of line delta
-	iny
+	INC_LINE
 	lda @dline+1
 	STOREB_Y line		; write MSB of line delta
 
-	iny
-
-	lda #$04		; advance 4 bytes
-	sta @isize
+	INC_LINE
 
 @advanceaddr:
 	lda @daddr
@@ -573,24 +596,22 @@ blockaddresseshi: .res MAX_FILES
 	lda #$00		; extended instruction opcode byte 0
 	STOREB_Y line
 
-	iny
+	INC_LINE
 	lda #OP_ADVANCE_ADDR	; extended instruction opcode byte 1
 	STOREB_Y line
 
 	; get 16 bit signed offset for target address
-	iny
+	INC_LINE
 	lda @daddr
 	STOREB_Y line	; write LSB
-	iny
+	INC_LINE
 	lda @daddr+1
 	STOREB_Y line	; write MSB
+	INC_LINE
 
-	lda #$04	; advance 4 bytes
-	clc
-	adc @isize
-	sta @isize
 
-@done:	; add instruction size to program pointer and program-stop pointer
+@done:
+	; update progstop
 	lda @isize
 	clc
 	adc progstop
@@ -598,20 +619,14 @@ blockaddresseshi: .res MAX_FILES
 	bcc :+
 	inc progstop+1
 
-	; update line pointer by instruction size
-:	lda @isize
-	clc
-	adc line
-	sta line
-	bcc :+
-	inc line+1
-
-:	; write new program terminator ($00 $00)
+	; write new program terminator ($00 $00)
 	lda #$00
-	tay
 	STOREB_Y line
-	iny
+	INC_LINE
 	STOREB_Y line
+
+	; fix line to point at start of new terminator
+	DEC_LINE
 
 	; if this line is > line top, set as new top
 	ldxy srcline
@@ -887,9 +902,9 @@ blockaddresseshi: .res MAX_FILES
 	stxy zp::bankaddr1	; copy to temp buffer
 	jsr ram::copyline	; copy the filename to a buffer in shared RAM
 	lda @buff
-	beq @notfound	; if string is 0-length, return with "not found" flag
+	beq @notfound		; if string is 0-length, return with "not found" flag
 	lda numfiles
-	beq @notfound	; if no files are stored, return with not found
+	beq @notfound		; if no files are stored, return with not found
 
 	lda #$00
 	sta @cnt
@@ -901,9 +916,9 @@ blockaddresseshi: .res MAX_FILES
 	jsr strcompare		; @filename == @other?
 	bne @next		; if not, try the next filename
 
-@found: ldxy @filename	; restore .XY
-	lda @cnt	; get the file ID
-	RETURN_OK	; file found
+@found: ldxy @filename		; restore .XY
+	lda @cnt		; get the file ID
+	RETURN_OK		; file found
 
 @next:	inc @cnt
 	lda @cnt
@@ -1274,18 +1289,18 @@ get_filename = get_filename_addr
 	jcs @ok		; branch always
 
 @extended_i:
-	incw line	; move line program PC to byte 2 of opcode
+	jsr inc_line	; move line program PC to byte 2 of opcode
 	LOADB_Y line	; get byte 2 of opcode
 	jeq @end	; if byte 2 is 0, we're at the end of the program
 
-	incw line	; move to operand
+	jsr inc_line	; move to operand
 
 	cmp #OP_SET_ADDR
 	bne :+
 @setaddr:
 	LOADB_Y line
 	sta addr
-	incw line
+	jsr inc_line
 	LOADB_Y line
 	sta addr+1
 	jmp @ok
@@ -1297,7 +1312,7 @@ get_filename = get_filename_addr
 	clc
 	adc srcline		; + current line value (LSB)
 	sta srcline
-	incw line
+	jsr inc_line
 	LOADB_Y line		; MSB of amount to advance
 	adc srcline+1		; + current line (MSB)
 	sta srcline+1
@@ -1310,7 +1325,7 @@ get_filename = get_filename_addr
 	clc
 	adc addr
 	sta addr
-	incw line
+	jsr inc_line
 	LOADB_Y line
 	adc addr+1
 	sta addr+1
@@ -1321,10 +1336,10 @@ get_filename = get_filename_addr
 @set_pc:
 	LOADB_Y line
 	sta addr
-	incw line
+	jsr inc_line
 	LOADB_Y line
 	sta addr+1
-@ok:	incw line
+@ok:	jsr inc_line
 	RETURN_OK
 
 @end:	sec		; flag end of porgram
@@ -1339,6 +1354,7 @@ get_filename = get_filename_addr
 ;   - line: points to the instruction in the line program to update
 ; OUT:
 ;   - .C: set if the operation could not be updated (or is not a line opcode)
+; TODO: this is unused and probably broken
 .proc inc_lineop
 	ldy #$00
 	LOADB_Y line	; get the opcode
@@ -1717,4 +1733,45 @@ get_filename = get_filename_addr
 	jmp @load_block
 
 @done:	RETURN_OK
+.endproc
+
+;*******************************************************************************
+; INC LINE AND COUNT
+; Falls through to inc_line, first incrementing a counter set by the caller
+; in r8
+.proc inc_line_and_count
+	inc r8
+
+	; fall through
+.endproc
+
+;*******************************************************************************
+; INC LINE
+; Increments the line pointer to point to the next location
+; Used to scan through the program when seeking an address/line (addr2line
+; line2addr) and when appending a line to a program (store_line)
+; Also increments a counter set by the caller in r8
+.proc inc_line
+.ifdef ultimem
+	pha
+	inc line
+	bne @done
+
+	inc line+1
+	lda line+1
+	cmp #$40	; overflow?
+	bne @done	; no -> continue
+
+	; current bank is full, move to next one and reset
+	; pointers to base of BLK1 ($2000)
+	lda #$20
+	sta line+1
+	inc $9ff8	; next bank
+
+@done:	pla
+	rts
+.else
+	incw line
+	rts
+.endif
 .endproc

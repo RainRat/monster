@@ -236,6 +236,7 @@ msave: .byte 0
 	; copy the instruction to the execution buffer, appending
 	; NOPs as needed to fill the 3 byte space
 	ldx @sz
+	jmp *
 	jsr write_step
 
 @execute:

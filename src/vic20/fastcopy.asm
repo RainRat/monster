@@ -239,7 +239,7 @@ save_debug_visual:
 	dey
 	bne :-
 
-	; set LSB of @src and @dst to 0
+	; set LSB of @dst to 0
 	sty @dst
 
 ; restore $1000-$2000
