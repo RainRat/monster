@@ -33,7 +33,8 @@
 ;                      clobbering.
 ;  - c64: this segment is DMA swapped by the REU for each step
 ;         (TODO: no it's not)
-.segment "SIMBSS"
+;.segment "SIMBSS"
+.BSS
 
 .export __sim_register_state
 .export __sim_pc
@@ -196,9 +197,9 @@ msave: .byte 0
 	sta @sz
 	stxy @op
 
-.ifdef ultimem
-	jsr ultim::select_prog00
-.endif
+;.ifdef ultimem
+;	jsr ultim::select_prog00
+;.endif
 
 	jsr @getnextpc
 	bcc @ok
@@ -236,7 +237,6 @@ msave: .byte 0
 	; copy the instruction to the execution buffer, appending
 	; NOPs as needed to fill the 3 byte space
 	ldx @sz
-	jmp *
 	jsr write_step
 
 @execute:

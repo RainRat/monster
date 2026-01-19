@@ -106,8 +106,8 @@ cart_start:
 
 .ifdef CART
 	jsr fe3::init1
-.endif
-
+	jmp enter
+.else
 ; DISK init code; load the application from file
 	; load the app and enter it
 	lda #FINAL_BANK_MAIN
@@ -127,6 +127,7 @@ cart_start:
 	jmp enter
 @mainprg: .byte "masm.prg"
 @mainprg_len=*-@mainprg
+.endif
 .endproc
 
 ;*******************************************************************************
