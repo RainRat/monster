@@ -99,7 +99,10 @@ debugtmp = zp::debuggertmp	; scratchpad
 prog00:	.res $400	; $00-$0400
 
 ; backup for low RAM when the user's values (prog00) are swapped in
-.export dbg00
+
+.ifdef ultimem
+.segment "SIMDBG_00"
+.endif
 dbg00:  .res $400	; $00-$400
 
 ;*******************************************************************************
@@ -1603,8 +1606,8 @@ __debug_remove_breakpoint:
 .export __debug_restore_debug_zp
 .proc __debug_restore_debug_zp
 .ifdef ultimem
-	; bank in the area containing prog00
-	lda #SIMRAM_00_BANK
+	; bank in the area containing dbg00
+	lda #SIMDBG_BANK
 	sta $9ffe
 	lda #$d5
 	sta $9ff2
@@ -1634,7 +1637,7 @@ __debug_remove_breakpoint:
 @ret=mem::spare
 .ifdef ultimem
 	; bank in the area containing prog00
-	lda #SIMRAM_00_BANK
+	lda #SIMDBG_BANK
 	sta $9ffe
 	lda #$d5
 	sta $9ff2
@@ -1683,7 +1686,7 @@ __debug_remove_breakpoint:
 @ret=mem::spare
 .ifdef ultimem
 	; bank in the area containing prog00
-	lda #SIMRAM_00_BANK
+	lda #SIMDBG_BANK
 	sta $9ffe
 	lda #$d5
 	sta $9ff2

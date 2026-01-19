@@ -25,6 +25,7 @@ FINAL_BANK_USER     = $0d
 NUM_BANKS           = $0d
 
 ERRORS_BANK        = 14
+SIMDBG_BANK        = 29
 SIMRAM_00_BANK     = 30
 FINAL_BANK_SOURCE0 = 36
 .endif

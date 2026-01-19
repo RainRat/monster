@@ -92,7 +92,6 @@ ret:     .word 0
 	jsr $fd52	; restore default I/O vectors
 	jsr $fdf9	; initialize I/O registers
 
-
 	; check expansion disable flag
 	lda __debug_enable_expansion
 	beq :+
@@ -243,10 +242,10 @@ ret:     .word 0
 	sta $911d	; ack all interrupts
 	sta $912d
 
-	ldxy #@restore_dbg_done		; need to pass return address
+	ldxy #@save_dbg_done		; need to pass return address
 	jmp dbg::save_debug_zp
 
-@restore_dbg_done:
+@save_dbg_done:
 	ldxy #@restore_done		; need to pass return address
 	jmp dbg::restore_user_zp
 
