@@ -76,6 +76,7 @@ symbol_addresses: .res MAX_IMPORTS+MAX_EXPORTS
 ; Calling obj::addreloc appends a relocation to this table
 reloc_tables:
 .ifdef vic20
+	; TODO: map this for ultimem
 	.res $3000
 .else
 .endif

@@ -47,24 +47,6 @@ __buff_num_lines_copied:	.byte 0
 	JUMP FINAL_BANK_BUFF, proc
 .endmacro
 
-.enum buff_proc_ids
-PUTCH
-GETCH
-GETLINE
-CLEAR
-LASTLINE
-LINES_COPIED
-PUSH
-POP
-LEN
-REVERSE
-.endenum
-
-.RODATA
-.define buff_procs putch, getch, getline, clear, lastline, lines_copied, push, pop, len, reverse
-buff_procs_lo: .lobytes buff_procs
-buff_procs_hi: .hibytes buff_procs
-
 .CODE
 ;*******************************************************************************
 ; Copy Buff JUMP table

@@ -47,7 +47,7 @@
 .byte $9e
 .asciiz "4621"
 @next: .word 0
-	lda #$11|$08
+	lda #DEFAULT_900F
 	sta $900f		; white/white
 	lda #$c0
 	sta $9005		; screen @ $1000
@@ -78,7 +78,7 @@ cart_start:
 	lda #$7f
 	sta $911e
 
-	lda #$11|$08
+	lda #DEFAULT_900F
 	sta $900f		; white/white
 	lda #$c0
 	sta $9005		; screen @ $1000
@@ -227,6 +227,7 @@ cart_start:
 	bpl :-
 
 @recover:
+	jsr scr::init
         jsr irq::on
 	; signature intact, ask user if they wish to recover
 	ldxy #recover_reset
@@ -247,7 +248,6 @@ cart_start:
 	jsr dbgi::initonce
 	jsr asm::reset
 	jsr buff::clear		; clear copy buffer
-	jsr run::clr		; init user state (run BASIC startup proc)
 	jsr edit::clear
 
 	lda #$00
@@ -264,6 +264,8 @@ cart_start:
 	dex
 	bpl :-
 .endif
+
+	jsr run::clr		; init user state (run BASIC startup proc)
 
 	; init some BASIC variables that are used (keyboard ptrs/delay)
 	lda #<$ebdc	; get keyboard decode logic pointer low byte

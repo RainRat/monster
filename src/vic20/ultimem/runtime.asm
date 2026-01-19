@@ -97,7 +97,15 @@ ret:     .word 0
 	beq :+
 	jsr $fdca	; set top of RAM to $2000 (emulate unexpanded config)
 
-:	jsr $e518	; initialize hardware
+:	jsr $e55b
+
+	; blank screen so user doesn't see garbage
+	lda #$00
+	sta $9002
+	sta $9003
+
+	jsr $e518+3	; initialize rest of hardware
+
 	jsr $e45b	; init BASIC vectors
 	jsr $e3a4	; init BASIC RAM locations
 	jsr $e404	; print startup message and init pointers
@@ -131,6 +139,13 @@ ret:     .word 0
 
 	; restore the rest of Monster's RAM and enter the application
 	jsr fcpy::restore_debug_state
+
+	lda #23<<1
+	ldxy #$9003
+	jsr vmem::store
+	lda #22
+	ldxy #$9002
+	jsr vmem::store
 
 	; initialize PC to warm start
 	ldxy #$c474

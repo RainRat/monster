@@ -86,40 +86,7 @@ __label_set_addr         = setaddr
 	JUMP FINAL_BANK_SYMBOLS, proc
 .endmacro
 
-.enum proc_ids
-CLR = 0
-ADD
-FIND
-BY_ADDR
-BY_ID
-NAME_BY_ID
-IS_VALID
-GET_NAME
-GETADDR
-IS_LOCAL
-SET
-DEL
-ADDRESS
-ADDRESS_BY_ID
-SET_SCOPE
-ADD_ANON
-GET_FANON
-GET_BANON
-INDEX
-ID_BY_ADDR_INDEX
-ADDRMODE
-GET_SEGMENT
-SET_ADDR
-DUMP
-LOAD
-.endenum
-
 .RODATA
-
-.define procs clr, add, find, by_addr, by_id, name_by_id, is_valid, get_name, getaddr, is_local, set, del, address, address_by_id, set_scope, add_anon, get_fanon, get_banon, index, id_by_addr_index, addrmode, get_segment, setaddr, dump, load
-
-procs_lo: .lobytes procs
-procs_hi: .hibytes procs
 
 __label_clr:              LBLJUMP clr
 __label_add:              LBLJUMP add
