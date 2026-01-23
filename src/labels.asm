@@ -80,7 +80,7 @@ __label_addrmode         = addrmode
 __label_set_addr         = setaddr
 
 .else
-;******************************************************************************
+;*******************************************************************************
 ; Label JUMP table
 .macro LBLJUMP proc
 	JUMP FINAL_BANK_SYMBOLS, proc
@@ -116,7 +116,7 @@ __label_load:             LBLJUMP load
 
 .endif
 
-;******************************************************************************
+;*******************************************************************************
 ; LABELS
 ; Table of label names. Each entry corresponds to an entry in label_addresses,
 ; which contains the value (address) for the label name.
@@ -130,7 +130,7 @@ labels: .res $2000
 labels: .res MAX_LABELS*MAX_LABEL_NAME_LEN
 .endif
 
-;******************************************************************************
+;*******************************************************************************
 ; SEGMENT IDS
 ; These bytes correspond to each label and tell us which segment it is defined
 ; within
@@ -140,7 +140,7 @@ segment_ids: .res MAX_LABELS
 
 .segment "SHAREBSS"
 
-;******************************************************************************
+;*******************************************************************************
 labelvars:
 .export __label_num
 __label_num:
@@ -153,7 +153,7 @@ numanon: .word 0	; total number of anonymous labels
 scope: .res 8 ; buffer containing the current scope
 labelvars_size=*-labelvars
 
-;******************************************************************************
+;*******************************************************************************
 ; LABEL MODES
 ; This bit array contains the size of each label
 ; Bit 7 of the first byte corresponds to label ID 0, bit 6 to the label ID 1,
@@ -164,7 +164,7 @@ label_modes: .res MAX_LABELS / 8	; modes (0=absolute, 1=zeropage)
 
 .segment "LABEL_BSS"
 
-;******************************************************************************
+;*******************************************************************************
 ; LABEL ADDRESSES
 ; Table of addresses for each label
 ; The address of a given label id is label_addresses + (id * 2)
@@ -198,7 +198,7 @@ label_addresses_sorted_ids: .res MAX_LABELS*2
 anon_addrs: .res MAX_ANON*2
 
 .segment "LABELS"
-;******************************************************************************
+;*******************************************************************************
 ; SET SCOPE
 ; Sets the current scope to the given scope.
 ; This affects local labels, which will be namespaced by prepending the scope.
@@ -221,7 +221,7 @@ anon_addrs: .res MAX_ANON*2
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; PREPEND SCOPE
 ; Prepends the current scope to the label in .XY and returns a buffer containing
 ; the namespaced label.
@@ -261,7 +261,7 @@ anon_addrs: .res MAX_ANON*2
 	RETURN_OK
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; CLR
 ; Removes all labels effectively resetting the label state
 .proc clr
@@ -273,7 +273,7 @@ anon_addrs: .res MAX_ANON*2
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; FIND
 ; Looks for the ID corresponding to the given label and returns it.
 ; in:
@@ -743,7 +743,7 @@ anon_addrs: .res MAX_ANON*2
 	RETURN_OK
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; ADD ANON
 ; Adds an anonymous label at the given address
 ; IN:
@@ -824,7 +824,7 @@ anon_addrs: .res MAX_ANON*2
 	RETURN_OK
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; SEEK ANON
 ; Finds the address of the first anonymous label that has a greater address than
 ; or equal to the given address.
@@ -899,7 +899,7 @@ anon_addrs: .res MAX_ANON*2
 @ret:	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; GET FANON
 ; Returns the address of the nth forward anonymous label relative to the given
 ; address. That is the nth anonymous label whose address is greater than
@@ -967,7 +967,7 @@ anon_addrs: .res MAX_ANON*2
 	jmp @l0
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; GET BANON
 ; Returns the address of the nth backward anonymous address relative to the
 ; given  address. That is the nth anonymous label whose address is less than
@@ -1038,7 +1038,7 @@ anon_addrs: .res MAX_ANON*2
 @err:	RETURN_ERR ERR_LABEL_UNDEFINED
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; GET ANON RETVAL
 ; Space saving helper to get the return address from r6
 ; IN:
@@ -1059,7 +1059,7 @@ anon_addrs: .res MAX_ANON*2
 	RETURN_OK
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; GET SEGMENT
 ; Returns the segment ID for the given label ID
 ; IN:
@@ -1080,7 +1080,7 @@ anon_addrs: .res MAX_ANON*2
 :	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; ADDRESS
 ; Returns the address of the label in (.YX)
 ; The address mode of the label is returned as well.
@@ -1098,7 +1098,7 @@ anon_addrs: .res MAX_ANON*2
 	; fall through to address_by_id
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; ADDRESS BY ID
 ; Returns the address of the label of the given ID
 ; Also returns the address mode.
@@ -1139,7 +1139,7 @@ anon_addrs: .res MAX_ANON*2
 :	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; DEL
 ; Deletes the given label name.
 ; IN:
@@ -1331,7 +1331,7 @@ anon_addrs: .res MAX_ANON*2
 	RETURN_OK
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; IS LOCAL
 ; Returns with .Z set if the given label name represents a
 ; "local" label (begins with '@')
@@ -1354,7 +1354,7 @@ anon_addrs: .res MAX_ANON*2
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; LABEL BY ID
 ; Returns the address of the label ID in .YX in .YX
 ; IN:
@@ -1381,7 +1381,7 @@ anon_addrs: .res MAX_ANON*2
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; BY ADDR
 ; Returns the label for a given address by performing a binary search on the
 ; cache of sorted label addresses
@@ -1513,7 +1513,7 @@ anon_addrs: .res MAX_ANON*2
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; NUMLABELS DIV8
 ; Returns the number of labels divided by 8 (assumes result is 8 bit)
 ; OUT:
@@ -1532,7 +1532,7 @@ anon_addrs: .res MAX_ANON*2
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; DIV8
 ; Returns the given number divided by 8. Assumes an 8 bit quotient
 ; IN:
@@ -1584,7 +1584,7 @@ anon_addrs: .res MAX_ANON*2
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; NAME BY ID
 ; Returns the address name of the label ID requested
 ; IN:
@@ -1631,7 +1631,7 @@ anon_addrs: .res MAX_ANON*2
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; ISVALID
 ; checks if the label name given is a valid label name
 ; IN:
@@ -1683,7 +1683,7 @@ anon_addrs: .res MAX_ANON*2
 @done:	RETURN_OK
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; GET NAME
 ; Copies the name of the label ID given to the provided buffer
 ; IN:
@@ -1714,7 +1714,7 @@ anon_addrs: .res MAX_ANON*2
 @done:	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; GET ADDR
 ; Returns the address of the given label ID.
 ; IN:
@@ -1731,7 +1731,7 @@ anon_addrs: .res MAX_ANON*2
 	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; IS DEFINITION SEPARATOR
 ; IN:
 ;  - .A: character to test
@@ -1743,7 +1743,7 @@ anon_addrs: .res MAX_ANON*2
 	; fall through to iswhitespace
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; ISWHITESPACE
 ; Checks if the given character is a whitespace character
 ; IN:
@@ -1759,7 +1759,7 @@ anon_addrs: .res MAX_ANON*2
 :	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; ISSEPARATOR
 ; IN:
 ;  - .A: the character to test
@@ -1785,11 +1785,11 @@ anon_addrs: .res MAX_ANON*2
 @numops = *-@ops
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; MACROS
 ; These macros are used by sort_by_addr
 
-;******************************************************************************
+;*******************************************************************************
 ; update @idi and @idj based on the values of @i and @j
 ; these pointers are offset by a fixed amount from @i and @j
 .macro setptrs
@@ -1810,7 +1810,7 @@ anon_addrs: .res MAX_ANON*2
 	sta @idj+1
 .endmacro
 
-;******************************************************************************
+;*******************************************************************************
 ; copies the unsorted addresses to the sorted addresses array and initializes
 ; the unsorted ids array
 .macro setup
@@ -1873,7 +1873,7 @@ anon_addrs: .res MAX_ANON*2
 	bne @idloop
 .endmacro
 
-;******************************************************************************
+;*******************************************************************************
 ; INDEX
 ; Updates the by-address sorting of the labels. This allows labels to be looked
 ; up by their address (see lbl::by_addr).
@@ -2080,7 +2080,7 @@ anon_addrs: .res MAX_ANON*2
 @done:  rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; DUMP
 ; Dumps the symbol table to the open file.
 ; A 2-byte header (number of symbols) is stored first
@@ -2134,7 +2134,7 @@ anon_addrs: .res MAX_ANON*2
 @done:	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; LOAD
 ; Loads the symbol table from the open file.
 .proc load
@@ -2186,7 +2186,7 @@ anon_addrs: .res MAX_ANON*2
 @done:	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; NEXT SYM
 ; Advances the "@sym" pointer to the next symbol (label)
 ; OUT:
@@ -2208,7 +2208,7 @@ anon_addrs: .res MAX_ANON*2
 :	rts
 .endproc
 
-;******************************************************************************
+;*******************************************************************************
 ; SETUP FOR LOAD OR DUMP
 .proc setup_for_load_or_dump
 @sym=r0
