@@ -64,14 +64,14 @@ block   = zp::debug+6		; address of current block pointer
 ; the offsets of these state variables correspond to the offsets
 ; of the BLOCK_ constants. e.g. BLOCK_START_ADDR -> blockstart
 blockstate    = block+2		; base of block state
-blockstart    = block+2		; base of active block's address range
-blockstop     = block+4		; top of active block's address range
-blocklinebase = block+6 	; base of active block's line range
-linestop      = block+8		; number of lines in active block
-file          = block+10 	; current file id being worked on
-seg_id        = block+11 	; current file id being worked on
-progstart     = block+12	; address of start of line program for block
-progstop      = block+14	; address of end of line program
+blockstart    = blockstate	; base of active block's address range
+blockstop     = blockstate+2	; top of active block's address range
+blocklinebase = blockstate+4 	; base of active block's line range
+linestop      = blockstate+6	; number of lines in active block
+file          = blockstate+8 	; current file id being worked on
+seg_id        = blockstate+9 	; current file id being worked on
+progstart     = blockstate+10	; address of start of line program for block
+progstop      = blockstate+12	; address of end of line program
 
 ; scratchpad
 debugtmp = block+16
@@ -362,7 +362,7 @@ blockaddresseshi: .res MAX_FILES
 	STOREB_Y block
 
 	; store the SEGMENT ID
-	ldy #BLOCK_LINE_COUNT
+	ldy #BLOCK_SEGMENT_ID
 	lda seg_id
 	STOREB_Y block
 
@@ -428,11 +428,11 @@ blockaddresseshi: .res MAX_FILES
 
 	; compute number of lines and write updated value
 	; numlines = (linestop - linebase) + 1
-	lda linestop
+	lda srcline
 	sec
 	sbc blocklinebase
 	sta @numlines
-	lda linestop+1
+	lda srcline+1
 	sbc blocklinebase+1
 	sta @numlines+1
 	incw @numlines
@@ -510,7 +510,6 @@ blockaddresseshi: .res MAX_FILES
 .endif
 	rts
 .endmacro
-
 	SELECT_BANK "DEBUGINFO"
 	stxy @line
 
@@ -610,8 +609,7 @@ blockaddresseshi: .res MAX_FILES
 	INC_LINE
 
 
-@done:
-	; update progstop
+@done:  ; update progstop
 	lda @isize
 	clc
 	adc progstop
@@ -816,6 +814,7 @@ blockaddresseshi: .res MAX_FILES
 @file=r5
 @closest=r7		; nearest line < the one we're looking for
 	SELECT_BANK "DEBUGINFO"
+	jmp *
 	sta @file
 	stxy @line
 	lda #$00

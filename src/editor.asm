@@ -189,12 +189,6 @@ main:	jsr key::getch
 	pla
 
 :	jsr __edit_handle_key
-
-;	; TODO: delete
-;	.ifdef c64
-;	jsr c64::dbg
-;	.endif
-
 @done:	jsr text::update
 	bne main	; branch always (continue main loop)
 .endproc
@@ -5366,6 +5360,7 @@ __edit_gotoline:
 ; DIRVIEW
 ; Enters the directory viewer
 .proc dirview
+	jsr krn::clall
 	jsr dir::view
 	jmp krn::clall
 .endproc

@@ -193,11 +193,14 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	stxy sim::pc
 
 	; init state
-	lda #$00
-	sta aux_mode		; initialize auxiliary views
-	sta watch::num		; clear watches
-	sta breakpoints_active
-	sta __debug_interface
+	ldx #$00
+	stx aux_mode		; initialize auxiliary views
+	stx watch::num		; clear watches
+	stx breakpoints_active	; flag that breakpoints are not installed
+	stx __debug_interface	; set interface to GUI
+
+	dex			; .X = $ff
+	txs			; initialize stack to $1ff
 
 	; highlight message row
 	ldx #DEBUG_MESSAGE_LINE
@@ -207,12 +210,11 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 
 	jsr run::init
 
+	jsr init_breakpoints
+
 	; initialize the user program stack
 	lda #<PROGRAM_STACK_START
 	sta sim::reg_sp
-
-	ldx #$ff
-	txs
 
 .ifdef hard8x8
 	ldx #REGISTERS_LINE
@@ -224,6 +226,39 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 .endif
 
 	jmp return_to_debugger		; enter the debugger
+.endproc
+
+;******************************************************************************
+; INIT BREAKPOINTS
+; Initializes breakpoints by looking up the address at their source position
+; and mapping them to it.
+.proc init_breakpoints
+@cnt=zp::tmp10
+	ldx __debug_numbreakpoints
+	beq @done
+	stx @cnt
+
+@l0:	; get the file id and line of the breakpoint
+	ldx @cnt
+	lda __debug_breakpoint_fileids-1,x
+	pha
+	ldy __debug_breakpoint_lineshi-1,x
+	lda __debug_breakpoint_lineslo-1,x
+	tax
+	pla
+	jsr dbgi::line2addr	; get address of breakpoint
+
+	; store the address for the breakpoint
+	txa
+	ldx @cnt
+	sta __debug_breakpointslo-1,x
+	tya
+	sta __debug_breakpointshi-1,x
+
+	dec @cnt
+	bne @l0
+
+@done:	rts
 .endproc
 
 ;******************************************************************************
@@ -282,6 +317,7 @@ breaksave:        .res MAX_BREAKPOINTS ; backup of instructions under the BRKs
 	ldx __debug_numbreakpoints
 	beq @done
 	stx @cnt
+
 @uninstall:
 	ldx @cnt
 	lda breakpoint_flags-1,x
@@ -1176,6 +1212,7 @@ __debug_remove_breakpoint:
 	ldx __debug_numbreakpoints
 	beq @done
 	dex
+
 @l0:	lda @fileid
 	cmp __debug_breakpoint_fileids,x
 	bne @next
@@ -1257,6 +1294,7 @@ __debug_remove_breakpoint:
 	beq @found
 @next:	dex
 	bpl @l0
+
 @notfound:
 	ldxy @addr
 	sec

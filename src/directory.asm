@@ -46,8 +46,8 @@
 	stxy @resultptr
 
 	jsr open_dir		; open the directory "file"
-	sta @file
 	bcs @ret
+	sta @file
 
 	jsr read_disk_name
 
@@ -100,7 +100,6 @@
 ; It could also easily be modified to support more (e.g. for the 1581)
 .export __dir_view
 .proc __dir_view
-@buff=r6
 @file=r8
 @line=r8
 @row=ra
@@ -110,17 +109,14 @@
 @scroll=re
 @dirbuff=mem::spare+40		; 0-40 will be corrupted by text routines
 @namebuff=mem::spareend-40	; buffer for the file name
-@fptrs=@namebuff-(128*2)	; room for 128 files
+@fptrslo=@namebuff-(128*2)	; room for 128 files
+@fptrshi=@namebuff-(128)	; room for 128 files
 	jsr irq::off
-
 	jsr open_dir
-	sta @file
 	bcc :+
 @err:	jmp irq::on
 
-	; load the directory into dirbuff
-:	ldxy #@dirbuff
-	stxy @buff
+:	sta @file
 
 	; reset the screen so that we can print the file names normally
 	jsr scr::save
@@ -163,14 +159,12 @@
 ;--------------------------------------
 ; parse filenames and render initial view
 @getfilenames:
-	lda @cnt
-	asl
-	tax
+	ldx @cnt
 	lda @line+1
-	sta @fptrs+1,x	; save pointer to this filename
+	sta @fptrshi,x	; save pointer to this filename
 	tay
 	lda @line
-	sta @fptrs,x
+	sta @fptrslo,x
 	tax
 
 	; read a filename into (@line)
@@ -250,10 +244,9 @@
 	lda @scroll
 	clc
 	adc @select
-	asl
 	tax
-	ldy @fptrs+1,x
-	lda @fptrs,x
+	ldy @fptrshi,x
+	lda @fptrslo,x
 	tax
 	lda #SCREEN_HEIGHT-1-1			; bottom row
 	jsr text::print
@@ -280,10 +273,9 @@
 	lda @scroll
 	clc
 	adc @select
-	asl
 	tax
-	ldy @fptrs+1,x
-	lda @fptrs,x
+	ldy @fptrshi,x
+	lda @fptrslo,x
 	tax
 	lda #1			; top row
 	jsr text::print
@@ -341,10 +333,9 @@
 	lda @select
 	clc
 	adc @scroll
-	asl
 	tax
-	lda @fptrs,x
-	ldy @fptrs+1,x
+	lda @fptrslo,x
+	ldy @fptrshi,x
 	tax
 	jmp edit::load		; load the file
 
@@ -358,10 +349,9 @@
 :	lda @i
 	clc
 	adc @scroll
-	asl
 	tax
-	ldy @fptrs-1,x
-	lda @fptrs-2,x
+	ldy @fptrshi-1,x
+	lda @fptrslo-1,x
 	tax
 	lda @i
 	jsr text::print
@@ -412,12 +402,14 @@
 ; OPEN DIR
 ; Opens the directory "file" for loading
 .proc open_dir
+	jsr krn::clall
 	ldxy #strings::dir
 	jsr file::exists
 	bcs :+
 	ldxy #strings::dir
 	jsr file::open_r_prg
 	bcs :+
+	tax
 	jsr krn::chkin
 	clc			; ok
 :	rts
@@ -449,7 +441,7 @@
 @done:  lda #$00
 	sta (@buff),y
 
-	; read until $00
+	; read until $00 (line terminator)
 :	jsr krn::chrin
 	cmp #$00
 	bne :-
@@ -482,7 +474,7 @@
 	bne :-
 
 	; read until the closing '"'
-	ldy #$00
+	;ldy #$00
 :	jsr getb
 	cmp #'"'
 	beq @done

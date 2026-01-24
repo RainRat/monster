@@ -57,7 +57,6 @@
 .include "codes.inc"
 .include "config.inc"
 .include "ctx.inc"
-.include "debug.inc"
 .include "debuginfo.inc"
 .include "errors.inc"
 .include "errlog.inc"
@@ -132,8 +131,7 @@ top: .word 0	; the highest address in the program
 __asm_linenum: .word 0
 
 .segment "SHAREBSS"
-; TODO: use
-; the type of the segment being stored e.g. SEG_BSS or SEG_CODE
+; TODO: use the type of the segment being stored e.g. SEG_BSS or SEG_CODE
 ;segment_type: .byte 0
 
 ;*******************************************************************************
@@ -349,8 +347,7 @@ ABS=6
 ABS_X=7
 ABS_Y=8
 ABS_IND=9
-bbb01:
-	.byte $ff ; implied/accumulator
+bbb01:  .byte $ff ; implied/accumulator
 	.byte $02 ; immediate
 	.byte $01 ; zp
 	.byte $05 ; zp,x
@@ -361,8 +358,7 @@ bbb01:
 	.byte $06 ; abs,y
 	.byte $ff ; (abs)
 
-bbb10:
-	.byte $02 ; implied/accumulator
+bbb10:  .byte $02 ; implied/accumulator
 	.byte $00 ; immediate
 	.byte $01 ; zp
 	.byte $05 ; zp,x
@@ -373,8 +369,7 @@ bbb10:
 	.byte $ff ; abs,y
 	.byte $ff ; (abs)
 
-bbb00:
-	.byte $ff ; implied/accumulator
+bbb00:  .byte $ff ; implied/accumulator
 	.byte $00 ; immediate
 	.byte $01 ; zp
 	.byte $05 ; zp,x
@@ -422,9 +417,11 @@ num_illegals = *-illegal_opcodes
 	lda #$ff
 	sta __asm_segmode		; no .SEG set
 
+	; empty CONTEXT and IF stacks
 	lda #$00
 	sta ifstacksp
 	sta contextstacksp
+
 	jsr ctx::init
 	CALL FINAL_BANK_MACROS, mac::init
 	jsr lbl::clr
@@ -435,8 +432,8 @@ num_illegals = *-illegal_opcodes
 ;*******************************************************************************
 ; RESETPC
 ; Resets the PC for, for example, beginning a new pass on the assembler
-.export __asm_resetpc
-.proc __asm_resetpc
+.export resetpc
+.proc resetpc
 	lda #$00
 	sta pcset
 	rts
@@ -454,6 +451,7 @@ num_illegals = *-illegal_opcodes
 	; disable VERIFY (assemble)
 	lda #$00
 	sta zp::verify
+
 	sta top			; set top of program to 0
 	sta top+1
 	sta origin
@@ -470,7 +468,7 @@ num_illegals = *-illegal_opcodes
 	sta zp::pass		; set pass #
 	cmp #$01
 	beq __asm_reset
-@pass2: jsr __asm_resetpc	; reset PC
+@pass2: jsr resetpc		; reset PC
 	jmp ctx::init		; re-init the context
 .endproc
 
@@ -558,23 +556,10 @@ __asm_tokenize_pass1 = __asm_tokenize
 
 	ldy #$00
 	sty mem::asmbuffer+LINESIZE
-	lda (zp::line),y
-	beq @noasm		; empty line, early out
-@setbrk:
-	lda zp::pass
-	cmp #2
-	bne :+
+	jsr line::process_ws
+	beq @noasm			; empty line -> done
 
-	; handle breakpoints (only set breakpoints in pass 2)
-	ldxy zp::virtualpc	; current PC (address)
-	stxy r0
-	lda dbgi::file
-	ldxy __asm_linenum
-	jsr dbg::brksetaddr	; if there is a breakpoint, set its address
-
-:	jsr line::process_ws
-	beq @noasm 		; empty line
-
+;---------------------------------------
 ; check if we're in an .IF (FALSE) and if we are, return
 @checkifs:
 	lda ifstacksp

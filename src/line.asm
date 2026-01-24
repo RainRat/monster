@@ -41,10 +41,10 @@
 ;*******************************************************************************
 ; PROCESS_WS
 ; Reads (line) and updates it to point past ' ' chars and non-printing chars
-; out:
-;  .Z: set if we're at the end of the line
-;  .A: the last character processed
-;  .Y: 0
+; OUT:
+;  .Z:       set if we're at the end of the line
+;  .A:       the last character processed
+;  .Y:       0
 ;  zp::line: updated to first non ' ' character
 .export __line_process_ws
 .proc __line_process_ws
