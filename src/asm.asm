@@ -1494,15 +1494,19 @@ __asm_tokenize_pass1 = __asm_tokenize
 	lda zp::pass
 	cmp #$01
 	beq @l1
+	bne :+			; skip first rewind
 
-@l0:	; define a label with the value of the iteration
-	jsr rewind_ctx_dbg
-	lda zp::ctx+repctx::iter
+;--------------------------------------
+; define a label with the value of the iteration (pass 2 only)
+@l0:	jsr rewind_ctx_dbg
+:	lda zp::ctx+repctx::iter
 	sta zp::label_value
 	lda zp::ctx+repctx::iter+1
 	sta zp::label_value+1
 	ldxy zp::ctx+repctx::params
 
+	; iteration 0: add a symbol for the iterator
+	; iteration 1: "set" (replace) the iterator's value
 	ora zp::label_value	; set .Z if label_value is 0
 	bne @set
 	lda #$01		; define label as 16 bit
@@ -1511,8 +1515,9 @@ __asm_tokenize_pass1 = __asm_tokenize
 @set:	jsr lbl::set
 :	bcs @err
 
-@l1:	; assemble the lines until .endrep
-	incw __asm_linenum
+;--------------------------------------
+; assemble the lines until .endrep
+@l1:	incw __asm_linenum
 	jsr ctx::getline
 	bcc :+
 @err:	rts				; propagate error, exit
@@ -1570,7 +1575,6 @@ __asm_tokenize_pass1 = __asm_tokenize
 	sbc @tmp
 	sta __asm_linenum
 	lda __asm_linenum+1
-	sec
 	sbc #$00
 	sta __asm_linenum+1
 

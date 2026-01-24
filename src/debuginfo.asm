@@ -814,7 +814,6 @@ blockaddresseshi: .res MAX_FILES
 @file=r5
 @closest=r7		; nearest line < the one we're looking for
 	SELECT_BANK "DEBUGINFO"
-	jmp *
 	sta @file
 	stxy @line
 	lda #$00

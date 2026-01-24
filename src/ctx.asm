@@ -20,9 +20,10 @@ PARAM_LENGTH = 16	; size of param (stored after the context data)
 MAX_PARAMS   = 4	; max params for a context
 MAX_CONTEXTS = 3	; $1000-$400 / $200
 
+SIZEOF_CTX_HEADER = 12
+
 CTX_ITER_START   = 2
 CTX_PARAMS_START = 8
-CTX_LINES_START  = 11
 
 ;*******************************************************************************
 ; CONTEXTS
@@ -31,7 +32,8 @@ CTX_LINES_START  = 11
 ; The number of contexts is limited by the size of a context (defined as
 ; CONTEXT_SIZE).
 .export contexts
-contexts = mem::spare
+contexts     = mem::spare
+contexts_top = mem::spareend
 
 .BSS
 ;*******************************************************************************
@@ -43,6 +45,7 @@ iterend   = zp::ctx+4	; (REP) iterator's end value
 cur       = zp::ctx+6	; cursor to current ctx data
 params    = zp::ctx+8	; address of params (grows down from CONTEXT+$200-PARAM_LENGTH)
 numparams = zp::ctx+10	; the number of parameters for the context
+numlines  = zp::ctx+11	; number of lines in the context
 
 .CODE
 ;*******************************************************************************
@@ -62,6 +65,7 @@ numparams = zp::ctx+10	; the number of parameters for the context
 .proc reset
 	lda #$00
 	sta numparams
+	sta numlines
 	sta mem::ctxbuffer
 	rts
 .endproc
@@ -74,20 +78,19 @@ numparams = zp::ctx+10	; the number of parameters for the context
 .export __ctx_push
 .proc __ctx_push
 	lda activectx
-	beq @push
+	beq @push		; no active context -> continue
 	cmp #MAX_CONTEXTS+1
-	bcc :+
+	bcc @save
 
 @err:	;sec
 	lda #ERR_STACK_OVERFLOW
 	rts
-
-:	; save the active context's state
-	ldy #CTX_LINES_START-CTX_ITER_START
-:	lda ctx+CTX_ITER_START,y
+@save:	; save the active context's state
+	ldy #SIZEOF_CTX_HEADER-CTX_ITER_START-1
+@l0:	lda ctx+CTX_ITER_START,y
 	sta (ctx),y
 	dey
-	bpl :-
+	bpl @l0
 
 @push:  inc activectx
 @ok:	jsr getctx
@@ -102,7 +105,8 @@ numparams = zp::ctx+10	; the number of parameters for the context
 .export  __ctx_rewind
 .proc __ctx_rewind
 	lda ctx
-	adc #CTX_LINES_START
+	clc
+	adc #SIZEOF_CTX_HEADER
 	sta cur
 	lda ctx+1
 	adc #$00
@@ -145,8 +149,7 @@ numparams = zp::ctx+10	; the number of parameters for the context
 	bcc @read
 	RETURN_ERR ERR_LINE_TOO_LONG
 
-@done:
-	iny
+@done:	iny
 	tya
 	clc
 	adc cur
@@ -225,7 +228,7 @@ numparams = zp::ctx+10	; the number of parameters for the context
 .proc __ctx_getdata
 	lda ctx
 	clc
-	adc #CTX_LINES_START
+	adc #SIZEOF_CTX_HEADER
 	tax
 	lda ctx+1
 	adc #$00
@@ -249,30 +252,36 @@ numparams = zp::ctx+10	; the number of parameters for the context
 	ldy #$00
 @write: lda (@line),y
 	beq @done
+	cmp #$0d
+	beq @done
 	cmp #';'
 	beq @done
 	sta (cur),y
-	beq @done
-	iny
-	cpy #LINESIZE
+
+	incw @line
+
+	; increment context pointer and make sure the context isn't full
+	incw cur
+	lda cur+1
+	cmp #>contexts_top
+	bcc @write
+	lda cur
+	cmp #<contexts_top
 	bne @write
+
+	;sec
+	lda #ERR_CTX_FULL
+	rts
+
 @err:	; sec
 	lda #ERR_LINE_TOO_LONG
 	rts
 
 @done:	lda #$00
 	sta (cur),y	; terminate this line in the buffer
-
-	; update buffer cursor
-	iny
-	tya
-	clc
-	adc cur
-	sta cur
-	bcc :+
-	inc cur+1
-	clc		; ok
-:	rts
+	incw cur
+	inc numlines
+	RETURN_OK
 .endproc
 
 ;*******************************************************************************
@@ -328,34 +337,11 @@ numparams = zp::ctx+10	; the number of parameters for the context
 ;*******************************************************************************
 ; NUMLINES
 ; Returns the length (in lines) of the context
+; OUT:
+;  - .A: the number of lines in the context
 .export __ctx_numlines
 .proc __ctx_numlines
-@base=r0
-@len=r2
-	lda ctx
-	adc #CTX_LINES_START
-	sta @base
-	lda ctx+1
-	adc #$00
-	sta @base+1
-
-	ldy #$00
-	sty @len
-	beq @next
-
-	; count the number of terminating 0's in the context
-@l0:	lda (@base),y
-	bne :+
-	inc @len
-:	incw @base
-@next:	lda @base
-	cmp cur
-	bne @l0
-	lda @base+1
-	cmp cur+1
-	bne @l0
-
-	lda @len
+	lda numlines
 	rts
 .endproc
 
@@ -379,7 +365,7 @@ numparams = zp::ctx+10	; the number of parameters for the context
 
 	; restore the context data
 	; get the ctx metadata (iter, iterend, cur, and param)
-	ldy #CTX_PARAMS_START-CTX_ITER_START
+	ldy #SIZEOF_CTX_HEADER-CTX_ITER_START-1
 @l0:	lda (ctx),y
 	sta ctx+CTX_ITER_START,y
 	dey

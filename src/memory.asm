@@ -7,17 +7,19 @@
 .include "config.inc"
 .include "layout.inc"
 
+.import __SPARESIZE__
+
 ;*******************************************************************************
 .segment "SPARE"
 .export __mem_spare
 .export __mem_spareend
-__mem_spare: .res $400
+__mem_spare: .res SPARESIZE
 __mem_spareend:
 
 ;*******************************************************************************
 .BSS
 .export __mem_ctxbuffer
-__mem_ctxbuffer = $140+40	; the buffer for the context during assembly
+__mem_ctxbuffer = $140+40	; buffer for a line of context during assembly
 
 .export __statusline
 __statusline = __mem_spare+80

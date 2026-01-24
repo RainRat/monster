@@ -218,6 +218,10 @@ err_oom:
 ; "out of memory"
 .byte $7d,$54,$db,$c6,$db,$45,$6b,$d2,$c8,$0
 
+err_ctx_full:
+; "context full"
+.byte $1b,$ce,$a1,$58,$a6,$c6,$ab,$c,$0
+
 ;******************************************************************************
 .linecont +
 .define errors \

@@ -81,6 +81,7 @@ ERR_ALREADY_EXPORTED     = 53
 ;******************************************************************************
 ; general errors
 ERR_OOM                  = 54
+ERR_CTX_FULL             = 55
 
 .import __err_get
 
