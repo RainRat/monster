@@ -1104,7 +1104,7 @@ flags: .res MAX_SOURCES		; flags for each source buffer
 	sub16 poststartzp	; bytes to copy
 	txa
 	pha
-	tay			; .y = bytes to copy
+	tay			; .Y = bytes to copy
 	dey
 	lda __src_bank
 .ifdef ultimem

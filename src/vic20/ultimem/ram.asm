@@ -111,8 +111,7 @@
 ;  - .X: the bank to return to
 .proc return_to_x
 	txa
-	jsr __ultimem_select_bank
-	rts
+	jmp __ultimem_select_bank
 .endproc
 
 ;*******************************************************************************
@@ -242,6 +241,5 @@
 	dec zp::banksp
 	ldx zp::banksp
 	lda zp::bankstack,x		; get the caller's bank
-	jsr __ultimem_select_bank	; restore bank
-	rts
+	jmp __ultimem_select_bank	; restore bank
 .endproc

@@ -1,4 +1,5 @@
 .include "expansion.inc"
+.include "../config.inc"
 .include "../debug.inc"
 .include "../debuginfo.inc"
 .include "../edit.inc"
@@ -345,17 +346,15 @@ data: .res BUFFER_SIZE
 ; ACTIVATE SOURCE
 .proc activate_source
 	; bank in the source buffer
-	pha
-	lda __src_bank
-	sta $9ff8
+	ldx __src_bank
+	stx $9ff8	; BLK1 = base of source bank
 	clc
-	adc #$01
-	sta $9ffa
-	adc #$01
-	sta $9ffc
-	lda #$3f
-	sta $9ff2
-	pla
+	inx
+	stx $9ffa	; BL2 = BLK1+1
+	inx
+	stx $9ffc	; BLK3 = BLK1+2
+	ldx #$3f
+	stx $9ff2
 	rts
 .endproc
 
@@ -387,7 +386,10 @@ data: .res BUFFER_SIZE
 @src=zp::bankaddr0
 @target=zp::bankaddr1
 	jsr activate_source
-	COPY_Y @src, @target
+	cpy #LINESIZE
+	bcc :+
+	ldy #LINESIZE
+:	COPY_Y @src, @target
 	jmp deactivate_source
 .endproc
 .endif

@@ -76,7 +76,13 @@ macros:          .res $1400
 	SELECT_BANK "MACRO"
 
 	sta @numparams
-	stxy @src
+
+	lda nummacros
+	cmp #MAX_MACROS
+	bcc :+
+	RETURN_ERR ERR_TOO_MANY_MACROS
+
+:	stxy @src
 	lda nummacros
 	asl
 	adc #<macro_addresses
@@ -93,7 +99,7 @@ macros:          .res $1400
 	lda (@addr),y
 	sta @dst+1
 
-; copy the name of the macro (parameter 0)
+	; copy the name of the macro (parameter 0)
 	dey
 @copyname:
 	lda (@params),y
@@ -124,24 +130,19 @@ macros:          .res $1400
 	dec @numparams
 	bne @copyparams
 
-; copy the macro definition byte-by-byte til we get to .endmac
+; copy the macro definition byte-by-byte til we get to terminating 0,0
 @paramsdone:
+	ldx #$00		; previous character value
 @l0:	ldy #$00
-	lda (@src),y
-	cmp #'.'
-	bne @next
-	ldxy @src
-	stxy zp::str0
-	ldxy #endmac
-	stxy zp::str2
-	lda #7			; strlen(endmac)+1
-	jsr strcmp
-	beq @done
-
-@next:	STOREB_Y @dst
+	lda (@src),y		; read a character
+	bne :+			; if not zero-> continue to store it
+	cpx #$00		; was previous char also 0?
+	beq @done		; if so, we're done
+:	STOREB_Y @dst		; store character for the macro
+	tax			; save previous char read to check EOF state
 	incw @src
 	incw @dst
-	bne @l0
+	bne @l0			; branch always
 
 @done:  ; 0-terminate the macro definition
 	lda #$00
@@ -202,9 +203,9 @@ macros:          .res $1400
 
 	; define the macro params
 	incw @macro
-	LOADB_Y @macro
+	LOADB_Y @macro	; get the number of parameters
 	sta @numparams
-	incw @macro
+	incw @macro	; move to the first parameter name
 
 	lda #$00
 	sta @cnt
@@ -382,33 +383,3 @@ macros:          .res $1400
 	lda @cnt
 	RETURN_OK
 .endproc
-
-;*******************************************************************************
-; STRCMP
-; Compares the strings in (str0) and (str2) up to a length of .A
-; IN:
-;  zp::str0: one of the strings to compare
-;  zp::str2: the other string to compare
-;  .A:       the max length to compare
-; OUT:
-;  .Z: set if the strings are equal
-.ifdef vic20
-.proc strcmp
-	tay		; is length 0?
-	dey
-	bmi @match	; if 0-length comparison, it's a match by default
-
-@l0:	lda (zp::str0),y
-	cmp (zp::str2),y
-	bne @ret
-	dey
-	bpl @l0
-@match:	lda #$00
-@ret:	rts
-.endproc
-
-.else
-strcmp = str::compare
-.endif
-
-endmac:	.byte ".endmac",0

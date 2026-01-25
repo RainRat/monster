@@ -56,6 +56,9 @@ err_undefined_label:
 err_unmatched_endif:
 	;.byte "endif with no if",0
 	.byte $2b,$84,$49,$9b,$ba,$54,$46,$ce,$7e,$c9,$30,$0
+err_too_many_macros:
+	; .byte "too many macros",0
+	.byte $a3,$cf,$db,$41,$76,$5b,$68,$43,$93,$d3,$0
 
 ;******************************************************************************
 err_unaligned_label:
@@ -206,6 +209,10 @@ err_too_many_segments:
 ; "too many segments"
 .byte $a3,$cf,$db,$41,$76,$5b,$99,$47,$69,$4e,$a4,$c0
 
+err_section_too_small:
+; .byte "section overrun",0
+.byte $99,$43,$a2,$4f,$76,$cf,$b1,$52,$95,$4e,$0
+
 err_addrmode_mismatch:
 ; "conflicting address modes for symbol"
 .byte $1b,$ce,$33,$9,$1d,$9,$71,$db,$9,$4,$91,$53,$9e,$cd,$79,$5,$9e,$c6,$7c,$9b,$9e,$4d,$13,$cc,$0
@@ -222,6 +229,10 @@ err_ctx_full:
 ; "context full"
 .byte $1b,$ce,$a1,$58,$a6,$c6,$ab,$c,$0
 
+err_no_matching_scope:
+; .byte "no matching scope",0
+.byte $73,$db,$68,$54,$1a,$9,$71,$db,$98,$cf,$81,$40
+
 ;******************************************************************************
 .linecont +
 .define errors \
@@ -234,8 +245,8 @@ err_ctx_full:
 	err_syntax, \
 	err_invalid_directive, \
 	err_undefined_label, \
-	\
 	err_unmatched_endif, \
+	err_too_many_macros, \
 	err_unaligned_label, \
 	err_illegal_opcode, \
 	err_illegal_addrmode, \
@@ -275,9 +286,12 @@ err_ctx_full:
 	err_buffer_full, \
 	err_too_many_global_refs, \
 	err_too_many_segments, \
+	err_section_too_small, \
 	err_addrmode_mismatch, \
 	err_already_exported, \
-	err_oom
+	err_oom, \
+	err_ctx_full, \
+	err_no_matching_scope
 .linecont -
 errorslo: .lobytes errors
 errorshi: .hibytes errors

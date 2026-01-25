@@ -13,6 +13,7 @@
 .segment "SPARE"
 .export __mem_spare
 .export __mem_spareend
+.assert * & $ff = 0, error, "spare must be algined to page boundary"
 __mem_spare: .res SPARESIZE
 __mem_spareend:
 
@@ -38,6 +39,7 @@ __mem_coloron: .byte 0
 
 .export __mem_rowcolors
 __mem_rowcolors: .res SCREEN_HEIGHT
+.assert >(*) = >(__mem_rowcolors), error, "mem::rowcolors must not cross page boundary (used in stable IRQ)"
 
 .export __mem_rowcolors_idx
 __mem_rowcolors_idx: .res 24

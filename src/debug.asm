@@ -122,9 +122,9 @@ __debug_sw_valid: .byte 0	; if !0, stopwatch is valid
 
 breakpoints_active: .byte 0	; if !0 breakpoints are installed
 
-lineset: .byte 0	; not zero if we know the line number we're on
+lineset: .byte 0		; not zero if we know the line number we're on
 
-aux_mode: .byte 0	; the active auxiliary view
+aux_mode: .byte 0		; the active auxiliary view
 
 ; set if interrupt was triggered by BRK
 .export __debug_is_brk
@@ -1691,7 +1691,7 @@ __debug_remove_breakpoint:
 	bne :-
 
 	; copy around the NMI vector
-	ldx #$100-$1a
+	ldx #$100-$1a-1
 :	lda dbg00+$31a,x
 	sta $31a,x
 	dex

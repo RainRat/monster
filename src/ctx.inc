@@ -1,4 +1,6 @@
+.import __ctx_active
 .import __ctx_addparam
+.import __ctx_end
 .import __ctx_getparams
 .import __ctx_push
 .import __ctx_pop
@@ -13,28 +15,22 @@
 MAX_CTX_LINES = 16
 
 CTX_REPEAT = 1
-CTX_MACRO = 2
+CTX_MACRO  = 2
 
 .scope repctx
-	base = 0
-	iter = 2
-	iter_end = 4
-	cur = 6 	; ptr to current location being read in (lines)
-	params = 8	; 16 bytes
+	base      = 0
+	iter      = 2
+	iter_end  = 4
+	cur       = 6 	; ptr to current location being read in (lines)
+	params    = 8	; 16 bytes
 	numparams = 10  ; 1 byte
-	lines = 11	; rest of buffer ($200-10)
-.endscope
-
-.scope macctx
-	base = 0
-	numparams = 1
-	params = 3	; up to 4 params, 16-bit pointers
-	cur = 5 	; ptr to current location being read in (lines)
-	lines = 13	; rest of buffer ($200-13)
+	lines     = 11	; rest of buffer ($200-10)
 .endscope
 
 .scope ctx
+	active    = __ctx_active
 	addparam  = __ctx_addparam
+	end       = __ctx_end
 	getparams = __ctx_getparams
 	init      = __ctx_init
 	numlines  = __ctx_numlines

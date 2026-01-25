@@ -77,7 +77,7 @@ PI_SRC=$(wildcard *.asm)
 SRC=$(TARGET_SRC) $(PI_SRC) $(MODE_SRC) $(TARGET_EXP_SRC)
 TEST_TXTS=$(wildcard tests/*.txt)
 
-#UNIT=$(wildcard *.a65)
+UNIT=$(wildcard *.a65)
 TEST_INCS=$(wildcard tests/*.inc)
 TESTS=$(wildcard tests/*.s)
 #TESTS=$(wildcard tests/wg/*.s)

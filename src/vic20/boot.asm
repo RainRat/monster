@@ -254,8 +254,8 @@ cart_start:
 	sta mem::linebuffer
 	CALL FINAL_BANK_MONITOR, mon::init
 
-.ifndef TEST
 @enter:
+.ifndef TEST
 .ifdef CART
 	; write the "initialized" signature
 	ldx #init_sig_len-1

@@ -212,75 +212,6 @@ savebank2: .byte 0
 
 .CODE
 
-;*******************************************************************************
-; IRQ ON
-; Syncs to the configured scanline and sets up an IRQ that will trigger whenever
-; that location is reached.
-.export __irq_on
-.proc __irq_on
-        sei
-	ldxy #sys_update
-	stxy $0314
-
-	ldxy #brk_handler
-	stxy $0316
-
-	ldy #IRQ_START_LINE
-
-	lda #<TIMER_VALUE
-	sta $9124
-@i0:	cpy $9004
-	bne @i0
-	iny
-	iny
-@i1:	cpy $9004
-	bne @i1
-	jsr @i6
-	iny
-	cpy $9004
-	beq @i2
-	nop
-	nop
-@i2:	jsr @i6
-	nop
-	iny
-	cpy $9004
-	beq @i3
-	bit $24
-@i3:	jsr @i6
-	nop
-	iny
-	cpy $9004
-	bne @i4
-@i4:	ldx #$06	; position
-@i5:	dex
-	bne @i5
-
-.ifndef PAL
-	nop
-	nop
-.endif
-	lda #>TIMER_VALUE
-	sta $9125
-
-	; enable T2 interrupts
-	lda #$80|$40
-	sta $912e
-
-	cli
-	rts
-
-@i6:
-.ifdef PAL
-	ldx #$19	; delay
-.else
-	ldx #$17	; delay
-.endif
-@i7:	dex
-	bne @i7
-	nop
-	rts
-.endproc
 
 ;*******************************************************************************
 ; IRQ OFF
@@ -381,3 +312,72 @@ savebank2: .byte 0
 .POPSEG
 .endproc
 
+;*******************************************************************************
+; IRQ ON
+; Syncs to the configured scanline and sets up an IRQ that will trigger whenever
+; that location is reached.
+.export __irq_on
+.proc __irq_on
+        sei
+	ldxy #sys_update
+	stxy $0314
+
+	ldxy #brk_handler
+	stxy $0316
+
+	ldy #IRQ_START_LINE
+
+	lda #<TIMER_VALUE
+	sta $9124
+@i0:	cpy $9004
+	bne @i0
+	iny
+	iny
+@i1:	cpy $9004
+	bne @i1
+	jsr @i6
+	iny
+	cpy $9004
+	beq @i2
+	nop
+	nop
+@i2:	jsr @i6
+	nop
+	iny
+	cpy $9004
+	beq @i3
+	bit $24
+@i3:	jsr @i6
+	nop
+	iny
+	cpy $9004
+	bne @i4
+@i4:	ldx #$06	; position
+@i5:	dex
+	bne @i5
+
+.ifndef PAL
+	nop
+	nop
+.endif
+	lda #>TIMER_VALUE
+	sta $9125
+
+	; enable T2 interrupts
+	lda #$80|$40
+	sta $912e
+
+	cli
+	rts
+
+@i6:
+.ifdef PAL
+	ldx #$19	; delay
+.else
+	ldx #$17	; delay
+.endif
+@i7:	dex
+	bne @i7
+	nop
+	rts
+.endproc

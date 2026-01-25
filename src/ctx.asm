@@ -20,10 +20,7 @@ PARAM_LENGTH = 16	; size of param (stored after the context data)
 MAX_PARAMS   = 4	; max params for a context
 MAX_CONTEXTS = 3	; $1000-$400 / $200
 
-SIZEOF_CTX_HEADER = 12
-
-CTX_ITER_START   = 2
-CTX_PARAMS_START = 8
+SIZEOF_CTX_HEADER = 11
 
 ;*******************************************************************************
 ; CONTEXTS
@@ -35,17 +32,26 @@ CTX_PARAMS_START = 8
 contexts     = mem::spare
 contexts_top = mem::spareend
 
-.BSS
+.assert $ff & contexts = 0, error, "contexts must be page-aligned"
+
 ;*******************************************************************************
+.segment "BSS_NOINIT"
+.export __ctx_active
+__ctx_active:		; !0: a context is active
 activectx: .byte 0
 
 ctx       = zp::ctx+0	; address of context
-iter      = zp::ctx+2	; (REP) iterator's current value
-iterend   = zp::ctx+4	; (REP) iterator's end value
-cur       = zp::ctx+6	; cursor to current ctx data
-params    = zp::ctx+8	; address of params (grows down from CONTEXT+$200-PARAM_LENGTH)
-numparams = zp::ctx+10	; the number of parameters for the context
-numlines  = zp::ctx+11	; number of lines in the context
+
+;*******************************************************************************
+; CTX META
+meta      = zp::ctx+2
+iter      = meta+0	; (REP) iterator's current value (set externally)
+iterend   = meta+2	; (REP) iterator's end value (set externally)
+cur       = meta+4	; cursor to current ctx data
+params    = meta+6	; address of params (grows down from CONTEXT+$200-PARAM_LENGTH)
+numparams = meta+8	; the number of parameters for the context
+type      = meta+9	; the type of the context
+numlines  = meta+10	; number of lines in the context
 
 .CODE
 ;*******************************************************************************
@@ -53,20 +59,15 @@ numlines  = zp::ctx+11	; number of lines in the context
 ; initializes the context state by clearing the stack
 .export  __ctx_init
 .proc __ctx_init
+	; init ctx pointer to base of contexts - CONTEXT_SIZE
+	lda #<(contexts-CONTEXT_SIZE)
+	sta ctx
+	lda #>(contexts-CONTEXT_SIZE)
+	sta ctx+1
+
 	lda #$00
 	sta activectx
 
-	; fallthrough
-.endproc
-
-;*******************************************************************************
-; RESET
-; resets the state for the active context
-.proc reset
-	lda #$00
-	sta numparams
-	sta numlines
-	sta mem::ctxbuffer
 	rts
 .endproc
 
@@ -77,40 +78,65 @@ numlines  = zp::ctx+11	; number of lines in the context
 ; - .C: set if there is no room to create a new context
 .export __ctx_push
 .proc __ctx_push
+	pha			; save the context type
+
 	lda activectx
-	beq @push		; no active context -> continue
+	beq @init		; no active context -> continue
 	cmp #MAX_CONTEXTS+1
 	bcc @save
 
 @err:	;sec
-	lda #ERR_STACK_OVERFLOW
+	pla			; clean stack
+	lda #ERR_STACK_OVERFLOW	; too many contexts
 	rts
+
 @save:	; save the active context's state
-	ldy #SIZEOF_CTX_HEADER-CTX_ITER_START-1
-@l0:	lda ctx+CTX_ITER_START,y
+	ldy #SIZEOF_CTX_HEADER-1
+@l0:	lda meta,y
 	sta (ctx),y
 	dey
 	bpl @l0
 
-@push:  inc activectx
-@ok:	jsr getctx
-	jsr reset
+@init:	inc activectx
 
-	; fall through to __ctx_rewind
+	; move ctx pointer to next context space
+	lda ctx
+	clc
+	adc #<CONTEXT_SIZE
+	lda ctx+1
+	adc #>CONTEXT_SIZE
+	sta ctx+1
+
+	; initialize metadata (numparams, line count, buffer)
+	lda #$00
+	sta numparams
+	sta numlines
+	sta mem::ctxbuffer
+
+	pla			; get context type
+	sta type
+
+	; fall through to __ctx_rewind to initialize cur pointer
 .endproc
 
 ;*******************************************************************************
 ; REWIND
-; Rewinds the context so that the cursor points to the beginning of its lines
+; Rewinds the context so that the cursor points to the beginning of its line
+; data
 .export  __ctx_rewind
 .proc __ctx_rewind
-	lda ctx
+	jsr __ctx_getdata	; get base address of context lines
+	stxy cur		; reset cursor to it
+
+	; init param buffer to end of ctx buffer (grows downward)
+	txa
 	clc
-	adc #SIZEOF_CTX_HEADER
-	sta cur
-	lda ctx+1
-	adc #$00
-	sta cur+1
+	adc #<(CONTEXT_SIZE-SIZEOF_CTX_HEADER-PARAM_LENGTH)
+	sta params
+	tya
+	adc #>(CONTEXT_SIZE-SIZEOF_CTX_HEADER-PARAM_LENGTH)
+	sta params+1
+
 	rts
 .endproc
 
@@ -121,11 +147,22 @@ numlines  = zp::ctx+11	; number of lines in the context
 ;  -.C: set if there are no contexts to pop
 .export __ctx_pop
 .proc __ctx_pop
-	lda activectx
-	beq @err
-	dec activectx
-@ok:	RETURN_OK
-@err:	RETURN_ERR ERR_STACK_UNDERFLOW
+	lda ctx
+	sec
+	sbc #<CONTEXT_SIZE
+	sta ctx
+	lda ctx+1
+	sbc #>CONTEXT_SIZE
+	sta ctx+1
+
+	; restore the ctx metadata (iter, iterend, cur, param, etc.)
+	ldy #SIZEOF_CTX_HEADER-1
+@l0:	lda (ctx),y
+	sta meta,y
+	dey
+	bpl @l0
+
+@done:	RETURN_OK
 .endproc
 
 ;*******************************************************************************
@@ -134,13 +171,17 @@ numlines  = zp::ctx+11	; number of lines in the context
 ; OUT:
 ;  - .XY: the address of the line returned
 ;  - .A: the # of bytes read (0 if EOF)
-;  - .C: set if there are no lines to read
+;  - .Z: set if EOF (0 bytes read)
+;  - .C: set on error
 ;  - mem::ctxbuffer: the line read from the context
 .export __ctx_getline
 .proc __ctx_getline
 @out=mem::ctxbuffer
 	; read until a newline or EOF
 	ldy #$00
+	lda (cur),y
+	beq @ok		; if line is empty -> we're done
+
 @read:	lda (cur),y
 	sta @out,y
 	beq @done
@@ -157,7 +198,8 @@ numlines  = zp::ctx+11	; number of lines in the context
 	bcc :+
 	inc cur+1
 :	ldxy #@out
-	RETURN_OK
+	tya		; restore # of bytes read
+@ok:	RETURN_OK
 .endproc
 
 ;*******************************************************************************
@@ -178,17 +220,9 @@ numlines  = zp::ctx+11	; number of lines in the context
 	beq @done
 	stx @cnt
 
-	; *16
-	dex
-	txa
-	asl
-	asl
-	asl
-	asl
-	adc params
+	lda params
 	sta @params
 	lda params+1
-	adc #$00
 	sta @params+1
 
 @l0:	ldy #$00
@@ -196,19 +230,22 @@ numlines  = zp::ctx+11	; number of lines in the context
 	sta (@buff),y
 	beq @next
 	iny
-	cpy #$10
+	cpy #PARAM_LENGTH
 	bcc @l1
 	RETURN_ERR ERR_PARAM_NAME_TOO_LONG
 
-@next:	tya
+@next:	; @buff += .Y+1
+	tya
 	sec		; +1
 	adc @buff
 	sta @buff
 	bcc :+
 	inc @buff+1
-:	lda @params
+
+:	; @params -= PARAM_LENGTH
+	lda @params
 	sec
-	sbc #$10
+	sbc #PARAM_LENGTH
 	sta @params
 	bcs :+
 	dec @params+1
@@ -250,6 +287,9 @@ numlines  = zp::ctx+11	; number of lines in the context
 @line=r0
 	stxy @line
 	ldy #$00
+	lda (@line),y
+	beq @ok		; don't store empty lines
+
 @write: lda (@line),y
 	beq @done
 	cmp #$0d
@@ -280,7 +320,39 @@ numlines  = zp::ctx+11	; number of lines in the context
 @done:	lda #$00
 	sta (cur),y	; terminate this line in the buffer
 	incw cur
-	inc numlines
+
+@ok:	inc numlines
+	RETURN_OK
+.endproc
+
+;*******************************************************************************
+; END
+; Closes the active context by writing a terminating 0 to its line data
+; and decrementing the activectx value.
+; Calling this tells the assembler to, for example, begin emitting assembly
+; instead of storing lines to the context.
+; This is called before the corresponding ctx::pop, which will completely
+; deactivate the context.
+; IN:
+;   - .A: the type of context we're closing
+; OUT:
+;   - .C: set on error
+.export __ctx_end
+.proc __ctx_end
+	; make sure the open context type matches the type we're closing
+	cmp type
+	beq :+
+	RETURN_ERR ERR_NO_MATCHING_SCOPE ; if scope types mismatch, return err
+
+:	lda activectx
+	bne :+
+	RETURN_ERR ERR_STACK_UNDERFLOW
+:	dec activectx
+
+	; write a terminating 0 to the context's buffer
+	ldy #$00
+	tya
+	sta (cur),y
 	RETURN_OK
 .endproc
 
@@ -297,17 +369,8 @@ numlines  = zp::ctx+11	; number of lines in the context
 @param=r0
 	stxy @param
 
-	; move pointer to next open param
-	lda params
-	sec
-	sbc #PARAM_LENGTH
-	sta params
-	bcs :+
-	dec params+1
-
-:	ldy #$00
-@copy:
-	lda (@param),y
+	ldy #$00
+@copy:  lda (@param),y
 	sta (params),y
 	beq @done
 	cmp #','
@@ -323,7 +386,16 @@ numlines  = zp::ctx+11	; number of lines in the context
 	lda #$00
 	sta (params),y	; 0-terminate
 
-	; get addr of rest of string for caller
+	; move pointer to next open param
+	; params -= PARAM_LENGTH
+	lda params
+	sec
+	sbc #PARAM_LENGTH
+	sta params
+	bcs :+
+	dec params+1
+
+:	; get addr of rest of string for caller
 	tya
 	clc
 	adc @param
@@ -342,42 +414,5 @@ numlines  = zp::ctx+11	; number of lines in the context
 .export __ctx_numlines
 .proc __ctx_numlines
 	lda numlines
-	rts
-.endproc
-
-;*******************************************************************************
-; GETCTX
-; Updates the zeropage context variables with values from the active context
-; OUT:
-;  - zp::ctx-zp::ctx+8: context variables for the active ctx
-.proc getctx
-	; get activectx LSB (0)
-	lda #<contexts
-	sta ctx
-
-	; get the MSB (ctx_id << 1)
-	ldx activectx
-	dex		; make id 0-based
-	txa
-	asl
-	ora #>contexts
-	sta ctx+1
-
-	; restore the context data
-	; get the ctx metadata (iter, iterend, cur, and param)
-	ldy #SIZEOF_CTX_HEADER-CTX_ITER_START-1
-@l0:	lda (ctx),y
-	sta ctx+CTX_ITER_START,y
-	dey
-	bpl @l0
-
-	; get address of param buffer (max address- will grow down)
-	lda ctx
-	adc #<(CONTEXT_SIZE)
-	sta params
-	lda ctx+1
-	adc #>(CONTEXT_SIZE)
-	sta params+1
-
 	rts
 .endproc
