@@ -210,7 +210,6 @@ macros:          .res $1400
 	lda #$00
 	sta @cnt
 @setparams:
-	SELECT_BANK "MACRO"
 
 	lda @cnt
 	cmp @numparams
@@ -256,12 +255,14 @@ macros:          .res $1400
 
 @paramsdone:
 	; assemble the macro line by line
-@asm:	ldxy @macro
+@asm:	; get macro address and
 	; save state that may be clobbered if we assemble another macro
-	txa
+	lda @macro
 	pha
-	tya
+	tax
+	lda @macro+1
 	pha
+	tay
 	lda @cnt
 	pha
 
@@ -272,7 +273,7 @@ macros:          .res $1400
 	rol @err		; set error if .C was set
 	sta @errcode		; store the error code
 
-	; restore state
+	; restore state (@cnt and @macro)
 	pla
 	sta @cnt
 	pla

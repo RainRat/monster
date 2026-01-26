@@ -1471,8 +1471,8 @@ __asm_tokenize_pass1 = __asm_tokenize
 ;*******************************************************************************
 ; HANDLE_REPEAT
 ; Handler for .endrep.
-; Generates the repeated assembly block defined between here and the previous
-; .endrep
+; Generates the repeated assembly block defined between here and the
+; corresponding .rep directive
 .proc handle_repeat
 @errcode=r0
 	; close the context
@@ -1564,10 +1564,31 @@ __asm_tokenize_pass1 = __asm_tokenize
 ;  - .C: set on error
 .proc handle_ctx
 	lda ctx::active
-	beq @ok		; no context active -> continue
+	beq @ok		; no contexts -> continue
 
 	ldxy #asmbuffer
+
+	; check if the active context is "open" or "closed"
+	; open:   write to context
+	; closed: write to parent context (nested) OR
+	;         return for assembler to handle (not nested)
+	cmp #$02
+	bcc @toplevel
+
+@nested:
+	lda ctx::open		; is context open?
+	bne @write_ctx		; if yes, write it to the context buffer
+	jsr ctx::write_parent	; write line to the PARENT's context buffer
+	jmp @ctx_done		; errcheck and return
+
+@toplevel:
+	lda ctx::open
+	beq @ok		; no context open -> continue
+
+@write_ctx:
 	jsr ctx::write	; copy the line to the context
+
+@ctx_done:
 	bcs @done
 	lda #$00	; flag that the context was handled
 	skw
@@ -2114,7 +2135,7 @@ __asm_include:
 	jsr expr::eval  ; get the number of times to repeat the code
 	bcs @ret	; error evaluating # of reps expression
 
-@ok:	stxy zp::ctx+repctx::iter_end
+@ok:	stxy zp::ctx+repctx::iter_end	; set number of iterations
 	jsr line::process_ws		; .Y=0
 	;ldy #$00
 	;lda (zp::line),y
@@ -2133,7 +2154,7 @@ __asm_include:
 
 @cont:	stxy zp::line	; update line pointer to after parameter
 
-	; initialize interator (number of repititons)
+	; initialize iterator (number of repititons)
 	lda #$00
 	sta zp::ctx+repctx::iter
 	sta zp::ctx+repctx::iter+1

@@ -36,9 +36,19 @@ contexts_top = mem::spareend
 
 ;*******************************************************************************
 .segment "BSS_NOINIT"
+
+;*******************************************************************************
+; ACTIVE
+; !0: a context is active
 .export __ctx_active
-__ctx_active:		; !0: a context is active
+__ctx_active:
 activectx: .byte 0
+
+;*******************************************************************************
+; OPEN
+; !0: current context is "closed" (ctx::end was called)
+.export __ctx_open
+__ctx_open: .byte 0
 
 ctx       = zp::ctx+0	; address of context
 
@@ -53,6 +63,8 @@ numparams = meta+8	; the number of parameters for the context
 type      = meta+9	; the type of the context
 numlines  = meta+10	; number of lines in the context
 
+parent    = meta+11	; address of parent context's line buffer
+
 .CODE
 ;*******************************************************************************
 ; INIT
@@ -60,13 +72,14 @@ numlines  = meta+10	; number of lines in the context
 .export  __ctx_init
 .proc __ctx_init
 	; init ctx pointer to base of contexts - CONTEXT_SIZE
-	lda #<(contexts-CONTEXT_SIZE)
+	lda #<(contexts-CONTEXT_SIZE+2)
 	sta ctx
-	lda #>(contexts-CONTEXT_SIZE)
+	lda #>(contexts-CONTEXT_SIZE+2)
 	sta ctx+1
 
 	lda #$00
-	sta activectx
+	sta activectx	; set activectx id to base (0)
+	sta __ctx_open	; no context open
 
 	rts
 .endproc
@@ -90,7 +103,13 @@ numlines  = meta+10	; number of lines in the context
 	lda #ERR_STACK_OVERFLOW	; too many contexts
 	rts
 
-@save:	; save the active context's state
+@save:	; set current context's cursor as new one's parent
+	lda cur
+	sta parent
+	lda cur+1
+	sta parent+1
+
+	; save the active context's state
 	ldy #SIZEOF_CTX_HEADER-1
 @l0:	lda meta,y
 	sta (ctx),y
@@ -98,6 +117,7 @@ numlines  = meta+10	; number of lines in the context
 	bpl @l0
 
 @init:	inc activectx
+	inc __ctx_open		; flag that a context is now open
 
 	; move ctx pointer to next context space
 	lda ctx
@@ -147,7 +167,11 @@ numlines  = meta+10	; number of lines in the context
 ;  -.C: set if there are no contexts to pop
 .export __ctx_pop
 .proc __ctx_pop
-	lda ctx
+	lda activectx
+	bne :+
+	RETURN_ERR ERR_STACK_UNDERFLOW
+
+:	lda ctx
 	sec
 	sbc #<CONTEXT_SIZE
 	sta ctx
@@ -162,6 +186,17 @@ numlines  = meta+10	; number of lines in the context
 	dey
 	bpl @l0
 
+	; if we modified this context (the previous one's parent), update the
+	; cursor with the modified value
+	lda parent
+	sta cur
+	lda parent+1
+	sta cur+1
+
+	lda #$01
+	sta __ctx_open	; mark context as open (again)
+
+	dec activectx
 @done:	RETURN_OK
 .endproc
 
@@ -274,6 +309,52 @@ numlines  = meta+10	; number of lines in the context
 .endproc
 
 ;*******************************************************************************
+; WRITE PARENT
+; Writes the given line to parent of the current context's line buffer
+; Comments are ignored to save space in the context buffer.
+; IN:
+;  - .XY: the line to write to the active context
+; OUT:
+;  - .XY: the address of the active context.
+;  - .C:  set on error
+.export __ctx_write_parent
+.proc __ctx_write_parent
+@line=r0
+	stxy @line
+	ldy #$00
+	lda (@line),y
+	beq @ok		; don't store empty lines
+
+@write: lda (@line),y
+	beq @done
+	cmp #$0d
+	beq @done
+	cmp #';'
+	beq @done
+	sta (parent),y
+
+	incw @line
+	incw parent
+	bne @write
+
+	; TODO: make sure ctx isn't full
+	;sec
+	;lda #ERR_CTX_FULL
+	;rts
+
+@err:	; sec
+	lda #ERR_LINE_TOO_LONG
+	rts
+
+@done:	lda #$00
+	sta (parent),y	; terminate this line in the buffer
+	incw parent
+
+@ok:	inc numlines
+	RETURN_OK
+.endproc
+
+;*******************************************************************************
 ; WRITE
 ; Writes the given line to the context at its current position
 ; Comments are ignored to save space in the context buffer.
@@ -344,15 +425,11 @@ numlines  = meta+10	; number of lines in the context
 	beq :+
 	RETURN_ERR ERR_NO_MATCHING_SCOPE ; if scope types mismatch, return err
 
-:	lda activectx
-	bne :+
-	RETURN_ERR ERR_STACK_UNDERFLOW
-:	dec activectx
-
-	; write a terminating 0 to the context's buffer
+:	; write a terminating 0 to the context's buffer
 	ldy #$00
 	tya
 	sta (cur),y
+	sta __ctx_open	; mark context as closed
 	RETURN_OK
 .endproc
 

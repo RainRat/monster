@@ -2,6 +2,7 @@
 .import __ctx_addparam
 .import __ctx_end
 .import __ctx_getparams
+.import __ctx_open
 .import __ctx_push
 .import __ctx_pop
 .import __ctx_getdata
@@ -9,6 +10,7 @@
 .import __ctx_numlines
 .import __ctx_rewind
 .import __ctx_write
+.import __ctx_write_parent
 .import __ctx_init
 
 ; the max number of lines stored in contexts for macros
@@ -28,16 +30,18 @@ CTX_MACRO  = 2
 .endscope
 
 .scope ctx
-	active    = __ctx_active
-	addparam  = __ctx_addparam
-	end       = __ctx_end
-	getparams = __ctx_getparams
-	init      = __ctx_init
-	numlines  = __ctx_numlines
-	push      = __ctx_push
-	pop       = __ctx_pop
-	getline   = __ctx_getline
-	getdata   = __ctx_getdata
-	write     = __ctx_write
-	rewind    = __ctx_rewind
+	active       = __ctx_active
+	addparam     = __ctx_addparam
+	end          = __ctx_end
+	getparams    = __ctx_getparams
+	init         = __ctx_init
+	numlines     = __ctx_numlines
+	push         = __ctx_push
+	open         = __ctx_open
+	pop          = __ctx_pop
+	getline      = __ctx_getline
+	getdata      = __ctx_getdata
+	write        = __ctx_write
+	write_parent = __ctx_write_parent
+	rewind       = __ctx_rewind
 .endscope
