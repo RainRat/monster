@@ -10,17 +10,37 @@
 .include "errors.inc"
 .include "macros.inc"
 .include "memory.inc"
+.include "ram.inc"
 .include "util.inc"
 .include "zeropage.inc"
+
+;*******************************************************************************
+.exportzp __ctx_numlines
+.export __ctx_push
+.export __ctx_rewind
+.export __ctx_pop
+.export __ctx_getline
+.export __ctx_getparams
+.export __ctx_getdata
+.export __ctx_write_parent
+.export __ctx_write
+.export __ctx_end
+.export __ctx_addparam
+
+.export __ctx_active
+.export __ctx_open
 
 ;*******************************************************************************
 ; CONSTANTS
 CONTEXT_SIZE = $200	; size of buffer per context
 PARAM_LENGTH = 16	; size of param (stored after the context data)
 MAX_PARAMS   = 4	; max params for a context
-MAX_CONTEXTS = 3	; $1000-$400 / $200
-
-SIZEOF_CTX_HEADER = 11
+.ifdef ultimem
+MAX_CONTEXTS = 8	; max nesting depth for contexts
+.else
+MAX_CONTEXTS = 3	; max nesting depth for contexts
+.endif
+SIZEOF_CTX_HEADER = 13
 
 ;*******************************************************************************
 ; CONTEXTS
@@ -28,33 +48,22 @@ SIZEOF_CTX_HEADER = 11
 ; assembly of a program.
 ; The number of contexts is limited by the size of a context (defined as
 ; CONTEXT_SIZE).
+.segment "CTX_BSS"
 .export contexts
-contexts     = mem::spare
-contexts_top = mem::spareend
-
-.assert $ff & contexts = 0, error, "contexts must be page-aligned"
+contexts: .res MAX_CONTEXTS*CONTEXT_SIZE
+contexts_top:
 
 ;*******************************************************************************
-.segment "BSS_NOINIT"
+; BSS
+.segment "SHAREBSS"
 
-;*******************************************************************************
-; ACTIVE
-; !0: a context is active
-.export __ctx_active
-__ctx_active:
-activectx: .byte 0
-
-;*******************************************************************************
-; OPEN
-; !0: current context is "closed" (ctx::end was called)
-.export __ctx_open
-__ctx_open: .byte 0
-
-ctx       = zp::ctx+0	; address of context
+__ctx_active: .byte 0	; !0: a context is active
+__ctx_open:   .byte 0	; !0: current context is "closed" (ctx::end was called)
 
 ;*******************************************************************************
 ; CTX META
-meta      = zp::ctx+2
+ctx       = zp::ctx+0	; address of context
+meta      = zp::ctx+2	; context metadata base
 iter      = meta+0	; (REP) iterator's current value (set externally)
 iterend   = meta+2	; (REP) iterator's end value (set externally)
 cur       = meta+4	; cursor to current ctx data
@@ -62,8 +71,9 @@ params    = meta+6	; address of params (grows down from CONTEXT+$200-PARAM_LENGT
 numparams = meta+8	; the number of parameters for the context
 type      = meta+9	; the type of the context
 numlines  = meta+10	; number of lines in the context
-
 parent    = meta+11	; address of parent context's line buffer
+
+__ctx_numlines = numlines
 
 .CODE
 ;*******************************************************************************
@@ -74,26 +84,74 @@ parent    = meta+11	; address of parent context's line buffer
 	; init ctx pointer to base of contexts - CONTEXT_SIZE
 	lda #<(contexts-CONTEXT_SIZE+2)
 	sta ctx
+	clc
+	adc #SIZEOF_CTX_HEADER
+	sta cur
+
 	lda #>(contexts-CONTEXT_SIZE+2)
 	sta ctx+1
+	adc #$00
+	sta cur+1
 
 	lda #$00
-	sta activectx	; set activectx id to base (0)
+	sta __ctx_active	; set activectx id to base (0)
 	sta __ctx_open	; no context open
 
 	rts
 .endproc
 
 ;*******************************************************************************
+; Flat memory procedure mappings (FE3 only)
+.if .defined(vic20) && .defined(fe3)
+__ctx_push         = push
+__ctx_rewind       = rewind
+__ctx_pop          = pop
+__ctx_getline      = getline
+__ctx_getparams    = getparams
+__ctx_getdata      = getdata
+__ctx_write_parent = write_parent
+__ctx_write        = write
+__ctx_end          = end
+__ctx_addparam     = addparam
+
+is_whitespace = util::is_whitespace
+
+;*******************************************************************************
+; Banked memory mappings
+.else
+__ctx_push:         JUMP FINAL_BANK_CTX, push
+__ctx_rewind:       JUMP FINAL_BANK_CTX, rewind
+__ctx_pop:          JUMP FINAL_BANK_CTX, pop
+__ctx_getline:      JUMP FINAL_BANK_CTX, getline
+__ctx_getparams:    JUMP FINAL_BANK_CTX, getparams
+__ctx_getdata:      JUMP FINAL_BANK_CTX, getdata
+__ctx_write_parent: JUMP FINAL_BANK_CTX, write_parent
+__ctx_write:	    JUMP FINAL_BANK_CTX, write
+__ctx_end:	    JUMP FINAL_BANK_CTX, end
+__ctx_addparam:     JUMP FINAL_BANK_CTX, addparam
+
+.segment "CTX"
+;*******************************************************************************
+; IS WHITESPACE
+; Checks if the given character is a whitespace character
+; IN:
+;  - .A: the character to test
+; OUT:
+;  - .Z: set if if the character in .A is whitespace
+.proc is_whitespace
+	.include "inline/is_ws.asm"
+.endproc
+.endif
+
+;*******************************************************************************
 ; PUSH
 ; Saves the current context and beings a new one
 ; OUT:
 ; - .C: set if there is no room to create a new context
-.export __ctx_push
-.proc __ctx_push
-	pha			; save the context type
+.proc push
+	sta type
 
-	lda activectx
+	lda __ctx_active
 	beq @init		; no active context -> continue
 	cmp #MAX_CONTEXTS+1
 	bcc @save
@@ -103,20 +161,25 @@ parent    = meta+11	; address of parent context's line buffer
 	lda #ERR_STACK_OVERFLOW	; too many contexts
 	rts
 
-@save:	; set current context's cursor as new one's parent
-	lda cur
-	sta parent
+@save:	lda cur
+	pha
 	lda cur+1
-	sta parent+1
+	pha
 
 	; save the active context's state
 	ldy #SIZEOF_CTX_HEADER-1
 @l0:	lda meta,y
-	sta (ctx),y
+	STOREB_Y ctx
 	dey
 	bpl @l0
 
-@init:	inc activectx
+	; set current context's cursor as new one's parent
+	pla
+	sta parent+1
+	pla
+	sta parent
+
+@init:	inc __ctx_active
 	inc __ctx_open		; flag that a context is now open
 
 	; move ctx pointer to next context space
@@ -133,9 +196,6 @@ parent    = meta+11	; address of parent context's line buffer
 	sta numlines
 	sta mem::ctxbuffer
 
-	pla			; get context type
-	sta type
-
 	; fall through to __ctx_rewind to initialize cur pointer
 .endproc
 
@@ -143,8 +203,7 @@ parent    = meta+11	; address of parent context's line buffer
 ; REWIND
 ; Rewinds the context so that the cursor points to the beginning of its line
 ; data
-.export  __ctx_rewind
-.proc __ctx_rewind
+.proc rewind
 	jsr __ctx_getdata	; get base address of context lines
 	stxy cur		; reset cursor to it
 
@@ -165,9 +224,8 @@ parent    = meta+11	; address of parent context's line buffer
 ; Restores the last PUSH'ed context
 ; OUT:
 ;  -.C: set if there are no contexts to pop
-.export __ctx_pop
-.proc __ctx_pop
-	lda activectx
+.proc pop
+	lda __ctx_active
 	bne :+
 	RETURN_ERR ERR_STACK_UNDERFLOW
 
@@ -179,6 +237,11 @@ parent    = meta+11	; address of parent context's line buffer
 	sbc #>CONTEXT_SIZE
 	sta ctx+1
 
+	lda parent
+	pha
+	lda parent+1
+	pha
+
 	; restore the ctx metadata (iter, iterend, cur, param, etc.)
 	ldy #SIZEOF_CTX_HEADER-1
 @l0:	lda (ctx),y
@@ -188,16 +251,16 @@ parent    = meta+11	; address of parent context's line buffer
 
 	; if we modified this context (the previous one's parent), update the
 	; cursor with the modified value
-	lda parent
-	sta cur
-	lda parent+1
+	pla
 	sta cur+1
+	pla
+	sta cur
 
 	lda #$01
 	sta __ctx_open	; mark context as open (again)
 
-	dec activectx
-@done:	RETURN_OK
+	dec __ctx_active
+@done:  RETURN_OK
 .endproc
 
 ;*******************************************************************************
@@ -206,18 +269,16 @@ parent    = meta+11	; address of parent context's line buffer
 ; OUT:
 ;  - .XY: the address of the line returned
 ;  - .A: the # of bytes read (0 if EOF)
-;  - .Z: set if EOF (0 bytes read)
 ;  - .C: set on error
 ;  - mem::ctxbuffer: the line read from the context
-.export __ctx_getline
-.proc __ctx_getline
+.proc getline
 @out=mem::ctxbuffer
 	; read until a newline or EOF
 	ldy #$00
-	lda (cur),y
+	LOADB_Y cur
 	beq @ok		; if line is empty -> we're done
 
-@read:	lda (cur),y
+@read:	LOADB_Y cur
 	sta @out,y
 	beq @done
 	iny
@@ -245,8 +306,7 @@ parent    = meta+11	; address of parent context's line buffer
 ; OUT:
 ;  - .A: the number of parameters
 ;  - (.XY): the updated buffer filled with 0-separated params
-.export __ctx_getparams
-.proc __ctx_getparams
+.proc getparams
 @buff=r0
 @cnt=r2
 @params=r3
@@ -261,7 +321,7 @@ parent    = meta+11	; address of parent context's line buffer
 	sta @params+1
 
 @l0:	ldy #$00
-@l1:	lda (@params),y
+@l1:	LOADB_Y @params
 	sta (@buff),y
 	beq @next
 	iny
@@ -296,8 +356,7 @@ parent    = meta+11	; address of parent context's line buffer
 ; returns the address of the data for the active context.
 ; OUT:
 ;  - .XY: the address of the data for the current context
-.export __ctx_getdata
-.proc __ctx_getdata
+.proc getdata
 	lda ctx
 	clc
 	adc #SIZEOF_CTX_HEADER
@@ -317,10 +376,10 @@ parent    = meta+11	; address of parent context's line buffer
 ; OUT:
 ;  - .XY: the address of the active context.
 ;  - .C:  set on error
-.export __ctx_write_parent
-.proc __ctx_write_parent
+.proc write_parent
 @line=r0
 	stxy @line
+
 	ldy #$00
 	lda (@line),y
 	beq @ok		; don't store empty lines
@@ -331,7 +390,7 @@ parent    = meta+11	; address of parent context's line buffer
 	beq @done
 	cmp #';'
 	beq @done
-	sta (parent),y
+	STOREB_Y parent
 
 	incw @line
 	incw parent
@@ -342,12 +401,8 @@ parent    = meta+11	; address of parent context's line buffer
 	;lda #ERR_CTX_FULL
 	;rts
 
-@err:	; sec
-	lda #ERR_LINE_TOO_LONG
-	rts
-
 @done:	lda #$00
-	sta (parent),y	; terminate this line in the buffer
+	STOREB_Y parent	; terminate this line in the buffer
 	incw parent
 
 @ok:	inc numlines
@@ -363,8 +418,7 @@ parent    = meta+11	; address of parent context's line buffer
 ; OUT:
 ;  - .XY: the address of the active context.
 ;  - .C:  set on error
-.export __ctx_write
-.proc __ctx_write
+.proc write
 @line=r0
 	stxy @line
 	ldy #$00
@@ -377,7 +431,7 @@ parent    = meta+11	; address of parent context's line buffer
 	beq @done
 	cmp #';'
 	beq @done
-	sta (cur),y
+	STOREB_Y cur
 
 	incw @line
 
@@ -399,7 +453,7 @@ parent    = meta+11	; address of parent context's line buffer
 	rts
 
 @done:	lda #$00
-	sta (cur),y	; terminate this line in the buffer
+	STOREB_Y cur	; terminate this line in the buffer
 	incw cur
 
 @ok:	inc numlines
@@ -409,7 +463,7 @@ parent    = meta+11	; address of parent context's line buffer
 ;*******************************************************************************
 ; END
 ; Closes the active context by writing a terminating 0 to its line data
-; and decrementing the activectx value.
+; and decrementing the __ctx_active value.
 ; Calling this tells the assembler to, for example, begin emitting assembly
 ; instead of storing lines to the context.
 ; This is called before the corresponding ctx::pop, which will completely
@@ -418,8 +472,7 @@ parent    = meta+11	; address of parent context's line buffer
 ;   - .A: the type of context we're closing
 ; OUT:
 ;   - .C: set on error
-.export __ctx_end
-.proc __ctx_end
+.proc end
 	; make sure the open context type matches the type we're closing
 	cmp type
 	beq :+
@@ -428,7 +481,7 @@ parent    = meta+11	; address of parent context's line buffer
 :	; write a terminating 0 to the context's buffer
 	ldy #$00
 	tya
-	sta (cur),y
+	STOREB_Y cur
 	sta __ctx_open	; mark context as closed
 	RETURN_OK
 .endproc
@@ -441,18 +494,17 @@ parent    = meta+11	; address of parent context's line buffer
 ;  context
 ; OUT:
 ;  - .XY: the rest of the string after the parameter that was extracted
-.export __ctx_addparam
-.proc __ctx_addparam
+.proc addparam
 @param=r0
 	stxy @param
 
 	ldy #$00
 @copy:  lda (@param),y
-	sta (params),y
+	STOREB_Y params
 	beq @done
 	cmp #','
 	beq @done
-	jsr util::is_whitespace
+	jsr is_whitespace
 	beq @done
 	iny
 	cpy #PARAM_LENGTH
@@ -461,7 +513,7 @@ parent    = meta+11	; address of parent context's line buffer
 
 @done:	inc numparams
 	lda #$00
-	sta (params),y	; 0-terminate
+	STOREB_Y params	; 0-terminate
 
 	; move pointer to next open param
 	; params -= PARAM_LENGTH
@@ -481,15 +533,4 @@ parent    = meta+11	; address of parent context's line buffer
 	adc #$00
 	tay
 	RETURN_OK
-.endproc
-
-;*******************************************************************************
-; NUMLINES
-; Returns the length (in lines) of the context
-; OUT:
-;  - .A: the number of lines in the context
-.export __ctx_numlines
-.proc __ctx_numlines
-	lda numlines
-	rts
 .endproc

@@ -77,23 +77,29 @@ segments = {
 		blk3 = Ram(22),
 		blk5 = Rom(11),
 	),
-	"VSCREEN": Bank(
+	"CTX": Bank(
 		blk1 = Ram(23),
 		blk2 = Ram(24),
 		blk3 = Ram(25),
 		blk5 = Rom(12),
 	),
+	"VSCREEN": Bank(
+		blk1 = Ram(26),
+		blk2 = Ram(27),
+		blk3 = Ram(28),
+		blk5 = Rom(13),
+	),
 	"VSYS": Bank(
 		blk1 = Ram(30),	# $0000-$2000    (virtual internal)
 		blk2 = Ram(34), # $9000-$a000    (virutal I/O)
 		blk3 = Ram(29), # backup for debugger RAM
-		blk5 = Rom(13),
+		blk5 = Rom(14),
 	),
 	"FTXT": Bank(
-		blk1 = Rom(15),
-		blk2 = Rom(16),
-		blk3 = Rom(17),
-		blk5 = Rom(18),
+		blk1 = Rom(16),
+		blk2 = Rom(17),
+		blk3 = Rom(18),
+		blk5 = Rom(19),
 	),
 	# bank 31-34 stores user's program
 	"USER": Bank(

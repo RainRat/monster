@@ -1,3 +1,5 @@
+.importzp __ctx_numlines
+
 .import __ctx_active
 .import __ctx_addparam
 .import __ctx_end
@@ -7,7 +9,6 @@
 .import __ctx_pop
 .import __ctx_getdata
 .import __ctx_getline
-.import __ctx_numlines
 .import __ctx_rewind
 .import __ctx_write
 .import __ctx_write_parent

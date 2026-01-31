@@ -243,7 +243,8 @@ cart_start:
 	bne @recover
 .endif
 
-@init:	jsr src::init
+@init:
+	jsr src::init
 	jsr src::new
 	jsr dbgi::initonce
 	jsr asm::reset

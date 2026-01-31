@@ -1474,36 +1474,50 @@ __asm_tokenize_pass1 = __asm_tokenize
 ; Generates the repeated assembly block defined between here and the
 ; corresponding .rep directive
 .proc handle_repeat
+@itername=$100
 @errcode=r0
-	; close the context
+	lda zp::verify
+	beq :+
+	RETURN_OK
+
+:	; close the context
 	lda #CTX_REPEAT
 	jsr ctx::end
 	bcs @err
 
-	; before rewinding, move debug line back to line we're repeating
+	; if the number of iterations is zero, we're done
+	iszero zp::ctx+repctx::iter_end
+	beq @done
+
+	; rewind context to first line and debug-info to that line too
 	jsr rewind_ctx_dbg
+
+	; load the parameter (iterator name)
+	ldxy #$100
+	jsr ctx::getparams
 
 	; don't define iterator label until pass 2
 	lda zp::pass
 	cmp #$01
-	beq @l1
-	bne :+			; skip first rewind
+	beq @l1			; if pass 1 -> skip label definition/update
+	bne :+			; branch always (skip first rewind)
 
 ;--------------------------------------
 ; define a label with the value of the iteration (pass 2 only)
 @l0:	jsr rewind_ctx_dbg
 
-:	lda zp::ctx+repctx::iter
-	sta zp::label_value
-	lda zp::ctx+repctx::iter+1
-	sta zp::label_value+1
-	ldxy zp::ctx+repctx::params
+:	ldxy #@itername
 
 	; iteration 0: add a symbol for the iterator
 	;              this will error if the symbol is already defined
 	; iteration 1: "set" (replace) the iterator's value
-	ora zp::label_value	; set .Z if label_value is 0
+	lda zp::ctx+repctx::iter
+	sta zp::label_value
+	lda zp::ctx+repctx::iter+1
+	sta zp::label_value+1
+	ora zp::label_value
 	bne @set
+
 	lda #$01		; define label as 16 bit
 	jsr add_label		; first iteration- add instead of set
 	jmp :+
@@ -1514,8 +1528,9 @@ __asm_tokenize_pass1 = __asm_tokenize
 ; assemble all lines for the iteration
 @l1:	incw __asm_linenum
 	jsr ctx::getline	; get a line to assemble
-	beq @next		; if at the end, continue to next iteration
 	bcs @err
+	cmp #$00
+	beq @next		; if at the end, continue to next iteration
 
 	; assemble line read from context
 	lda #FINAL_BANK_MAIN	; bank doesn't matter for ctx
@@ -1530,7 +1545,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	bne @l0
 
 	; cleanup iterator label and context
-	ldxy zp::ctx+repctx::params
+	ldxy #@itername
 	jsr lbl::del	; delete the iterator label
 
 @done:	jmp ctx::pop	; pop the context
@@ -1543,7 +1558,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 .proc rewind_ctx_dbg
 @tmp=r0
 	; before rewinding, move debug line back to line we're repeating
-	jsr ctx::numlines	; get # of lines we're rewinding
+	lda ctx::numlines	; get # of lines we're rewinding
 	sta @tmp
 	lda __asm_linenum
 	sec
@@ -2129,6 +2144,9 @@ __asm_include:
 ;   .endrep
 ;   will produce 10 'asl's
 .proc repeat
+	lda zp::verify
+	bne @done		; don't handle when NOT verifying
+
 	lda #CTX_REPEAT
 	jsr ctx::push	; push a new context
 
@@ -2139,6 +2157,11 @@ __asm_include:
 	jsr line::process_ws		; .Y=0
 	;ldy #$00
 	;lda (zp::line),y
+
+	; initialize iterator (number of repititons)
+	sty zp::ctx+repctx::iter
+	sty zp::ctx+repctx::iter+1
+
 	cmp #','
 	beq @getparam
 	RETURN_ERR ERR_UNEXPECTED_CHAR ; comma must follow the # of reps
@@ -2146,18 +2169,12 @@ __asm_include:
 @getparam:
 	; get the name of the parameter
 	jsr line::incptr
-	ldy #$00
 @saveparam:
 	ldxy zp::line
 	jsr ctx::addparam
 	bcs @ret	; error adding parameter
 
 @cont:	stxy zp::line	; update line pointer to after parameter
-
-	; initialize iterator (number of repititons)
-	lda #$00
-	sta zp::ctx+repctx::iter
-	sta zp::ctx+repctx::iter+1
 
 @done:	clc		; ok
 @ret:	rts
