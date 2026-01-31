@@ -12,6 +12,7 @@
 .include "memory.inc"
 .include "ram.inc"
 .include "util.inc"
+.include "target.inc"
 .include "zeropage.inc"
 
 ;*******************************************************************************
@@ -204,8 +205,8 @@ __ctx_addparam:     JUMP FINAL_BANK_CTX, addparam
 ; Rewinds the context so that the cursor points to the beginning of its line
 ; data
 .proc rewind
-	jsr __ctx_getdata	; get base address of context lines
-	stxy cur		; reset cursor to it
+	jsr getdata	; get base address of context lines
+	stxy cur	; reset cursor to it
 
 	; init param buffer to end of ctx buffer (grows downward)
 	txa
