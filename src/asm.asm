@@ -1572,7 +1572,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 .endproc
 
 ;*******************************************************************************
-; HANDLE_CTX
+; HANDLE CTX
 ; If a context is active, copies the contents of the asmbuffer to it
 ; OUT:
 ;  - .Z: set if the line was handled by this handler
