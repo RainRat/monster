@@ -205,7 +205,7 @@ __ctx_addparam:     JUMP FINAL_BANK_CTX, addparam
 ; Rewinds the context so that the cursor points to the beginning of its line
 ; data
 .proc rewind
-	jsr getdata	; get base address of context lines
+	jsr getdataaddr	; get base address of context lines
 	stxy cur	; reset cursor to it
 
 	; init param buffer to end of ctx buffer (grows downward)
@@ -354,10 +354,41 @@ __ctx_addparam:     JUMP FINAL_BANK_CTX, addparam
 
 ;*******************************************************************************
 ; GETDATA
+; Copies the data for the current context to mem::spare
+; OUT:
+;  - mem::spare: the contents of the current context
+;  - .XY:        address of data (mem::spare)
+.proc getdata
+@src=r0
+@dst=r2
+@prev=r4
+	jsr getdataaddr
+	stxy @src
+	ldxy #mem::spare
+	stxy @dst
+
+	ldy #$00
+	sty @prev
+@l0:	lda (@src),y
+	sta (@dst),y
+	tax
+	ora @prev	; check if we encountered 2 consecutive 0's
+	beq @done	; if yes, we're at the end
+	stx @prev	; save character we just read as previous
+	incw @src
+	incw @dst
+	bne @l0		; branch always
+
+@done:	ldxy #mem::spare
+	rts
+.endproc
+
+;*******************************************************************************
+; GETDATAADDR
 ; returns the address of the data for the active context.
 ; OUT:
 ;  - .XY: the address of the data for the current context
-.proc getdata
+.proc getdataaddr
 	lda ctx
 	clc
 	adc #SIZEOF_CTX_HEADER

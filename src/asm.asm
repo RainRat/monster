@@ -2261,9 +2261,11 @@ __asm_include:
 
 	; get the context data (the macro definition)
 	pha
-	ldxy #$100
-	stxy r0
 	jsr ctx::getdata
+	lda #<$100
+	sta r0
+	lda #>$100
+	sta r0+1
 	pla
 
 	; create the macro
