@@ -90,16 +90,17 @@ MAX_CONTEXTS = 3 ; max nesting depth for contexts (activated by .MAC, .REP, etc)
 ; ASM INFORMATION
 ; These zeropage locations are filled with information after each call to
 ; asm::tokenize
-indirect   = zp::asmtmp   ; 1=indirect, 0=absolute
-indexed    = zp::asmtmp+1 ; 1=x-indexed, 2=y-indexed, 0=not indexed
-immediate  = zp::asmtmp+2 ; 1=immediate, 0=not immediate
-operandsz  = zp::asmtmp+3 ; size of the operand (in bytes) $ff indicates 1 or 2 byttes
-cc         = zp::asmtmp+4
-resulttype = zp::asmtmp+5 ; how to format line (ASM_COMMENT, ASM_OPCODE, etc.)
-opcode     = zp::asmtmp+6 ; opcode (if there was one)
-operand    = zp::asmtmp+7 ; operand (if there was one)
+indirect_hint   = zp::asmtmp   ; 1=indirect, 0=absolute
+indexed         = zp::asmtmp+1 ; 1=x-indexed, 2=y-indexed, 0=not indexed
+immediate       = zp::asmtmp+2 ; 1=immediate, 0=not immediate
+operandsz       = zp::asmtmp+3 ; size of the operand (in bytes)
+			       ; $ff indicates 1 or 2 byttes
+cc              = zp::asmtmp+4
+resulttype      = zp::asmtmp+5 ; how to format line (ASM_COMMENT, ASM_OPCODE, etc.)
+opcode          = zp::asmtmp+6 ; opcode (if there was one)
+operand         = zp::asmtmp+7 ; operand (if there was one)
 
-savereg    = zp::text
+savereg         = zp::text
 
 SEG_CODE = 1	; flag for CODE segment
 SEG_BSS  = 2	; flag for BSS segment (all data must be 0, PC not updated)
@@ -623,7 +624,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	beq @ret0		; context was handled
 
 @noctx:	ldy #$00
-	sty indirect
+	sty indirect_hint
 	sty indexed
 	sty operandsz
 	sty immediate
@@ -739,8 +740,9 @@ __asm_tokenize_pass1 = __asm_tokenize
 	; not immediate, assume expressions are 2 bytes
 	cmp #'('
 	bne @evalexpr
-	inc indirect
-	jsr line::incptr
+	jsr is_indirect
+	bne @evalexpr
+	inc indirect_hint	; might be dealing with indirect opcode
 
 ; all chars not part of expression have been processed, evaluate the expression
 @evalexpr:
@@ -766,7 +768,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 :	sec
 	rts			; return error
 
-@eval:  jsr expr::eval
+@eval:	jsr expr::eval
 	bcs @evalfailed		; return error, eval failed
 	skw			; skip force address size
 @eval_anon_done:
@@ -789,12 +791,13 @@ __asm_tokenize_pass1 = __asm_tokenize
 ; ',X' or ',Y' to conclude if this is indirect or indexed addressing
 @cont:	jsr line::process_ws	; .Y=0
 	;ldy #$00
-	lda indirect		; is indirect flagged? (we saw a '(' earlier)?
+	lda indirect_hint	; is indirect flagged? (we saw a '(' earlier)?
 	beq @index		; if not, skip to absolute
 
-; handle indirect. May be x pre-indexed, indirect or indirect: ',X)' or ')'
+; handle indirect hint. May be x pre-indexed, indirect or indirect: ',X)' or ')'
+; if no indexing, or opcode is not JMP, not indirect
 @rparen:
-; look for closing paren or ",X"
+	; look for indexing or ",X"
 	lda (zp::line),y	; get first char
 	cmp #','		; is it a ','?
 	bne @rparen_noprex	; if not, only valid string is a plain ')'
@@ -803,7 +806,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	cmp #'x'		; is it an .X?
 	bne @unexpected_char
 
-	jsr line::nextch		; get next char after ",X"
+	jsr line::nextch	; get next char after ",X"
 	inc indexed		; inc once to flag X-indexed
 	cmp #')'
 	beq @finishline		; if ')', continue
@@ -875,11 +878,11 @@ __asm_tokenize_pass1 = __asm_tokenize
 	; JMP (xxxx) has a different opcode than JMP
 	lda opcode
 	cmp #$40
-	bne @getbbb	; if not $40, not a JMP
-	lda cc		; if cc is not 00,
-	bne @getbbb	; not a JMP
-	lda indirect	; get indirect flag
-	beq @jmpabs	; if not set, this is an ABS JMP
+	bne @getbbb		; if not $40, not a JMP
+	lda cc			; if cc is not 00,
+	bne @getbbb		; not a JMP
+	lda indirect_hint	; get indirect flag
+	beq @jmpabs		; if not set, this is an ABS JMP
 
 @jmpind:
 	cpx #ABS_IND	; only abs-indirect is supported for JMP (XXXX)
@@ -1234,7 +1237,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 @zp:	lda immediate
 	bne @imm
 	ldx indexed
-	lda indirect
+	lda indirect_hint
 	beq :+
 	dex
 	bpl :+
@@ -1244,15 +1247,15 @@ __asm_tokenize_pass1 = __asm_tokenize
 	RETURN_ERR ERR_ILLEGAL_ADDRMODE
 :	txa
 	clc
-	adc indirect
-	adc indirect
+	adc indirect_hint
+	adc indirect_hint
 	adc #ZEROPAGE
 @ok:	RETURN_OK
 
 ;------------------
 @abs:   lda immediate
 	bne @oversized	; error- immediate abs illegal (operand too large)
-	lda indirect
+	lda indirect_hint
 	beq :+
 	lda indexed
 	bne @err 	; error- indirect absolute doesn't support indexing
@@ -1263,7 +1266,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	adc #ABS
 	RETURN_OK
 
-@imm:	lda indirect
+@imm:	lda indirect_hint
 	bne @illegalmode ; error- immediate doesn't support indirection
 	lda indexed
 	bne @illegalmode ; error- immediate doesn't support indexing
@@ -1392,6 +1395,55 @@ __asm_tokenize_pass1 = __asm_tokenize
 	bcc @l0
 
 @err:	RETURN_ERR ERR_ILLEGAL_OPCODE
+.endproc
+
+;*******************************************************************************
+; IS INDIRECT
+; Checks if the contents of zp::line represent an indirect operand
+; IN:
+;   - zp::line: the operand to check
+; OUT:
+;   - .Z: set if the operand IS indirect (completely enclosed in a parens)
+.proc is_indirect
+@cnt=r0
+@len=r1
+	ldy #$00
+	sty @cnt
+	lda (zp::line),y
+	cmp #'('
+	bne @no		; if doesn't start with a '(', not indirect
+
+@l0:	; check if opening paren is closed before end of line
+	lda (zp::line),y
+	jsr islineterminator
+	beq @no		; at the effective end of line and unbalanced
+	cmp #'('
+	bne :+
+	inc @cnt
+:	cmp #')'
+	bne :+
+	dec @cnt
+	beq @closed
+:	iny
+	bne @l0		; branch always
+
+@closed:
+	; parens are balanced, if there are any more '(' or ')' the expression
+	; is not indirect or invalid (unbalanced) respectively
+	iny
+@l1:	lda (zp::line),y
+	jsr islineterminator
+	beq @yes
+
+	cmp #'('
+	beq @no
+	cmp #')'
+	beq @no
+	iny
+	bne @l1
+
+@no:	lda #$ff
+@yes:	rts
 .endproc
 
 ;*******************************************************************************

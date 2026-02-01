@@ -22,6 +22,7 @@ SLASH = SPECIAL_CHARS_START+2
 ;  - .YX: the string to get the length of
 ; OUT:
 ;  - .A: the length of the string
+;  - .Y: the length of the string
 ;  - .Z: set if the string is empty (length 0)
 .export __str_len
 .proc __str_len

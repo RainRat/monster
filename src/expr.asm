@@ -862,11 +862,8 @@ operands: .res $100
 	lda (zp::line),y
 	cmp #')'
 	beq @done
-	RETURN_ERR ERR_LABEL_UNDEFINED
-
-@unexpected_value:
 	lda #ERR_UNEXPECTED_CHAR	; unexpected operands still on stack
-	;sec
+	sec
 @ret:	rts
 
 ;------------------
