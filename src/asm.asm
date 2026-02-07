@@ -82,7 +82,7 @@
 
 .include "ram.inc"
 
-;******************************************************************************
+;*******************************************************************************
 MAX_IFS      = 4 ; max nesting depth for .if/.endif
 MAX_CONTEXTS = 3 ; max nesting depth for contexts (activated by .MAC, .REP, etc)
 
@@ -94,7 +94,7 @@ indirect_hint   = zp::asmtmp   ; 1=indirect, 0=absolute
 indexed         = zp::asmtmp+1 ; 1=x-indexed, 2=y-indexed, 0=not indexed
 immediate       = zp::asmtmp+2 ; 1=immediate, 0=not immediate
 operandsz       = zp::asmtmp+3 ; size of the operand (in bytes)
-			       ; $ff indicates 1 or 2 byttes
+			       ; $ff indicates 1 or 2 bytes
 cc              = zp::asmtmp+4
 resulttype      = zp::asmtmp+5 ; how to format line (ASM_COMMENT, ASM_OPCODE, etc.)
 opcode          = zp::asmtmp+6 ; opcode (if there was one)
@@ -539,7 +539,6 @@ __asm_tokenize_pass1 = __asm_tokenize
 ;  - .C: set if an error occurred
 .export __asm_tokenize
 .proc __asm_tokenize
-@tmp=r0
 	; copy the line to the main RAM bank and make it uppercase (assembly is
 	; case-insensitive)
 	stxy zp::bankaddr0
@@ -560,13 +559,13 @@ __asm_tokenize_pass1 = __asm_tokenize
 ; check if we're in an .IF (FALSE) and if we are, return
 @checkifs:
 	lda ifstacksp
-	beq @assemble	; no active .IF
+	beq assemble_with_ctx	; no active .IF
 	ldx #$00
 :	inx
 	lda ifstack,x
 	beq @if_false
 	cpx ifstacksp
-	beq @assemble
+	beq assemble_with_ctx
 	bne :-
 
 @if_false:
@@ -575,23 +574,29 @@ __asm_tokenize_pass1 = __asm_tokenize
 	jsr is_directive
 	bcs @noasm		; if not directive continue
 	jsr getdirective
-	bcs :+			; if error, return it
+	bcs @ret		; if error, return it
+	ldx #ASM_DIRECTIVE
+	stx resulttype
 	cmp #DIRECTIVE_ENDIF
-	beq @exec_directive
-	cmp #DIRECTIVE_ELSE
-	beq @exec_directive
+	bne :+
+	jmp do_endif		; handle .ENDIF
+:	cmp #DIRECTIVE_ELSE
+	bne @noasm
+	jmp do_else		; handle .ELSE
 @noasm:	lda #ASM_NONE
 	clc
-:	rts
+@ret:	rts
+.endproc
 
-;---------------------------------------
+;*******************************************************************************
+; ASSEMBLE WITH CTX
 ; assembly entrypoint for successive single-line assembly
 ; if a label is found, for example, we will reenter here after adding the label
 ; to assemble any opcode, directive, etc. that may still be in the line
-@assemble:
+.proc assemble_with_ctx
 	ldy #$00
 	lda (zp::line),y
-	beq @noasm
+	beq @ret		; return with .A=0 (ASM_NONE)
 	jsr line::process_ws
 
 ; check if the line is a full line comment
@@ -609,7 +614,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	jsr is_directive
 	bcs @ctx		; if not directive -> continue
 	jsr getdirective
-	bcs @ret0		; return error
+	bcs @ret		; return error
 
 @exec_directive:
 	lda #ASM_DIRECTIVE
@@ -620,9 +625,27 @@ __asm_tokenize_pass1 = __asm_tokenize
 ; after directives, handle context if any. this is used for things like an
 ; active macro definition (the lines between .mac and .endmac)
 @ctx:	jsr handle_ctx
-	bcs @ret0		; error
-	beq @ret0		; context was handled
+	beq @ret		; context was handled
+	bcc assemble
+@ret:	rts
+.endproc
 
+;*******************************************************************************
+; ASSEMBLE
+; This is the entrypoint for assembly after checking comments, directives, and
+; the state of the .IF stack.  That is, this entrypoint will always assemble
+; the input line regardless of overall assembly state.
+; This is used to assemble lines for open contexts (e.g. .REP)
+; asm::tokenize does not complete assembly when a context is open; it simply
+; stores the line to the current context.
+; IN:
+;  - zp::line: string to assemble (assumed to be in shared RAM)
+;  - zp::asmresult: pointer to the location to assemble the instruction
+; OUT:
+;  - .A: the type of the result e.g. ASM_OPCODE or the error code
+;  - .C: set if an error occurred
+.proc assemble
+@tmp=r0
 @noctx:	ldy #$00
 	sty indirect_hint
 	sty indexed
@@ -704,7 +727,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 
 	lda zp::verify
 	bne @retlabel		; if verifying, don't bother assembling rest
-	jsr @assemble		; assemble the rest of the line
+	jsr assemble_with_ctx	; assemble the rest of the line
 	bcs @ret0		; return error
 	cmp #ASM_LABEL
 	bne @retlabel
@@ -888,9 +911,10 @@ __asm_tokenize_pass1 = __asm_tokenize
 	cpx #ABS_IND	; only abs-indirect is supported for JMP (XXXX)
 	bne @err
 	lda #$6c
+	sta opcode		; fix the opcode variable
 	jsr writeb
 	bcc @noerr
-	rts		; return err
+	rts			; return err
 
 @jmpabs:
 	cpx #ZEROPAGE
@@ -1049,6 +1073,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	bpl :-
 
 	; if instruction is valid, write out its opcode
+	sta opcode	; write the fixed opcode
 	jsr writeb
 	bcc @noerr
 	rts		; return err
@@ -1314,6 +1339,8 @@ __asm_tokenize_pass1 = __asm_tokenize
 ; GETOPCODE
 ; Parses zp::line for an instruction and returns information about it if it
 ; is determined to be an instruction
+; IN:
+;  - zp::line: the line to parse the opcode from
 ; OUT:
 ;  - .A: ASM_OPCODE (on success) else error
 ;  - .X: the opcode's ID
@@ -1527,7 +1554,9 @@ __asm_tokenize_pass1 = __asm_tokenize
 ; corresponding .rep directive
 .proc handle_repeat
 @itername=$100
-@errcode=r0
+@parambuff=$100
+@it=r0
+@numparams=r2
 	lda zp::verify
 	beq :+
 	RETURN_OK
@@ -1548,21 +1577,19 @@ __asm_tokenize_pass1 = __asm_tokenize
 	ldxy #$100
 	jsr ctx::getparams
 
-	; don't define iterator label until pass 2
-	lda zp::pass
-	cmp #$01
-	beq @l1			; if pass 1 -> skip label definition/update
-	bne :+			; branch always (skip first rewind)
-
 ;--------------------------------------
-; define a label with the value of the iteration (pass 2 only)
+; define a label with the value of the iteration
 @l0:	jsr rewind_ctx_dbg
 
-:	ldxy #@itername
+	ldxy #@itername
+	lda #SEG_ABS
+	sta zp::label_segmentid
+	lda #$01		; define label as 16-bit (ABSOLUTE)
+	sta zp::label_mode
 
 	; iteration 0: add a symbol for the iterator
 	;              this will error if the symbol is already defined
-	; iteration 1: "set" (replace) the iterator's value
+	; iteration n: "set" (replace) the iterator's value
 	lda zp::ctx+repctx::iter
 	sta zp::label_value
 	lda zp::ctx+repctx::iter+1
@@ -1570,7 +1597,6 @@ __asm_tokenize_pass1 = __asm_tokenize
 	ora zp::label_value
 	bne @set
 
-	lda #$01		; define label as 16 bit
 	jsr add_label		; first iteration- add instead of set
 	jmp :+
 @set:	jsr lbl::set		; successive iterations- set (replace)
@@ -1596,11 +1622,46 @@ __asm_tokenize_pass1 = __asm_tokenize
 	cmpw zp::ctx+repctx::iter_end
 	bne @l0
 
-	; cleanup iterator label and context
-	ldxy #@itername
-	jsr lbl::del	; delete the iterator label
+@done:	ldxy #@parambuff
+	jsr ctx::getparams	; get the iterator label(s)
+	sta @numparams
+	jsr ctx::pop		; pop the context
 
-@done:	jmp ctx::pop	; pop the context
+	ldxy #@parambuff
+	stxy @it
+	cmp #$00		; was that the last context?
+	beq @cleanup		; if so, clean up the iterator labels
+
+;--------------------------------------
+@saveits:
+	; bubble up iterators from the nested context to new one
+	ldxy @it
+	jsr ctx::addparam
+:	incw @it
+	ldy #$00
+	lda (@it),y
+	bne :-
+	incw @it
+	dec @numparams
+	bne @saveits
+	RETURN_OK
+
+;--------------------------------------
+@cleanup:
+	; delete all iterator labels
+	ldxy @it
+	jsr lbl::del
+	dec @numparams
+	beq @ret
+
+	ldy #$00
+:	incw @it
+	lda (@it),y
+	bne :-
+	incw @it
+	bne @cleanup
+
+@ret:	RETURN_OK
 .endproc
 
 ;*******************************************************************************
@@ -1639,13 +1700,42 @@ __asm_tokenize_pass1 = __asm_tokenize
 	; open:   write to context
 	; closed: write to parent context (nested) OR
 	;         return for assembler to handle (not nested)
-	cmp #$02
-	bcc @toplevel
+	cmp #$02		; activectx < 2?
+	bcc @toplevel		; if yes, we're using first context (top)
 
 @nested:
 	lda ctx::open		; is context open?
 	bne @write_ctx		; if yes, write it to the context buffer
-	jsr ctx::write_parent	; write line to the PARENT's context buffer
+
+;--------------------------------------
+; context is open, write the fully assembled line to the parent's
+; context buffer. we assemble now to capture the iterator/param
+; values of the context at this point in evaluation
+; To get the fully assembled value, assemble the instruction and
+; disassemble it back to a buffer
+@buff=$100+LINESIZE
+	inc zp::verify		; enable verify (don't write to memory)
+	stxy zp::line
+	jsr str::toupper
+	jsr line::process_ws
+	jsr assemble		; assemble the line
+	dec zp::verify		; disable verify again
+	bcs @done		; err -> quit
+	ldxy #asmbuffer
+	cmp #ASM_OPCODE		; was result an opcode?
+	bne @writepar		; if not, just write unaltered input to parent
+	ldxy #@buff		; address to disassemble to.
+	stxy r0
+	ldxy #opcode		; disassemble the opcode that was parsed
+	lda #$00		; disassemble to string
+	ldxy zp::asmresult	; TODO: this is probably wrong
+	stxy ra			; store address of instruction
+	jsr disasm		; perform the disassembly
+	bcs @done		; err -> quit
+	ldxy #@buff		; get address we disassembled
+
+@writepar:
+	jsr ctx::write_parent	; write disassembled line to PARENT's ctx buff
 	jmp @ctx_done		; errcheck and return
 
 @toplevel:
@@ -2219,7 +2309,7 @@ __asm_include:
 	RETURN_ERR ERR_UNEXPECTED_CHAR ; comma must follow the # of reps
 
 @getparam:
-	; get the name of the parameter
+	; get the name of the iterator
 	jsr line::incptr
 @saveparam:
 	ldxy zp::line
@@ -2335,8 +2425,8 @@ __asm_include:
 ; disassembles the given instruction
 ; IN:
 ;  - .A:  0=disassemble to string, !0=don't disassemble to string
-;  - .XY: the address of the instruction to disassemble
-;  - r0:  the address of the buffer to disassemble to (if A != 0)
+;  - .XY: address of the instruction to disassemble
+;  - r0:  address of the buffer to disassemble to (if A != 0)
 ; OUT:
 ;  - .A:   the size of the instruction that was disassembled
 ;  - .X:   the address modes for the instruction
@@ -2344,34 +2434,54 @@ __asm_include:
 ;  - (r0): the (0-terminated) disassembled instruction string (if A IN=0)
 .export __asm_disassemble
 .proc __asm_disassemble
+@opaddr=ra
+	pha			; save nostr flag
+	stxy @opaddr		; opcode
+	jsr vmem::load
+	sta opcode
+	ldxy @opaddr		; operand
+	lda #$01
+	jsr vmem::load_off
+	sta operand
+	ldxy @opaddr		; operand byte 2
+	lda #$02
+	jsr vmem::load_off
+	sta operand+1
+	pla			; restore nostr flag
+
+	; fall through to disasm
+.endproc
+
+;*******************************************************************************
+; DISASM
+; Entrypoint for disassembling values in opcode and operand directly
+; IN:
+;   - .A:      0=disassemble to string, !0=don't disassemble to string
+;   - r0:      address of the buffer to disassemble to (if A != 0)
+;   - ra:      address of instruction
+;   - opcode:  opcode of the instruction to disassemble
+;   - operand: operand of instruction to disassemble
+; OUT:
+;  - .A:   the size of the instruction that was disassembled
+;  - .X:   the address modes for the instruction
+;  - .C:   clear if instruction was successfully disassembled
+;  - (r0): the (0-terminated) disassembled instruction string (if A IN=0)
+.proc disasm
 @dst=r0
 @cc=r2
-
-@op=r3
-@operand=r4
-
 @optab=r7
-@illegals=r7
 @cc8=r7
 @xxy=r7
 @cc8_plus_aaa=r7
 @modes=r7
-
 @bbb=r8
 @nostr=r9
+@illegals=r7
 @opaddr=ra
+@op=opcode
+@operand=operand
+
 	sta @nostr
-	stxy @opaddr		; opcode
-	jsr vmem::load
-	sta @op
-	ldxy @opaddr		; operand
-	lda #$01
-	jsr vmem::load_off
-	sta @operand
-	ldxy @opaddr		; operand byte 2
-	lda #$02
-	jsr vmem::load_off
-	sta @operand+1
 
 ; check for single byte opcodes
 @chksingles:
@@ -2941,7 +3051,11 @@ __asm_include:
 ; IN:
 ;  - .A: the value to add to the assembly pointers (virtualpc and asmresult)
 .proc addpc
-	pha
+	ldx zp::verify
+	beq :+
+	rts
+
+:	pha
 	clc
 	adc zp::asmresult
 	sta zp::asmresult
@@ -2964,7 +3078,11 @@ __asm_include:
 ; INCPC
 ; Updates the asmresult and virtualpc pointers by 1
 .proc incpc
-	incw zp::asmresult
+	ldx zp::verify
+	beq :+
+	rts
+
+:	incw zp::asmresult
 	incw zp::virtualpc
 
 	; fall through to update_top

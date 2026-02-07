@@ -58,7 +58,7 @@ contexts_top:
 ; BSS
 .segment "SHAREBSS"
 
-__ctx_active: .byte 0	; !0: a context is active
+__ctx_active: .byte 0	; # of contexts on stack - !0: a context is active
 __ctx_open:   .byte 0	; !0: current context is "closed" (ctx::end was called)
 
 ;*******************************************************************************
@@ -74,7 +74,8 @@ type      = meta+9	; the type of the context
 numlines  = meta+10	; number of lines in the context
 parent    = meta+11	; address of parent context's line buffer
 
-__ctx_numlines = numlines
+__ctx_numlines  = numlines
+__ctx_numparams = numparams
 
 .CODE
 ;*******************************************************************************
@@ -96,7 +97,7 @@ __ctx_numlines = numlines
 
 	lda #$00
 	sta __ctx_active	; set activectx id to base (0)
-	sta __ctx_open	; no context open
+	sta __ctx_open		; no context open
 
 	rts
 .endproc
@@ -261,7 +262,8 @@ __ctx_addparam:     JUMP FINAL_BANK_CTX, addparam
 	sta __ctx_open	; mark context as open (again)
 
 	dec __ctx_active
-@done:  RETURN_OK
+@done:  lda __ctx_active
+	RETURN_OK
 .endproc
 
 ;*******************************************************************************

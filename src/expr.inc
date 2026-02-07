@@ -2,6 +2,7 @@
 .import __expr_eval
 .import __expr_eval_list
 .import __expr_kind
+.import __expr_parse
 .import __expr_postproc
 .import __expr_rpnlist
 .import __expr_rpnlistlen
@@ -20,6 +21,7 @@ POSTPROC_MSB  = 2
 	eval       = __expr_eval
 	eval_list  = __expr_eval_list
 	kind       = __expr_kind
+	parse      = __expr_parse
 	rpnlist    = __expr_rpnlist
 	rpnlistlen = __expr_rpnlistlen
 	segment    = __expr_segment

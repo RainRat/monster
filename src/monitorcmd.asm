@@ -753,6 +753,7 @@ __mon_default_start_set: .byte 0
 	jmp @next
 @ok:	jsr @drawline
 @next:	ldxy @addr
+	stxy default_start		; set current address is new default
 	cmpw @stopaddr
 	bcc @l0
 @done:	clc

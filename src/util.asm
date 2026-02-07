@@ -419,7 +419,7 @@ result=mem::spare
 .endproc
 
 ;*******************************************************************************
-; is_null_space_comma_closingparen
+; IS NULL SPACE COMMA CLOSINGPAREN NEWLINE
 ; IN:
 ;  - .A: the character to test
 ; OUT:
@@ -481,7 +481,7 @@ result=mem::spare
 .endproc
 
 ;*******************************************************************************
-; IS_ALPHANUM
+; IS ALPHANUM
 ; IN:
 ;  .A: the character to test for alphanumeric
 ; OUT:

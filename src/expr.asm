@@ -297,7 +297,7 @@ operands: .res $100
 	beq @unresolved
 
 	CALLMAIN lbl::addr_and_mode
-	stxy @val1					; addend
+	stxy @val1		; addend
 
 	; get the segment ID
 	ldxy @symbol
@@ -737,7 +737,7 @@ operands: .res $100
 ; IN:
 ;   - zp::line: pointer to the expression to parse
 ; OUT:
-;   - $150: a list of tokens for evaluation (in RPN format)
+;   - expr::rpnlist a list of tokens for evaluation (in RPN format)
 .export __expr_parse
 .proc __expr_parse
 @i=zp::expr+2
@@ -1002,7 +1002,7 @@ operands: .res $100
 	cpx #$02
 	bcs @done
 
-	ldx #$01
+	ldx #VAL_ABS
 	stx @mode	; default to ABS mode
 	bcc @updateline	; proceed with dummy ID
 
@@ -1051,8 +1051,8 @@ operands: .res $100
 	bne @cont
 	inx		; flag hex
 	iny
-@cont:
-	lda (zp::line),y
+
+@cont:	lda (zp::line),y
 	jsr isseparator
 	beq @done
 
