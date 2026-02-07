@@ -1002,7 +1002,7 @@ operands: .res $100
 	cpx #$02
 	bcs @done
 
-	ldx #VAL_ABS
+	ldx #$01
 	stx @mode	; default to ABS mode
 	bcc @updateline	; proceed with dummy ID
 
