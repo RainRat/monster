@@ -36,7 +36,6 @@ MAX_LABEL_NAME_LEN = 32
 .export __label_load
 .export __label_is_local
 .export __label_set
-.export __label_del
 .export __label_address
 .export __label_address_by_id
 .export __label_setscope
@@ -67,7 +66,6 @@ __label_get_addr         = getaddr
 __label_get_segment      = get_segment
 __label_is_local         = is_local
 __label_set              = set
-__label_del              = del
 __label_address          = address
 __label_address_by_id    = address_by_id
 __label_setscope         = set_scope
@@ -99,7 +97,6 @@ __label_get_name:         LBLJUMP get_name
 __label_get_addr:         LBLJUMP getaddr
 __label_is_local:         LBLJUMP is_local
 __label_set:              LBLJUMP set
-__label_del:              LBLJUMP del
 __label_address:          LBLJUMP address
 __label_address_by_id:    LBLJUMP address_by_id
 __label_setscope:         LBLJUMP set_scope
@@ -1136,199 +1133,7 @@ anon_addrs: .res MAX_ANON*2
 	pla
 	tax
 	lda @mode
-:	rts
-.endproc
-
-;*******************************************************************************
-; DEL
-; Deletes the given label name.
-; IN:
-;  - .XY: the address of the label name to delete
-.proc del
-@id=r6
-@cnt=r8
-@cnt2=ra
-@cnt3=rc
-@src=re
-@dst=zp::tmp10
-@name=zp::tmp12
-@tmp=r8
-@tmp2=r9
-@mode=ra
-@stop=rb
-	SELECT_BANK "SYMBOLS"
-	stxy @name
-	jsr find
-	bcs :-		; -> rts (not found)
-
-@del:	stxy @id
-	jsr by_id
-	stxy @dst
-
-	; get the number of addresses/names to shift (numlabels - id)
-	lda numlabels
-	sec
-	sbc @id
-	sta @cnt
-	sta @cnt2
-	sta @cnt3
-	lda numlabels+1
-	sbc @id+1
-	sta @cnt+1
-	sta @cnt2+1
-	sta @cnt3+1
-	ora @cnt		; does anything need to be shifted?
-	bne :+
-	jmp @done		; if @cnt is 0, no -> done
-
-:	; move the addresses down
-	ldx @cnt
-@addrloop:
-	; dst[i] = dst[i+2]
-	ldy #$02
-	LOADB_Y @dst
-	ldy #$00
-	STOREB_Y @dst
-	ldy #$03
-	LOADB_Y @dst
-	ldy #$01
-	STOREB_Y @dst
-
-	lda @dst
-	clc
-	adc #$02
-	sta @dst
-	bcc @next
-	inc @dst+1
-
-@next:	dex
-	cpx #$ff
-	bne @addrloop
-	dec @cnt+1
-	bpl @addrloop
-
-@names: ; get the destination address to shift names to
-	ldxy @id
-	jsr name_by_id
-	stx @dst
-	sta @dst+1
-
-	; get the source (destination + MAX_LABEL_LEN)
-	lda @dst
-	clc
-	adc #MAX_LABEL_LEN
-	sta @src
-	lda @dst+1
-	adc #$00
-	sta @src+1
-
-	; move the names down
-	ldx @cnt2
-@nameloop:
-	ldy #MAX_LABEL_LEN-1
-	COPY_Y @src, @dst
-
-	lda @src
-	clc
-	adc #MAX_LABEL_LEN
-	sta @src
-	bcc :+
-	inc @src+1
-:	lda @dst
-	clc
-	adc #MAX_LABEL_LEN
-	sta @dst
-	bcc @nextname
-	inc @dst+1
-@nextname:
-	dex
-	cpx #$ff
-	bne @nameloop
-	dec @cnt2+1
-	bpl @nameloop
-
-	; move the segment id's down
-@delete_segid:
-	lda @id
-	clc
-	adc #<segment_ids
-	sta @dst
-	sta @src
-	lda @id+1
-	adc #>segment_ids+1
-	sta @dst+1
-	lda @dst
-	;clc
-	adc #$01
-	sta @src
-	lda @dst+1
-	adc #$00
-	sta @src+1
-
-	ldx @cnt3
-	ldy #$00
-@segidloop:
-	LOADB_Y @src
-	STOREB_Y @dst
-@next_segid:
-	incw @src
-	incw @dst
-	dex
-	cpx #$ff
-	bne @segidloop
-	dec @cnt3+1
-	bpl @segidloop
-
-@delete_mode:
-	; (id / 8) is the byte containing the mode to delete
-	lda @id
-	ldx @id+1
-	jsr div8
-	sta @stop
-
-	; shift the the mode bytes right of the last byte
-	jsr numlabels_div8	; get starting point (numlabels / 8)
-	tax
-:	rol label_modes,x
-	rol @tmp2		; save .C for later
-	dex
-	cpx @stop
-	bne :-
-
-	lda @id
-	and #$07
-	tay			; .Y = bit (from left to right) to erase
-
-	; $86f8 %00000000
-	; $82f9 %10000000
-	; $82fa %11000000
-	; $82fb %11100000
-	; ...
-	lda label_modes,x
-	pha
-	and $86f8,y		; mask bits to leave alone
-	sta @tmp		; save as temp result
-
-	; get mask of bits to shift
-	; $82f8 %11111111
-	; $82f9 %01111111
-	; $82fa %00111111
-	; $82fb %00011111
-	; $82fc %00001111
-	; $82fd %00000011
-	; $82fe %00000001
-	; $82ff %00000001
-	; $8300 %00000000
-	pla
-	and $82f8+1,y		; mask bits we need to shift
-	lsr @tmp2		; restore .C
-	rol			; shift (destroy the bit to delete)
-	ora @tmp		; OR unshifted bits
-	sta label_modes,x	; save result
-
-@done:	decw numlabels
-	ldxy @name
-	RETURN_OK
+	rts
 .endproc
 
 ;*******************************************************************************

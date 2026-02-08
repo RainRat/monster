@@ -75,4 +75,3 @@
 	jsr __line_inc
 	jmp __line_process_word
 .endproc
-

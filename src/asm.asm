@@ -626,8 +626,8 @@ __asm_tokenize_pass1 = __asm_tokenize
 ; after directives, handle context if any. this is used for things like an
 ; active macro definition (the lines between .mac and .endmac)
 @ctx:	jsr handle_ctx
-	beq @ret		; context was handled
-	bcc assemble
+	bcs @ret	; err -> exit
+	bne assemble	; if context wasn't handled, assemble
 @ret:	rts
 .endproc
 
@@ -1555,9 +1555,6 @@ __asm_tokenize_pass1 = __asm_tokenize
 ; corresponding .rep directive
 .proc handle_repeat
 @itername=$100
-@parambuff=$100
-@it=r0
-@numparams=r2
 	lda zp::verify
 	beq :+
 	RETURN_OK
@@ -1575,18 +1572,12 @@ __asm_tokenize_pass1 = __asm_tokenize
 	jsr rewind_ctx_dbg
 
 	; load the parameter (iterator name)
-	ldxy #$100
+	ldxy #@itername
 	jsr ctx::getparams
 
 ;--------------------------------------
 ; define a label with the value of the iteration
 @l0:	jsr rewind_ctx_dbg
-
-	ldxy #@itername
-	lda #SEG_ABS
-	sta zp::label_segmentid
-	lda #$01		; define label as 16-bit (ABSOLUTE)
-	sta zp::label_mode
 
 	; iteration 0: add a symbol for the iterator
 	;              this will error if the symbol is already defined
@@ -1596,12 +1587,16 @@ __asm_tokenize_pass1 = __asm_tokenize
 	lda zp::ctx+repctx::iter+1
 	sta zp::label_value+1
 	ora zp::label_value
-	bne @set
+	beq @l1			; label already defined in repeat
 
-	jsr add_label		; first iteration- add instead of set
-	jmp :+
+	ldxy #@itername
+	lda #SEG_ABS
+	sta zp::label_segmentid
+	lda #$01		; define label as 16-bit (ABSOLUTE)
+	sta zp::label_mode
+
 @set:	jsr lbl::set		; successive iterations- set (replace)
-:	bcs @err
+	bcs @err
 
 ;--------------------------------------
 ; assemble all lines for the iteration
@@ -1623,46 +1618,7 @@ __asm_tokenize_pass1 = __asm_tokenize
 	cmpw zp::ctx+repctx::iter_end
 	bne @l0
 
-@done:	ldxy #@parambuff
-	jsr ctx::getparams	; get the iterator label(s)
-	sta @numparams
-	jsr ctx::pop		; pop the context
-
-	ldxy #@parambuff
-	stxy @it
-	cmp #$00		; was that the last context?
-	beq @cleanup		; if so, clean up the iterator labels
-
-;--------------------------------------
-@saveits:
-	; bubble up iterators from the nested context to new one
-	ldxy @it
-	jsr ctx::addparam
-:	incw @it
-	ldy #$00
-	lda (@it),y
-	bne :-
-	incw @it
-	dec @numparams
-	bne @saveits
-	RETURN_OK
-
-;--------------------------------------
-@cleanup:
-	; delete all iterator labels
-	ldxy @it
-	jsr lbl::del
-	dec @numparams
-	beq @ret
-
-	ldy #$00
-:	incw @it
-	lda (@it),y
-	bne :-
-	incw @it
-	bne @cleanup
-
-@ret:	RETURN_OK
+@done:  jmp ctx::pop		; pop the context
 .endproc
 
 ;*******************************************************************************
@@ -1709,33 +1665,15 @@ __asm_tokenize_pass1 = __asm_tokenize
 	bne @write_ctx		; if yes, write it to the context buffer
 
 ;--------------------------------------
-; context is open, write the fully assembled line to the parent's
-; context buffer. we assemble now to capture the iterator/param
-; values of the context at this point in evaluation
-; To get the fully assembled value, assemble the instruction and
-; disassemble it back to a buffer
+; context is open, reduce the current iterator to its constant value
+; and write it to the parent context's buffer
 @buff=$100+LINESIZE
-	inc zp::verify		; enable verify (don't write to memory)
-	stxy zp::line
-	jsr str::toupper
-	jsr line::process_ws
-	jsr assemble		; assemble the line
-	dec zp::verify		; disable verify again
-	bcs @done		; err -> quit
-	ldxy #asmbuffer
-	cmp #ASM_OPCODE		; was result an opcode?
-	bne @writepar		; if not, just write unaltered input to parent
-	ldxy #@buff		; address to disassemble to.
-	stxy r0
-	ldxy #opcode		; disassemble the opcode that was parsed
-	lda #$00		; disassemble to string
-	ldxy zp::asmresult	; TODO: this is probably wrong
-	stxy ra			; store address of instruction
-	jsr disasm		; perform the disassembly
-	bcs @done		; err -> quit
-	ldxy #@buff		; get address we disassembled
+	ldxy #@buff
+	jsr ctx::getparams	; get the active iterator's name
+	ldxy #@buff
+	jsr sub_label		; and replace uses with its value in asmbuffer
+	ldxy #mem::asmbuffer
 
-@writepar:
 	jsr ctx::write_parent	; write disassembled line to PARENT's ctx buff
 	jmp @ctx_done		; errcheck and return
 
@@ -2304,6 +2242,8 @@ __asm_include:
 	; initialize iterator (number of repititons)
 	sty zp::ctx+repctx::iter
 	sty zp::ctx+repctx::iter+1
+	sty zp::label_value
+	sty zp::label_value+1
 
 	cmp #','
 	beq @getparam
@@ -2315,11 +2255,20 @@ __asm_include:
 @saveparam:
 	ldxy zp::line
 	jsr ctx::addparam
-	bcs @ret	; error adding parameter
+	bcs @ret		; error adding parameter
+	ldxy zp::line
 
-@cont:	stxy zp::line	; update line pointer to after parameter
+	; define the label for the iterator as a constant with value 0
+	lda #SEG_ABS
+	sta zp::label_segmentid
+	lda #$01		; define label as 16-bit (ABSOLUTE)
+	sta zp::label_mode
+	jsr lbl::set
+	bcs @ret
 
-@done:	clc		; ok
+@cont:	stxy zp::line		; update line pointer to after parameter
+
+@done:	clc			; ok
 @ret:	rts
 .endproc
 
@@ -2970,16 +2919,8 @@ __asm_include:
 	lda zp::line+1
 	pha
 
-	; read all characters in zp::line until the next whitespace
-	ldy #$00
-	lda (zp::line),y
-	jsr util::is_whitespace
-	beq @cont
-
-@l0:	jsr line::incptr
-	lda (zp::line),y
-	jsr util::is_whitespace
-	bne @l0
+	; read to next whitespace (move past the constant name)
+	jsr line::process_word
 
 @cont:	jsr line::process_ws	; eat whitespace
 	inc zp::pass		; require label predefinition for constants
@@ -3217,4 +3158,155 @@ __asm_include:
 	ldy @savey
 	ldx @savex
 	rts
+.endproc
+
+;*******************************************************************************
+; SUB LABEL
+; Substitutes a symbol name in the asmbuffer with its value.
+; If the label is not found, does nothing
+; This procedure is used to reduce lines before they are stored to the context
+; buffer.
+; e.g. "LDA A+B+$10" becomes "LDA $1000+B+$10"
+; IN:
+;   - .XY:       address of name of label to replace
+;   - asmbuffer: buffer to find/replace the symbol in
+; OUT:
+;   - asmbuffer: updated buffer with symbol replaced
+.proc sub_label
+@cnt         = r0
+@replace_idx = r1
+@val         = r2
+@backup      = r4
+@len         = r6
+@label       = zp::str0
+@line        = zp::str2
+@buff        = mem::spare
+	stxy @label
+	lda #<mem::asmbuffer
+	sta @line
+	lda #>mem::asmbuffer
+	sta @line+1
+
+@find:	ldxy @label
+	jsr find_label
+	bcs @done	; not found -> exit
+	stxy @line	; @line = address of label to substitute
+
+	; look up the address of the label we are substituting
+	ldxy @label
+	jsr lbl::addr
+	bcs @done	; label doesn't exist -> exit
+	stxy @val	; save the value of the symbol for later
+
+	; get offset to start backup at (line+strlen(@label))
+	ldxy #@buff
+	stxy @backup
+
+	; back up rest of line
+	ldx #$00
+	ldy @len
+:	lda (@line),y
+	sta @buff,x
+	inx
+	iny
+	cpy #LINESIZE
+	bne :-
+
+	; replace label with its hex value in the line
+	ldy #$00
+	lda #'$'
+	sta (@line),y
+	inc @line
+	lda @val+1
+	jsr @write_hex
+	lda @val
+	jsr @write_hex
+
+	; copy backup[replace_idx:LINESIZE] to asmbuffer[@cnt]
+	; to append rest of line after our replacement
+	ldy #$00
+@l1:	lda (@backup),y
+	sta (@line),y
+	beq @find	; repeat procedure to replace next occurrence (if any)
+	iny
+	cpy #LINESIZE
+	bcc @l1
+
+@done:	rts
+
+;--------------------------------------
+; WRITE HEX
+; helper to convert/write a hex value to buffer
+@write_hex:
+	jsr util::hextostr
+	tya
+	ldy #$00
+	sta (@line),y
+	txa
+	iny
+	sta (@line),y
+	inc @line
+	inc @line
+	sty @cnt
+	rts
+.endproc
+
+;*******************************************************************************
+; FIND LABEL
+; Searches for the given label in the given buffer
+; e.g. when called with "A", returns the address "LDA A+B+$10"
+;                                                     ^
+; IN:
+;   - .XY:      address of name of label to replace
+;   - zp::str2: address of buffer to find the symbol in
+; OUT:
+;   - .XY:      address of the next occurrence of the label label
+;   - zp::str0: the given label
+.proc find_label
+@cnt         = r0
+@replace_idx = r1
+@val         = r2
+@backup      = r4
+@len         = r6
+@label       = zp::str0
+@line        = zp::str2
+@buff        = mem::spare
+	stxy @label
+	jsr str::len
+	sta @len
+
+	ldy #$00
+	sty @cnt
+@l0:	; read until we're NOT on a separator
+	lda (@line),y
+	jsr util::isseparator
+	bne @check	; found a non-separator char -> check if it's our label
+	inc @line
+	inc @cnt
+	lda @cnt
+	cmp #LINESIZE
+	bcc @l0
+@notfound:
+	rts
+
+@check:	; check if we're now pointing to the label
+	lda @len
+	jsr str::compare
+	beq @found
+
+	; read until we ARE on a separator
+	ldy #$00
+@l1:	lda (@line),y
+	jsr util::isseparator
+	beq @l0		; we are back on a separator, continue to outer loop
+	inc @line
+	inc @cnt
+	lda @cnt
+	cmp #LINESIZE
+	bcc @l1
+	rts
+
+@found: ; found the string (label)
+	ldxy @line
+	RETURN_OK
 .endproc

@@ -209,7 +209,6 @@ macros:          .res $1400
 	lda #$00
 	sta @cnt
 @setparams:
-
 	lda @cnt
 	cmp @numparams
 	beq @paramsdone
@@ -222,11 +221,6 @@ macros:          .res $1400
 	lda @params+1,x
 	sta zp::label_value+1
 
-	; save the label name for later removal
-	lda @macro
-	pha
-	lda @macro+1
-	pha
 	inc @cnt
 
 	; set the parameter to its value
@@ -249,7 +243,7 @@ macros:          .res $1400
 
 :	ldxy #@tmplabel
 	CALLMAIN lbl::set
-	bcs @cleanup
+	bcs @done
 	bcc @setparams		; repeat for all params
 
 @paramsdone:
@@ -262,8 +256,6 @@ macros:          .res $1400
 	lda @macro+1
 	pha
 	tay
-	lda @cnt
-	pha
 
 	; assemble this line of the macro
 	lda #FINAL_BANK_MACROS
@@ -274,15 +266,13 @@ macros:          .res $1400
 
 	; restore state (@cnt and @macro)
 	pla
-	sta @cnt
-	pla
 	sta @macro+1
 	pla
 	sta @macro
 
 @chkerr:
 	lda @err		; did an error occur?
-	bne @cleanuploop	; if yes, cleanup and exit
+	bne @done		; if yes, exit
 
 @ok:	; move to the next line
 	SELECT_BANK "MACRO"
@@ -294,21 +284,6 @@ macros:          .res $1400
 	incw @macro
 	LOADB_Y @macro		; at the end of the macro? (two 0's)
 	bne @asm		; no, continue
-
-@cleanup:
-	lda @cnt
-	beq @done
-
-@cleanuploop:
-	; restore the label name for the parameter
-	pla
-	tay
-	pla
-	tax
-	CALLMAIN lbl::del
-
-	dec @cnt
-	bne @cleanuploop	; repeat until all params deleted
 
 @done:	lsr @err		; set .C if error occurred
 	lda @errcode

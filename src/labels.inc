@@ -8,7 +8,6 @@
 .import __label_by_id
 .import __label_by_addr
 .import __label_clr
-.import __label_del
 .import __label_dump
 .import __label_find
 .import __label_get_addr
@@ -47,7 +46,6 @@ SYM_UNRESOLVED = $ffff	; magic value for unresolved symbol ID
 	by_id         = __label_by_id
 	by_addr       = __label_by_addr
 	clr           = __label_clr
-	del           = __label_del
 	dump          = __label_dump
 	load          = __label_load
 	find          = __label_find
