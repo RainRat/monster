@@ -22,6 +22,7 @@
 .import __label_address
 .import __label_num
 .import __label_name_by_id
+.import __label_popscope
 .import __label_set
 .import __label_set_addr
 .import __label_setscope
@@ -59,6 +60,7 @@ SYM_UNRESOLVED = $ffff	; magic value for unresolved symbol ID
 	isvalid       = __label_isvalid
 	name_by_id    = __label_name_by_id
 	num           = __label_num
+	popscope      = __label_popscope
 	set           = __label_set
 	setaddr       = __label_set_addr
 	setscope      = __label_setscope

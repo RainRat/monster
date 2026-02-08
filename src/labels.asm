@@ -22,6 +22,7 @@ SCOPE_LEN  = 8		; max len of namespace (scope)
 MAX_LABELS = 732
 
 MAX_LABEL_NAME_LEN = 32
+MAX_SCOPES = 4
 
 .export __label_clr
 .export __label_add
@@ -39,6 +40,7 @@ MAX_LABEL_NAME_LEN = 32
 .export __label_address
 .export __label_address_by_id
 .export __label_setscope
+.export __label_popscope
 .export __label_addanon
 .export __label_get_fanon
 .export __label_get_banon
@@ -69,6 +71,7 @@ __label_set              = set
 __label_address          = address
 __label_address_by_id    = address_by_id
 __label_setscope         = set_scope
+__label_popscope         = pop_scope
 __label_addanon          = add_anon
 __label_get_fanon        = get_fanon
 __label_get_banon        = get_banon
@@ -100,6 +103,7 @@ __label_set:              LBLJUMP set
 __label_address:          LBLJUMP address
 __label_address_by_id:    LBLJUMP address_by_id
 __label_setscope:         LBLJUMP set_scope
+__label_popscope:         LBLJUMP pop_scope
 __label_addanon:          LBLJUMP add_anon
 __label_get_fanon:        LBLJUMP get_fanon
 __label_get_banon:        LBLJUMP get_banon
@@ -123,6 +127,7 @@ __label_load:             LBLJUMP load
 ; The Ultimem can actually hold more labels than this, but we only bank in
 ; $2000 bytes at a time
 labels: .res $2000
+.segment "LABEL_BSS"
 .else
 labels: .res MAX_LABELS*MAX_LABEL_NAME_LEN
 .endif
@@ -141,13 +146,13 @@ segment_ids: .res MAX_LABELS
 labelvars:
 .export __label_num
 __label_num:
-numlabels: .word 0   	; total number of labels
+numlabels: .word 0		; total number of labels
 
 .export __label_numanon
 __label_numanon:
-numanon: .word 0	; total number of anonymous labels
+numanon: .word 0		; total number of anonymous labels
 
-scope: .res 8 ; buffer containing the current scope
+scopesp: .byte 0		; index of curent active scope's name
 labelvars_size=*-labelvars
 
 ;*******************************************************************************
@@ -158,6 +163,8 @@ labelvars_size=*-labelvars
 .segment "LABELMODES"
 .export label_modes
 label_modes: .res MAX_LABELS / 8	; modes (0=absolute, 1=zeropage)
+
+scopes: .res 8*MAX_SCOPES		; scope stack buffer
 
 .segment "LABEL_BSS"
 
@@ -196,25 +203,60 @@ anon_addrs: .res MAX_ANON*2
 
 .segment "LABELS"
 ;*******************************************************************************
+; POP SCOPE
+; Pops the current scope, returning to the next scope on the stack. If no other
+; scope is open, returns to the "root" scope
+.proc pop_scope
+	lda scopesp
+	beq @done	; nothing to POP -> exit
+	sec
+	sbc #SCOPE_LEN
+	sta scopesp
+@done:	rts
+.endproc
+
+;*******************************************************************************
 ; SET SCOPE
 ; Sets the current scope to the given scope.
 ; This affects local labels, which will be namespaced by prepending the scope.
 ; IN:
 ;  - .XY: the address of the scope string to set as the current scope
 .proc set_scope
-@scope=zp::labels
-	stxy @scope
-	ldy #$00
-:	lda (@scope),y
+@scope  = zp::labels
+@scopes = zp::labels+2
+	SELECT_BANK "SYMBOLS"
+
+	lda scopesp
+	clc
+	adc #SCOPE_LEN
+	sta scopesp
+
+	; get @scope-scopesp so that @scope+scopesp points to the start of the
+	; input string
+	txa
+	sec
+	sbc scopesp
+	sta @scope
+	tya
+	sbc #$00
+	sta @scope+1
+
+	ldxy #scopes
+	stxy @scopes
+
+	ldx #SCOPE_LEN-1
+	ldy scopesp
+:	lda (@scope),y		; (@scope-scopesp)+scopesp + Y
 	jsr isseparator
 	beq @done
-	sta scope,y
+	STOREB_Y @scopes	; scopes+scopesp + Y
 	iny
-	cpy #SCOPE_LEN
+	dex
 	bne :-
+	rts			; maxed out scope len; don't terminate
 
 @done:  lda #$00
-	sta scope,y	; terminate
+	STOREB_Y @scopes	; terminate
 	rts
 .endproc
 
@@ -230,20 +272,29 @@ anon_addrs: .res MAX_ANON*2
 .proc prepend_scope
 @buff=$100
 @lbl=zp::labels
+@scopes=zp::labels+2
+	SELECT_BANK "SYMBOLS"
+
 	stxy @lbl
+	ldxy #scopes
+	stxy @scopes
+
 	ldx #$00
-	lda scope			; check if there is a scope defined
+	ldy scopesp			; check if there is a scope defined
 	bne @l0				; if so, continue
 	RETURN_ERR ERR_NO_OPEN_SCOPE
 
-@l0:	lda scope,x
+@l0:	; write the scope to the buffer
+	LOADB_Y @scopes
 	beq :+
 	sta @buff,x
+	iny
 	inx
 	cpx #SCOPE_LEN
 	bne @l0
 
-:	ldy #$00
+:	; copy the label after the scope we just added to the buffer
+	ldy #$00
 @l1:	lda (@lbl),y
 	jsr isseparator
 	beq @done
@@ -252,6 +303,8 @@ anon_addrs: .res MAX_ANON*2
 	inx
 	cpx #MAX_LABEL_LEN
 	bne @l1
+	RETURN_OK			; maxed out scope buffer, return
+
 @done:	lda #$00
 	sta @buff,x
 	ldxy #@buff
@@ -263,6 +316,7 @@ anon_addrs: .res MAX_ANON*2
 ; Removes all labels effectively resetting the label state
 .proc clr
 	lda #$00
+	sta scopesp
 	ldx #labelvars_size
 :	sta labelvars-1,x
 	dex
@@ -489,6 +543,7 @@ anon_addrs: .res MAX_ANON*2
 
 	lda @allow_overwrite
 	bne :+
+	jmp *
 	RETURN_ERR ERR_LABEL_ALREADY_DEFINED
 
 :	; label exists, overwrite its old value
