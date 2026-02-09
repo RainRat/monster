@@ -1618,7 +1618,14 @@ __asm_tokenize_pass1 = __asm_tokenize
 	cmpw zp::ctx+repctx::iter_end
 	bne @l0
 
-@done:  jmp ctx::pop		; pop the context
+@done:  jsr ctx::pop		; pop the context
+
+	; did we close all contexts?
+	lda __ctx_active
+	bne :+
+	jsr lbl::popscope	; all contexts popped, pop the scope
+	clc
+:	rts
 .endproc
 
 ;*******************************************************************************
@@ -2225,10 +2232,21 @@ __asm_include:
 ;   .endrep
 ;   will produce 10 'asl's
 .proc repeat
+@buff=r0
 	lda zp::verify
 	bne @done		; don't handle when NOT verifying
 
-	lda #CTX_REPEAT
+	; if there are no open contexts, start a non-renderable scope
+	ldy ctx::active
+	bne :+
+	sty @buff+1		; 0
+	iny			; 1
+	sty @buff		; 1
+	dey			; 0
+	ldx #@buff
+	jsr lbl::setscope	; set scope to a binary (unrenderable) prefix
+
+:	lda #CTX_REPEAT
 	jsr ctx::push	; push a new context
 
 	jsr expr::eval  ; get the number of times to repeat the code

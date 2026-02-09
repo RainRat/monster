@@ -686,6 +686,8 @@ tempbuff: .res LINESIZE
 ; INDEX2CURSOR
 ; Returns the x cursor position for the given offset in linebuffer
 ; Assumes that the editor is NOT in INSERT mode.
+; If the given index is greater than the number of characters in the line
+; buffer, returns the position of the last character in the buffer.
 ; IN:
 ;  - .A: the index in linebuffer to get the cursor position for
 ; OUT:

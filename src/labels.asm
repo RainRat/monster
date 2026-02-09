@@ -226,6 +226,7 @@ anon_addrs: .res MAX_ANON*2
 @scopes = zp::labels+2
 	SELECT_BANK "SYMBOLS"
 
+	; scopesp += SCOPE_LEN
 	lda scopesp
 	clc
 	adc #SCOPE_LEN

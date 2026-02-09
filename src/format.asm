@@ -42,12 +42,10 @@ __fmt_enable: .byte 0	; flag to enable (!0) or disable (0) formatting
 	cmp #$0d
 	beq @done		; newline -> done
 	jsr util::is_whitespace
-	bne @tab		; non-whitespace -> separate with tab
+	bne indent		; non-whitespace -> separate with tab
 	jsr src::delete		; delete whitespaced
 	bcc @l1
-@done:	jsr refresh
-	jmp src::down
-@tab:
+@done:	jmp refresh
 .endproc
 
 ;******************************************************************************
@@ -70,8 +68,7 @@ __fmt_enable: .byte 0	; flag to enable (!0) or disable (0) formatting
 	lda #' '
 	jsr src::insert		; insert a space
 	jmp @refresh		; and refresh the line again
-
-:	jmp src::down	; and go to end of line
+:	rts
 .endproc
 
 ;******************************************************************************
@@ -82,14 +79,42 @@ __fmt_enable: .byte 0	; flag to enable (!0) or disable (0) formatting
 .export __fmt_line
 .proc __fmt_line
 @linecontent=r6
+@cnt=r0
 	cmp #$00
 	beq @done
 	sta @linecontent
 	lda __fmt_enable
 	beq @done
 
-	; remove spaces from start of line
-	jsr src::up
+	; get current character index of cursor
+	jsr text::char_index
+	tya
+	pha			; save character index
+
+	jsr @fmt
+
+	; fix cursor position for newly formatted line
+	jsr src::home
+	jsr src::get
+
+	pla			; restore character index
+	pha
+	jsr text::index2cursor
+	stx zp::curx
+
+	pla
+	sta @cnt
+	beq @done
+:	jsr src::right_rep
+	bcs @done
+	dec @cnt
+	bne :-
+	rts
+
+;--------------------------------------
+@fmt:	; remove spaces from start of line
+	jsr src::home
+
 @removespaces:
 	jsr src::after_cursor
 	jsr util::is_whitespace

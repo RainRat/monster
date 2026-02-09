@@ -997,6 +997,14 @@ main:	jsr key::getch
 .endproc
 
 ;*******************************************************************************
+; FMT AND ENTER COMMAND
+; Attempts to format the current line and then enters command mode
+.proc fmt_and_enter_command
+	jsr cancel
+	jmp fmt_line
+.endproc
+
+;*******************************************************************************
 ; CANCEL
 ; If not in COMMAND mode, just enters command mode
 ; If already in command mode: clears auxiliary views (if any active), errors,
@@ -2350,7 +2358,7 @@ main:	jsr key::getch
 	symview::enter, command_link, \
 	close_buffer, new_buffer, set_breakpoint, jumpback, \
 	buffer1, buffer2, buffer3, buffer4, buffer5, buffer6, buffer7, buffer8,\
-	next_buffer, prev_buffer, udgedit, cancel, go_basic, \
+	next_buffer, prev_buffer, udgedit, fmt_and_enter_command, go_basic, \
 	gprefs::next_pal, gprefs::prev_pal, toggle_autoformat
 .linecont -
 @specialvecslo: .lobytes specialvecs
@@ -3417,27 +3425,40 @@ goto_buffer:
 
 ;******************************************************************************
 ; LINEDONE
-; Attempts to compile the line entered in (mem::linebuffer)
+; Inserts a newline ($0d) and attempts to compile the line entered in
+; (mem::linebuffer).
 ; If successful, formats the source according to the type of the assembled line
 ; (instruction, label, etc.) and creates a line/address mapping.
 .proc linedone
-@indent=ra		; indent boolean (!0 = indent)
-@i=ra			; loop counter for indentation loop
-	sta @indent
-
 	jsr is_readonly
 	bne :+
 	jmp begin_next_line	; if READONLY, just go down a line
 
-:	; insert \n into source buffer and terminate text buffer
+:	lda zp::curx
+	beq @fmt_done	; @ column 0, skip tokenization and go to the next line
+	jsr fmt_line
+
+@fmt_done:
+	pha			; save indent hint
+	jsr src::lineend	; go the the end of the line (if not already)
+
+	; insert \n into source buffer and terminate text buffer
 	lda #$0d
 	jsr src::insert
-	lda #$00
-	jsr text::putch
+	jsr scroll_line
 
-	ldx zp::curx
-	beq @nextline	; @ column 0, skip tokenization and go to the next line
+	pla			; restore indent hint
+	jmp start_next_line
+.endproc
 
+;******************************************************************************
+; FMT LINE
+; Attempts to compile the line entered in (mem::linebuffer)
+; If successful, formats the source according to the type of the assembled line
+; (instruction, label, etc.) and creates a line/address mapping.
+; OUT:
+;   - .A: indent hint; 1=next line should be indented, 0=not
+.proc fmt_line
 	lda #$00
 	sta zp::gendebuginfo
 
@@ -3445,22 +3466,35 @@ goto_buffer:
 	ldxy #mem::linebuffer
 	lda #FINAL_BANK_MAIN
 	jsr asm::tokenize
-	ldx #$00		; default to no indent if assembly fails
-	bcs @nextline		; failed to assemble, skip formatting
+	tax
+	bcs @done		; failed to assemble, skip formatting
 
 ; format the line based on the line's contents (in .A from tokenize)
-@fmt:	ldx autoindent
-	beq @nextline		; if indent disabled, skip
+@fmt:	lda autoindent
+	beq @done		; if indent disabled, skip
 
-	ldx #$00		; init flag to NO indentation
-	cmp #ASM_COMMENT	; if this is a comment, don't indent
-	beq @nextline
+	lda #$00		; init flag to NO indentation
+	cpx #ASM_COMMENT	; if this is a comment, don't format
+	beq @done
+	txa
 	jsr fmt::line
-	ldx #$01		; default to indent ON
+	lda #$01		; default to indent ON
 
-@nextline:
-	stx @indent		; set indent flag
-	jsr drawline		; draw the formatted line and move to next row
+@done:	pha			; save indent hint
+	lda zp::cury
+	jsr print_line
+	pla			; restore indent hint
+	rts
+.endproc
+
+;******************************************************************************
+; START NEXT LINE
+; Begins a new line based on the given indentation hint
+; IN:
+;   - .A: indent hint; 1=next line should be indented, 0=not
+.proc start_next_line
+@indent=ra		; indent boolean (!0 = indent)
+	sta @indent		; set indent flag
 
 	; redraw the cleared status line
 	jsr text::update
@@ -3534,16 +3568,12 @@ goto_buffer:
 .endproc
 
 ;******************************************************************************
-; DRAWLINE
-; Draws the line in mem::linebuffer at the current cursor position.
-; The cursor is then updated and the screen scrolled.
+; SCROLL LINE
+; Updates the curson and scrolls lines below the one we're on
 ; The linebuffer is also updated to contain the contents of the new line
 ; IN:
 ;   - zp::cury: row to draw the line at
-.proc drawline
-	lda zp::cury
-	jsr text::drawline
-@nextline:
+.proc scroll_line
 	; scroll lines below cursor position
 	ldy zp::cury
 	cpy height
