@@ -83,6 +83,7 @@ __fmt_enable: .byte 0	; flag to enable (!0) or disable (0) formatting
 	cmp #$00
 	beq @done
 	sta @linecontent
+
 	lda __fmt_enable
 	beq @done
 
@@ -134,8 +135,9 @@ __fmt_enable: .byte 0	; flag to enable (!0) or disable (0) formatting
 	jmp label
 
 @notlabel:
+	; if comment/directive don't indent
 	lda @linecontent
-	and #ASM_COMMENT 	; if comment, don't format at all
+	and #ASM_COMMENT|ASM_DIRECTIVE
 	bne @done
 
 @ident: jmp indent		; anything else- indent

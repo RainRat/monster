@@ -2287,7 +2287,8 @@ __asm_include:
 @cont:	stxy zp::line		; update line pointer to after parameter
 
 @done:	clc			; ok
-@ret:	rts
+@ret:	lda #ASM_DIRECTIVE
+	rts
 .endproc
 
 ;*******************************************************************************
