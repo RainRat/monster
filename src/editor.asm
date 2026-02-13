@@ -3434,20 +3434,21 @@ goto_buffer:
 	bne :+
 	jmp begin_next_line	; if READONLY, just go down a line
 
-:	lda zp::curx
+:	lda #$0d
+	jsr src::insert
+	lda #$00
+	jsr text::putch
+
+	lda zp::curx
 	beq @fmt_done	; @ column 0, skip tokenization and go to the next line
+	jsr src::up
 	jsr fmt_line
+	pha
+	jsr src::down
+	jsr scroll_line
+	pla
 
 @fmt_done:
-	pha			; save indent hint
-	jsr src::lineend	; go the the end of the line (if not already)
-
-	; insert \n into source buffer and terminate text buffer
-	lda #$0d
-	jsr src::insert
-	jsr scroll_line
-
-	pla			; restore indent hint
 	jmp start_next_line
 .endproc
 
