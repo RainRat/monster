@@ -197,10 +197,9 @@ msave: .byte 0
 	sta @sz
 	stxy @op
 
-;.ifdef ultimem
-;	jsr ultim::select_prog00
-;.endif
-
+.ifdef ultimem
+	jsr ultim::select_prog00
+.endif
 	jsr @getnextpc
 	bcc @ok
 
@@ -330,7 +329,7 @@ msave: .byte 0
 ; if we're writing, check if it is safe to do so to the effective addr
 @chkaddr:
 	lda __sim_affected
-	and #OP_STORE|OP_LOAD
+	and #OP_STORE
 	beq @chkjam
 	jsr is_write_safe
 	bcc @chkjam

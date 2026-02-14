@@ -27,34 +27,33 @@ JMP_RETURN_ADDR = RETURN_ADDR-5
 ; PROG
 ; backup for the user's program during debug
 progsave:
+; PROG1000 (SCREEN)
 .ifdef ultimem
-	.res $1000 ; padding
+	.res $1000		; padding ($0000-$1000)
 .endif
-prog1000: .res $1000	; $1000-$2000
+prog1000: .res $1000		; $1000-$2000
 
-
+; PROG9000, PROG91000 (VIC and VIAs)
 .ifdef ultimem
 .segment "SIMRAM_IO"
+	.res $1000		; padding ($8000-$9000)
 .endif
+prog9000: .res $10		; $9000-$9010
+prog9110: .res $20		; $9110-$9130
 
-prog9000: .res $10	; $9000-$9010
-prog9110: .res $20	; $9110-$9130
-
+; PROG9400 (COLOR RAM)
 .ifdef ultimem
-	; padding between VIAs and color RAM
-	.res $9400-$9130
+	.res $9400-$9130	; padding between VIAs and color RAM
 .endif
-
-prog9400: .res $f0	; $9400-$94f0
-
-.ifdef ultimem
-.segment "SIMDBG"
-.endif
+prog9400: .res $f0		; $9400-$94f0
 
 ;******************************************************************************
 ; DBG
 ; backup for debugger/editor memory
 ; we back up less for debug because we can just re-init some state
+.ifdef ultimem
+.segment "SIMDBG"
+.endif
 dbg1000: .res $1000	; $1000-$2000
 dbg9000: .res $10	; $9000-$9010
 dbg9400: .res $f0	; $9400-$94f0
@@ -217,7 +216,7 @@ save_debug_visual:
 ; restores the saved program state
 .export restore_prog_state
 .proc restore_prog_state
-; restore VIA2 ($9120-$9130)
+	; restore VIA2 ($9120-$9130)
 	ldx #$10
 :	lda prog9110+$10-1,x
 	sta $9120-1,x
@@ -233,6 +232,7 @@ save_debug_visual:
 ; restore $9000-$9010
 @src=r0
 @dst=r2
+; restore VIC state
 	ldy #$10
 :	lda prog9000-1,y
 	sta $9000-1,y

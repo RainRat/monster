@@ -32,9 +32,9 @@ ULTIMEM_ULTIMEM_INC = 1
 .endscope
 
 .scope ultim
-	init          = __ultimem_init
-	reset_blk5    = __ultimem_reset_blk5
-	select_prog00 = __ultimem_select_prog00
+	init            = __ultimem_init
+	reset_blk5      = __ultimem_reset_blk5
+	select_prog00   = __ultimem_select_prog00
 .endscope
 
 ;*******************************************************************************

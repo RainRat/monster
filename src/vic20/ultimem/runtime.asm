@@ -99,13 +99,12 @@ ret:     .word 0
 
 :	jsr $e55b
 
+
+	jsr $e518	; initialize rest of hardware
 	; blank screen so user doesn't see garbage
 	lda #$00
 	sta $9002
 	sta $9003
-
-	jsr $e518+3	; initialize rest of hardware
-
 	jsr $e45b	; init BASIC vectors
 	jsr $e3a4	; init BASIC RAM locations
 	jsr $e404	; print startup message and init pointers
@@ -121,7 +120,7 @@ ret:     .word 0
 	lda #$7f
 	sta $911e			; disable NMI's
 
-	; restore the debug (Monster's) low memory
+	; restore the "debug" (Monster's) low memory
 	; this has the routines (in the shared RAM space) we need to do the rest
 	; of the banekd program state save (save_prog_state)
 	jsr dbg::restore_debug_zp
@@ -140,10 +139,11 @@ ret:     .word 0
 	; restore the rest of Monster's RAM and enter the application
 	jsr fcpy::restore_debug_state
 
+	; write the KERNAL's default values for $9002 & $9003
 	lda #23<<1
 	ldxy #$9003
 	jsr vmem::store
-	lda #22
+	lda #22|$80
 	ldxy #$9002
 	jsr vmem::store
 

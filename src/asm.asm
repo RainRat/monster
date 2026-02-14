@@ -90,17 +90,17 @@ MAX_CONTEXTS = 3 ; max nesting depth for contexts (activated by .MAC, .REP, etc)
 ; ASM INFORMATION
 ; These zeropage locations are filled with information after each call to
 ; asm::tokenize
-indirect_hint   = zp::asmtmp   ; 1=indirect, 0=absolute
-indexed         = zp::asmtmp+1 ; 1=x-indexed, 2=y-indexed, 0=not indexed
-immediate       = zp::asmtmp+2 ; 1=immediate, 0=not immediate
-operandsz       = zp::asmtmp+3 ; size of the operand (in bytes)
-			       ; $ff indicates 1 or 2 bytes
-cc              = zp::asmtmp+4
-resulttype      = zp::asmtmp+5 ; how to format line (ASM_COMMENT, ASM_OPCODE, etc.)
-opcode          = zp::asmtmp+6 ; opcode (if there was one)
-operand         = zp::asmtmp+7 ; operand (if there was one)
+indirect_hint = zp::asmtmp	; 1=indirect, 0=absolute
+indexed       = zp::asmtmp+1	; 1=x-indexed, 2=y-indexed, 0=not indexed
+immediate     = zp::asmtmp+2	; 1=immediate, 0=not immediate
+operandsz     = zp::asmtmp+3	; size of the operand (in bytes)
+				; $ff indicates 1 or 2 bytes
+cc            = zp::asmtmp+4	; "cc" bits of opcode under construction
+resulttype    = zp::asmtmp+5	; how to format line (ASM_COMMENT, etc.)
+opcode        = zp::asmtmp+6	; opcode (if there was one)
+operand       = zp::asmtmp+7	; operand (if there was one)
 
-savereg         = zp::text
+savereg       = zp::text
 
 SEG_CODE = 1	; flag for CODE segment
 SEG_BSS  = 2	; flag for BSS segment (all data must be 0, PC not updated)
