@@ -21,6 +21,7 @@
 .include "../labels.inc"
 .include "../macros.inc"
 .include "../memory.inc"
+.include "../prefs.inc"
 .include "../ram.inc"
 .include "../runtime.inc"
 .include "../screen.inc"
@@ -282,6 +283,9 @@ cart_start:
 	; initialize the status row reverse
 	ldx #23
 	jsr draw::hiline
+
+	; load default preferences
+	; jsr gprefs::load
 
         jsr irq::on
 	jmp edit::init

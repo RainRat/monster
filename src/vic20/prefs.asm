@@ -1,9 +1,12 @@
-.include "../draw.inc"
 .include "settings.inc"
-.include "../screen.inc"
+.include "../draw.inc"
+.include "../file.inc"
 .include "../irq.inc"
+.include "../kernal.inc"
 .include "../macros.inc"
 .include "../memory.inc"
+.include "../screen.inc"
+.include "../util.inc"
 
 SCREEN_ROWS = 24
 
@@ -30,7 +33,7 @@ __prefs_select_col:    .byte GUI_SELECT_COLOR
 
 pal_num: .byte 0
 
-.RODATA
+.DATA
 ;*******************************************************************************
 ; PALETTES
 ; 0: default
@@ -111,4 +114,68 @@ NUM_TABLES   = 7
 
 	jsr draw::refresh_colors
 	jmp irq::on
+.endproc
+
+;*******************************************************************************
+; LOAD
+; Loads preferences from the "PREFS" file (if it exists)
+.export __prefs_load
+.proc __prefs_load
+@i   = r0
+@tmp = r1
+@pal = mem::spare
+.if 0
+	ldxy #prefs
+	jsr file::open_r
+	tax
+	jsr krn::chkin
+
+	ldx #$00
+	stx @i
+@load:
+:	jsr krn::chrin		; load MSB of this pref
+	jsr util::chtohex
+	asl
+	asl
+	asl
+	asl
+	sta @tmp
+	jsr util::chtohex	; and LSB
+	jsr krn::chrin
+	ora @tmp
+	sta @tmp
+
+	jsr krn::chrin
+	cmp #$0d	; make sure final char is newline
+	beq @done	; failed to load (invalid line)
+
+@next:	ldx @i
+	lda @tmp
+	sta @pal,x
+	inc @i
+	cpx #NUM_TABLES-1
+	bne @load
+
+	; done, copy the parsed palette to the default palette's location
+	ldx #$00
+	ldy #$00
+@copy:	lda @pal,y
+	sta palettes,x
+	txa
+	clc
+	adc #NUM_PALETTES
+	tax
+	iny
+	cpy #NUM_TABLES
+	bne @load
+
+@done:	; load the (new) default palette
+	ldx #$00
+	jmp set_pal
+.PUSHSEG
+.RODATA
+prefs: .byte "prefs",0
+.POPSEG
+
+.endif
 .endproc

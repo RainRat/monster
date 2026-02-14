@@ -1108,11 +1108,14 @@ __asm_tokenize_pass1 = __asm_tokenize
 
 	jsr lbl::islocal
 	cmp #$00		; check flag
-	bne :+
+	bne @cont
+
+	; label is global
+	jsr lbl::popscope	; end the current scope
 	ldxy zp::line
 	jsr lbl::setscope	; set the non-local label as the new scope
 
-:	lda zp::verify
+@cont:	lda zp::verify
 	bne @ok			; if verifying, don't add/check label
 
 	lda zp::pass
