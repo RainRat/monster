@@ -315,8 +315,6 @@ main:	jsr key::getch
 	lda #DEBUG_MESSAGE_LINE
 	sta status_row
 
-	;jsr home_line	; avoid problems with cursor-y being below new height
-
 	ldxy @addr
 	jmp dbg::start	; start debugging at address in .XY
 .endproc

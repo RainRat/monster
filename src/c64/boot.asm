@@ -110,6 +110,9 @@ start:
 	lda #DEFAULT_DEVICE
 	sta zp::device
 
+	lda #$00
+	sta dbg::numbreakpoints	; clear breakpoints
+
 	; clear row colors
 	lda #DEFAULT_900F
 	ldx #24-1

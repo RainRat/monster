@@ -217,6 +217,7 @@ cart_start:
 	sei
 	lda #$00
 	sta $c6			; clear keyboard buffer
+	sta dbg::numbreakpoints	; clear breakpoints
 
 .ifdef CART
 @detect_reset:
@@ -297,7 +298,7 @@ cart_start:
 
 .ifdef CART
 init_sig:
-	.byte 6,5,6,0
+	.byte 6,5,6,0	; magic value to detect reset for recovery
 init_sig_len=*-init_sig
 
 .PUSHSEG
