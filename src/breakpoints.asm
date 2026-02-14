@@ -141,14 +141,3 @@ BREAKPOINT_ENABLED = 1
 	sec		; not found
 @done:	rts
 .endproc
-
-;*******************************************************************************
-; NUM
-; Returns the number of breakpoints
-; OUT:
-;  - .A: the number of breakpoints
-.export __brkpt_num
-.proc __brkpt_num
-	lda dbg::numbreakpoints
-	rts
-.endproc

@@ -228,7 +228,7 @@ __mon_default_start_set: .byte 0
 	lda #$00
 	sta @cnt
 
-	CALLMAIN brkpt::num
+	lda dbg::numbreakpoints
 	sta @num
 	cmp #$00
 	beq @done

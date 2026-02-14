@@ -132,6 +132,7 @@ __debug_is_brk: .byte 0
 
 step_out_depth: .byte 0 ; # of RTS's to wait for when "stepping out"
 
+.segment "SHAREBSS"
 ;******************************************************************************
 ; ENABLE EXPANSION
 ; This flag controls how BASIC is initialized with the NEW command. Setting it
@@ -141,6 +142,9 @@ step_out_depth: .byte 0 ; # of RTS's to wait for when "stepping out"
 .export __debug_enable_expansion
 __debug_enable_expansion: .byte 0
 
+.export __debug_numbreakpoints
+__debug_numbreakpoints: .byte 0
+
 ;******************************************************************************
 ; BREAKPOINTS
 .export __debug_breakpointslo
@@ -148,9 +152,6 @@ __debug_enable_expansion: .byte 0
 .export __debug_breakpoint_lineslo
 .export __debug_breakpoint_lineshi
 .export __debug_breakpoint_fileids
-
-.export __debug_numbreakpoints
-__debug_numbreakpoints: .byte 0
 
 ;******************************************************************************
 ; The following tables must be stored together and
