@@ -2230,6 +2230,7 @@ main:	jsr key::getch
 	pha
 
 	jsr newl
+	jsr draw_active_line
 	jsr ccup		; go up
 
 	pla			; did line start with TAB?
@@ -3322,10 +3323,9 @@ goto_buffer:
 @switch_buff:
 ; buffer already loaded, switch to it
 	cmp src::activebuff
-	bne :+
-	RETURN_OK		; buffer already active; quit
+	beq @ok			; buffer already active; quit
 
-:	pha
+	pha
 	jsr src::save		; save the current buffer's state
 	pla
 	jsr src::setbuff	; switch to the new buffer
@@ -3376,7 +3376,7 @@ goto_buffer:
 	jsr refresh
 	jsr text::clrinfo
 	jsr cancel
-	RETURN_OK
+@ok:	RETURN_OK
 
 @err:	jsr irq::on
 	jsr report_drive_error
@@ -3396,17 +3396,9 @@ goto_buffer:
 	jmp begin_next_line
 
 @insert:
-	lda autoindent
-	pha
-	lda #$00
-	sta autoindent		; temporarily overwrite autoindent flag
-
 	lda #$0d
-	jsr insert
-
-	pla
-	sta autoindent		; restore autoindent flag
-	rts
+	jsr src::insert
+	jmp scroll_line
 .endproc
 
 ;******************************************************************************
@@ -3620,7 +3612,8 @@ goto_buffer:
 @setx:	ldx #$00
 	ldy zp::cury
 	iny
-	jmp cur::set
+	jsr cur::set
+	jmp draw_active_line
 .endproc
 
 ;*******************************************************************************

@@ -277,18 +277,18 @@ tempbuff: .res LINESIZE
 	sta zp::cury
 	jmp restoretmp
 
+:	lda @ch
+	beq :+		; don't increment line if character was 0
+	inc zp::curx
+
 :	lda __text_buffer
 	bne @done
 	lda zp::cury
-	ldx @ch
-	beq @redrawline		; don't increment line if character was 0
-	inc zp::curx
 @redrawline:
 	jsr __text_drawline	; re-render whole line
 	RETURN_OK
 
-@done:	inc zp::curx
-	RETURN_OK		; "put" was successful
+@done:	RETURN_OK		; "put" was successful
 .endproc
 
 ;*******************************************************************************
