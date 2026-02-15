@@ -1067,11 +1067,7 @@ main:	jsr key::getch
 	jsr src::after_cursor
 	cmp #$09
 	bne @done
-	jsr text::tabr_dist
-	clc
-	adc zp::curx
-	sta zp::curx
-	dec zp::curx
+	jsr advance_tab
 
 @done:  lda #MODE_COMMAND
 	sta mode
@@ -3540,11 +3536,7 @@ goto_buffer:
 	jsr src::after_cursor
 	cmp #$09
 	bne :+
-	jsr text::tabr_dist
-	clc
-	adc zp::curx
-	sta zp::curx
-	dec zp::curx
+	jsr advance_tab
 
 :	; make sure cursor is pointing to something in the source
 	; (unless line is empty)
@@ -3799,11 +3791,8 @@ goto_buffer:
 	lda mode
 	cmp #MODE_INSERT
 	beq ccup_highlight
-	jsr text::tabr_dist
-	clc
-	adc zp::curx
-	sta zp::curx
-	dec zp::curx
+	jsr advance_tab
+
 ; fallthrough to ccup_highlight
 .endproc
 
@@ -4245,11 +4234,8 @@ goto_buffer:
 	lda mode
 	cmp #MODE_INSERT
 	beq ccdown_highlight
-	jsr text::tabr_dist
-	clc
-	adc zp::curx
-	sta zp::curx
-	dec zp::curx
+	jsr advance_tab
+
 ; fall through to ccdown_highlight
 .endproc
 
@@ -5275,6 +5261,18 @@ __edit_gotoline:
 .proc gotoindex
 	jsr text::index2cursor
 	stx zp::curx
+	rts
+.endproc
+
+;*******************************************************************************
+; ADVANCE TAB
+; Advances the cursor to the next tab stop
+.proc advance_tab
+	jsr text::tabr_dist
+	clc
+	adc zp::curx
+	sta zp::curx
+	dec zp::curx
 	rts
 .endproc
 
