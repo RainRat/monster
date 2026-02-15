@@ -1196,6 +1196,7 @@ main:	jsr key::getch
 
 ;*******************************************************************************
 ; APPEND_TO_LINE
+; Moves the cursor to the end of the line and enters INSERT mode
 .proc append_to_line
 	jsr enter_insert
 @l0:	jsr ccright
@@ -1205,6 +1206,7 @@ main:	jsr key::getch
 
 ;*******************************************************************************
 ; APPEND_CHAR
+; Moves the cursor after the current character and enters INSERT mode
 .proc append_char
 	jsr enter_insert
 	jsr src::end
@@ -1217,6 +1219,7 @@ main:	jsr key::getch
 
 ;*******************************************************************************
 ; END_OF_WORD
+; Moves the cursor to the end of the current "word"
 .proc endofword
 	jsr ccright
 	bcs @done
@@ -1234,6 +1237,7 @@ main:	jsr key::getch
 
 ;*******************************************************************************
 ; END_OF_LINE
+; Moves the cursor to the end of the current line
 .proc end_of_line
 @l0:	jsr ccright
 	bcc @l0
@@ -1241,6 +1245,9 @@ main:	jsr key::getch
 .endproc
 
 ;*******************************************************************************
+; PREV EMPTY LINE
+; Moves the cursor to the last empty line. Empty lines are used as logical
+; separators
 .proc prev_empty_line
 @target=zp::editortmp
 	jsr src::currline
@@ -1262,16 +1269,9 @@ main:	jsr key::getch
 .endproc
 
 ;*******************************************************************************
-; ON_LINE_1
-; OUT:
-;  - .Z: set if we're on the 1st line of the source
-.proc on_line1
-	jsr src::currline
-	cmpw #1
-	rts
-.endproc
-
-;*******************************************************************************
+; NEXT EMPTY LINE
+; Moves the cursor to the next empty line. Empty lines are used as logical
+; separators
 .proc next_empty_line
 @target=zp::editortmp
 	jsr src::currline
@@ -1290,6 +1290,16 @@ main:	jsr key::getch
 @move:	jsr src::popgoto
 	ldxy @target
 	jmp gotoline
+.endproc
+
+;*******************************************************************************
+; ON_LINE_1
+; OUT:
+;  - .Z: set if we're on the 1st line of the source
+.proc on_line1
+	jsr src::currline
+	cmpw #1
+	rts
 .endproc
 
 ;*******************************************************************************
