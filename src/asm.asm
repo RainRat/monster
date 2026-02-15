@@ -725,9 +725,6 @@ __asm_tokenize_pass1 = __asm_tokenize
 	jsr storedebuginfo	; store debug info for label
 	jsr line::process_word	; read past the label name
 	ldxy zp::line
-
-	lda zp::verify
-	bne @retlabel		; if verifying, don't bother assembling rest
 	jsr assemble_with_ctx	; assemble the rest of the line
 	bcs @ret0		; return error
 	cmp #ASM_LABEL

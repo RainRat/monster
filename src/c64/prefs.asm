@@ -110,3 +110,11 @@ NUM_TABLES   = 7
 	jsr draw::refresh_colors
 	jmp irq::on
 .endproc
+
+;*******************************************************************************
+; LOAD
+; Loads user preferences from the "PREFS" file
+.export __prefs_load
+.proc __prefs_load
+	; TODO:
+.endproc

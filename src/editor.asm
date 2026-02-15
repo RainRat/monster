@@ -143,6 +143,7 @@ autoindent: .byte 0		; auto-indent enable flag (0=don't auto-indent)
 
 	inx			; ldx #$00
 	stx debugging
+	stx zp::gendebuginfo
 
 	inx			; ldx #$01
 	stx zp::verify		; don't assemble code (just check syntax)
@@ -162,8 +163,7 @@ autoindent: .byte 0		; auto-indent enable flag (0=don't auto-indent)
 	lda #$00
 	sta asm::mode
 	sta zp::cury
-	jsr text::index2cursor
-	stx zp::curx
+	jsr gotoindex
 
 	jsr refresh
 
@@ -785,8 +785,7 @@ main:	jsr key::getch
 	bcs @getloop		; don't print if not printable
 :	jsr text::putch
 @redraw:
-	lda zp::cury
-	jsr text::drawline
+	jsr draw_active_line
 	jsr cur::on
 	jmp @getloop
 
@@ -1171,10 +1170,8 @@ main:	jsr key::getch
 	; if a TAB / something differently sized than the char we replaced
 	; was inserted, update cursor appropriately
 	tya
-	jsr text::index2cursor
-	stx zp::curx
-	lda zp::cury
-	jsr text::drawline
+	jsr gotoindex
+	jsr draw_active_line
 @done:	rts
 .endproc
 
@@ -1333,8 +1330,7 @@ main:	jsr key::getch
 	jsr backspace
 	jmp :-
 @done:	jsr text::bufferoff
-	lda zp::cury
-	jsr text::drawline
+	jsr draw_active_line
 	jmp enter_command
 .endproc
 
@@ -1369,8 +1365,7 @@ main:	jsr key::getch
 	lda #MODE_VISUAL_LINE
 	sta selection_type	; set copy mode to LINE
 
-	lda zp::cury
-	jmp text::drawline
+	jmp draw_active_line
 .endproc
 
 ;*******************************************************************************
@@ -1477,9 +1472,7 @@ main:	jsr key::getch
 	; paste_buff will assume cursor should be moved to the end of the line
 	; where the paste ended, but VISUAL LINE pastes leave the source cursor
 	; at the start of the line- fix the cursor to match
-:	lda #$00
-	jsr text::index2cursor
-	stx zp::curx
+:	jsr gotoindex0
 @ret:	rts
 
 @vis:	; visual, move to next character and paste there
@@ -1511,9 +1504,7 @@ main:	jsr key::getch
 	; paste_buff will assume cursor should be moved to the end of the line
 	; where the paste ended, but VISUAL LINE pastes leave the source cursor
 	; at the start of the line- fix the cursor to match
-:	lda #$00
-	jsr text::index2cursor
-	stx zp::curx
+:	jsr gotoindex0
 @ret:	rts
 
 @vis:	; visual mode, just paste
@@ -2039,8 +2030,7 @@ main:	jsr key::getch
 	jsr insert
 	dec @cnt
 	bne :-
-	lda zp::cury
-	jsr text::drawline
+	jsr draw_active_line
 	jmp text::bufferoff
 .endproc
 
@@ -2215,8 +2205,7 @@ main:	jsr key::getch
 	jsr bumpup
 	jsr text::restorebuff
 
-	lda zp::cury
-	jmp text::drawline
+	jmp draw_active_line
 .endproc
 
 ;******************************************************************************
@@ -2768,8 +2757,7 @@ __edit_set_breakpoint:
 	bpl @l0
 
 @done:	jsr text::bufferoff
-	lda zp::cury
-	jmp text::drawline
+	jmp draw_active_line
 @ret:	rts
 .PUSHSEG
 .RODATA
@@ -3441,10 +3429,18 @@ goto_buffer:
 	beq @fmt_done	; @ column 0, skip tokenization and go to the next line
 	jsr src::up
 	jsr fmt_line
-	pha
+	php
 	jsr src::down
+	plp
+	bcc @ok
+
+@err:	; invalid line, back up and return
+	jsr beep::short
+	jmp src::backspace
+
+@ok:	pha			; save indent flag
 	jsr scroll_line
-	pla
+	pla			; restore indent flag
 
 @fmt_done:
 	jmp start_next_line
@@ -3457,15 +3453,18 @@ goto_buffer:
 ; (instruction, label, etc.) and creates a line/address mapping.
 ; OUT:
 ;   - .A: indent hint; 1=next line should be indented, 0=not
+;   - .C: set if the line was not formatted (assembly failed)
 .proc fmt_line
-	lda #$00
-	sta zp::gendebuginfo
+	lda fmt::enable
+	bne :+
+	RETURN_OK
 
-	; tokenize (1st pass) to check if the line is valid
+:	; tokenize (1st pass) to check if the line is valid
 	ldxy #mem::linebuffer
 	lda #FINAL_BANK_MAIN
 	jsr asm::tokenize
 	tax
+	php			; save assembly status (.C flag)
 	bcs @done		; failed to assemble, skip formatting
 
 ; format the line based on the line's contents (in .A from tokenize)
@@ -3483,6 +3482,7 @@ goto_buffer:
 	lda zp::cury
 	jsr print_line
 	pla			; restore indent hint
+	plp			; restore formatting/assembly success flag
 	rts
 .endproc
 
@@ -3537,8 +3537,7 @@ goto_buffer:
 	jsr src::pushp
 	jsr src::home
 	jsr src::get
-	lda zp::cury
-	jsr text::drawline
+	jsr draw_active_line
 	jsr src::popgoto
 
 	pla
@@ -3688,8 +3687,7 @@ goto_buffer:
 	jsr cmp_vis_start
 	beq @up
 	bcc @up
-	lda zp::cury
-	jsr text::drawline
+	jsr draw_active_line
 	jmp @up
 
 @chkvis:
@@ -5264,6 +5262,35 @@ __edit_gotoline:
 	lda jumplist_lo-1,x
 	tax
 	jmp gotoline
+.endproc
+
+;*******************************************************************************
+; GOTO INDEX 0
+; Moves the cursor's x-coordinate to the index of the first character
+; in the linebuffer
+.proc gotoindex0
+	lda #$00
+
+	; fall through to gotoindex
+.endproc
+
+;*******************************************************************************
+; GOTO INDEX
+; Moves the cursor's x-coordinate to the index of the given character
+; IN:
+;   - .A: the index of the character in the linebuffer to move the cursor to
+.proc gotoindex
+	jsr text::index2cursor
+	stx zp::curx
+	rts
+.endproc
+
+;*******************************************************************************
+; DRAW ACTIVE LINE
+; Draws the contents of the linebuffer at the current cury position
+.proc draw_active_line
+	lda zp::cury
+	jmp text::drawline
 .endproc
 
 ;*******************************************************************************

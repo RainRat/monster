@@ -280,6 +280,8 @@ tempbuff: .res LINESIZE
 :	lda __text_buffer
 	bne @done
 	lda zp::cury
+	ldx @ch
+	beq @redrawline		; don't increment line if character was 0
 	inc zp::curx
 @redrawline:
 	jsr __text_drawline	; re-render whole line
