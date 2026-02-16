@@ -110,7 +110,8 @@ overwrite: .byte 0	; for SAVE commands, if !0, overwrite existing file
 .export __edit_binary_flag
 __edit_binary_flag: .byte 0	; flag used by some commands
 
-cmdreps:     .byte 0	; number of times to REPEAT current command
+cmdreps:      .byte 0		; number of times to REPEAT current command
+bufferedkeys: .byte 0		; number of keys "buffered" for current command
 
 .export __edit_highlight_en
 .export __edit_highlight_line
@@ -919,8 +920,10 @@ main:	jsr key::getch
 	jsr key::isdec
 	bcc @check_cmds
 	cmp #'0'
-	beq @check_cmds
-	sbc #'0'		; .C already set
+	beq @check_cmds		; don't handle 0
+	jsr buffer_key		; add digit to the input buffer
+	sec
+	sbc #'0'
 	sta cmdreps
 
 	jsr key::waitch		; get another key for the command to do cmdreps times
@@ -1835,6 +1838,8 @@ main:	jsr key::getch
 
 ; if not in visual mode, prompt for another key
 @prompt:
+	lda #$79		; #'y'
+	jsr buffer_key
 	jsr key::waitch
 	cmp #$79	; if yy was entered, yank current line
 	beq :+
@@ -2074,6 +2079,8 @@ main:	jsr key::getch
 ; GOTO_START
 ; Accepts another key and, if it is 'g', moves to the start of the buffer.
 .proc goto_start
+	lda #$67		; #'g'
+	jsr buffer_key
 	jsr key::waitch
 	cmp #$64		; 'd' (goto definition)
 	beq @gotodef
@@ -2283,8 +2290,8 @@ main:	jsr key::getch
 
 @special:
 	; TODO: what is corrupting this (on rare occasion)?
-	lda #$4c
-	sta zp::jmpaddr
+	; lda #$4c
+	; sta zp::jmpaddr
 
 	lda @specialvecslo,x
 	sta zp::jmpvec
@@ -5410,6 +5417,22 @@ __edit_gotoline:
 	jsr krn::clall
 	jsr dir::view
 	jmp krn::clall
+.endproc
+
+;*******************************************************************************
+; BUFFER KEY
+; Adds the given character to the input "buffer" display
+; This is used for, for example, numbers, 'y', and other keys that are not
+; immediately handled
+.proc buffer_key
+	pha
+	ldx #$00
+	sta mem::statusline+13,x
+	lda status_row
+	jsr text::status
+	inc bufferedkeys
+	pla
+	rts
 .endproc
 
 ;******************************************************************************

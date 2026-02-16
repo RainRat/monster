@@ -129,8 +129,6 @@ top: .word 0	; the highest address in the program
 __asm_linenum: .word 0
 
 .segment "SHAREBSS"
-; TODO: use the type of the segment being stored e.g. SEG_BSS or SEG_CODE
-;segment_type: .byte 0
 
 ;*******************************************************************************
 ; SEGMODE
@@ -2903,7 +2901,7 @@ __asm_include:
 .proc is_ldx_stx
 	pha
 	lda cc
-	cmp #$02	; only applicable if cc = 10
+	cmp #$02	; only applicable if cc = %10
 	bne @no
 
 	lda opcode
@@ -3328,4 +3326,14 @@ __asm_include:
 @found: ; found the string (label)
 	ldxy @line
 	RETURN_OK
+.endproc
+
+;*******************************************************************************
+; REPORT
+; Writes a report about the current assembly state
+; This is used after completing assembly to inform the user about the number
+; of labels, etc. used
+.export __asm_report
+.proc __asm_report
+
 .endproc

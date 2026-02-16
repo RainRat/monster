@@ -557,7 +557,6 @@ trampoline:
 	SELECT_BANK_A
 	lda #VMEM_RAM123_BANK	; $0000-$2000
 	sta $9ff4
-	jmp *
 
 	lda #$82		; enable RESTORE key interrupt
 	sta $911e
