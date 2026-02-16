@@ -481,6 +481,8 @@ nmi_handler:
 brk_handler:
 	lda #FINAL_BANK_MAIN	; start of BRK handler
 	SELECT_BANK_A		; switch to DEBUGGER bank
+	lda #$00
+	sta $9ff4		; restore RAM123
 	lda #$82
 	sta $911e		; enable CA1 (RESTORE key) interrupts
 	jmp dbg::reenter	; jmp nmi_edit (when installed for editor)

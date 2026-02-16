@@ -5427,7 +5427,7 @@ __edit_gotoline:
 .proc buffer_key
 	pha
 	ldx #$00
-	sta mem::statusline+13,x
+	sta mem::statusline+KEYBUFFER_COL,x
 	lda status_row
 	jsr text::status
 	inc bufferedkeys
