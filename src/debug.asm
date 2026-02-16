@@ -90,7 +90,7 @@ debugtmp = zp::debuggertmp	; scratchpad
 
 ;******************************************************************************
 .ifdef ultimem
-.segment "SIMRAM_00"
+.segment "SIMRAM_INTERNAL"
 .else
 .segment "VSYSRAM"
 .endif
@@ -1569,15 +1569,35 @@ __debug_remove_breakpoint:
 .export __debug_save_user_zp
 .proc __debug_save_user_zp
 @ret=mem::spare
+	stxy @ret
+
 .ifdef ultimem
+@BLK5_OFFSET=$a000-$2000
 	; bank in the area containing prog00
 	lda #SIMRAM_00_BANK
 	sta $9ffe
 	lda #$d5
 	sta $9ff2
-.endif
-	stxy @ret
 
+	ldx #$00
+:	lda $00,x
+	sta prog00+@BLK5_OFFSET,x
+	lda $100,x
+	sta prog00+$100+@BLK5_OFFSET,x
+	lda $200,x
+	sta prog00+$200+@BLK5_OFFSET,x
+	lda $300,x
+	sta prog00+$300+@BLK5_OFFSET,x
+	dex
+	bne :-
+
+	; reset BLK5 RAM area
+	lda #$04
+	sta $9ffe
+	lda #$55
+	sta $9ff2
+
+.else
 	ldx #$00
 :	lda $00,x
 	sta prog00,x
@@ -1589,14 +1609,8 @@ __debug_remove_breakpoint:
 	sta prog00+$300,x
 	dex
 	bne :-
-
-.ifdef ultimem
-	; reset BLK5 RAM area
-	lda #$04
-	sta $9ffe
-	lda #$55
-	sta $9ff2
 .endif
+
 	jmp (@ret)
 .endproc
 
@@ -1608,15 +1622,35 @@ __debug_remove_breakpoint:
 .export __debug_restore_user_zp
 .proc __debug_restore_user_zp
 @ret=mem::spare
+	stxy @ret
+
 .ifdef ultimem
+@BLK5_OFFSET=$a000-$2000
 	; bank in the area containing prog00
 	lda #SIMRAM_00_BANK
 	sta $9ffe
 	lda #$d5
 	sta $9ff2
-.endif
-	stxy @ret
 
+	ldx #$00
+:	lda prog00+@BLK5_OFFSET,x
+	sta $00,x
+	lda prog00+$100+@BLK5_OFFSET,x
+	sta $100,x
+	lda prog00+$200+@BLK5_OFFSET,x
+	sta $200,x
+	lda prog00+$300+@BLK5_OFFSET,x
+	sta $300,x
+	dex
+	bne :-
+
+	; reset BLK5 RAM area
+	lda #$04
+	sta $9ffe
+	lda #$55
+	sta $9ff2
+
+.else
 	ldx #$00
 :	lda prog00,x
 	sta $00,x
@@ -1628,14 +1662,8 @@ __debug_remove_breakpoint:
 	sta $300,x
 	dex
 	bne :-
-
-.ifdef ultimem
-	; reset BLK5 RAM area
-	lda #$04
-	sta $9ffe
-	lda #$55
-	sta $9ff2
 .endif
+
 	jmp (@ret)
 .endproc
 

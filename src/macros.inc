@@ -16,6 +16,7 @@
 ; decrements the 16-bit value at the address w.
 ; clobbers .A
 ; .Z is set if LSB of w is 0 after decrementing
+; .A is the LSB of w
 .macro decw w
 .local @skip
 	lda w
@@ -122,8 +123,9 @@
 
 ;******************************************************************************
 ; ISZERO
-; Sets the .Z flag if the operand is 0
-; .A is destroyed
+; Sets the .Z flag if the 16-bit operand is 0. If the .Z flag is set, .A will
+; also be 0
+; .A is destroyed (0 if .Z is set)
 .macro iszero arg
 	lda arg
 	ora arg+1

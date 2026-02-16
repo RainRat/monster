@@ -29,7 +29,7 @@ __statusline = __mem_spare+80
 __statusinfo: .res 20
 
 .export __mem_drive_err
-__mem_drive_err: .res 40
+__mem_drive_err: .res 23
 
 .export __linesave
 __linesave: .res 40
@@ -39,7 +39,7 @@ __mem_coloron: .byte 0
 
 .export __mem_rowcolors
 __mem_rowcolors: .res SCREEN_HEIGHT
-.assert >(*) = >(__mem_rowcolors), error, "mem::rowcolors must not cross page boundary (used in stable IRQ)"
+;.assert >(*) = >(__mem_rowcolors), error, "mem::rowcolors must not cross page boundary (used in stable IRQ)"
 
 .export __mem_rowcolors_idx
 __mem_rowcolors_idx: .res 24

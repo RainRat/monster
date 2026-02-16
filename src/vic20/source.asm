@@ -359,6 +359,16 @@ data: .res BUFFER_SIZE
 .endproc
 
 ;*******************************************************************************
+; INSERT
+.proc insert
+	jsr activate_source
+	ldy #$00
+	sta (cursorzp),y
+
+	; fall through to deactivate_source
+.endproc
+
+;*******************************************************************************
 ; DEACTIVATE SOURCE
 .proc deactivate_source
 	; restore MAIN bank
@@ -367,15 +377,6 @@ data: .res BUFFER_SIZE
 	SELECT_BANK_A
 	pla
 	rts
-.endproc
-
-;*******************************************************************************
-; INSERT
-.proc insert
-	jsr activate_source
-	ldy #$00
-	sta (cursorzp),y
-	jmp deactivate_source
 .endproc
 
 .segment "BANKCODE"

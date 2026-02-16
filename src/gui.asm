@@ -24,6 +24,8 @@ MAX_WINDOWS = 3
 
 ;*******************************************************************************
 .BSS
+.exportzp scroll
+.exportzp select
 
 guidata = zp::gui
 guidata_size=$c

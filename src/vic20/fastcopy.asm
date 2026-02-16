@@ -22,28 +22,24 @@ JMP_RETURN_ADDR = RETURN_ADDR-5
 .SEGMENT "FASTCOPY_BSS"
 .endif
 
-
 ;******************************************************************************
 ; PROG
 ; backup for the user's program during debug
 progsave:
 ; PROG1000 (SCREEN)
-.ifdef ultimem
-	.res $1000		; padding ($0000-$1000)
-.endif
 prog1000: .res $1000		; $1000-$2000
 
 ; PROG9000, PROG91000 (VIC and VIAs)
 .ifdef ultimem
 .segment "SIMRAM_IO"
-	.res $1000		; padding ($8000-$9000)
 .endif
+
 prog9000: .res $10		; $9000-$9010
 prog9110: .res $20		; $9110-$9130
 
 ; PROG9400 (COLOR RAM)
 .ifdef ultimem
-	.res $9400-$9130	; padding between VIAs and color RAM
+.res $9400-$9130		; padding between VIAs and color RAM
 .endif
 prog9400: .res $f0		; $9400-$94f0
 

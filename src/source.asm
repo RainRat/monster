@@ -37,7 +37,7 @@
 ;*******************************************************************************
 ; CONSTANTS
 MAX_SOURCES    = 8	; # of source buffers that can be loaded at once
-POS_STACK_SIZE = 32 	; size of source position stack
+POS_STACK_SIZE = 16 	; size of source position stack
 
 ;*******************************************************************************
 ; FLAGS
@@ -93,8 +93,7 @@ bank:	    .byte 0
 buffs_curx: .res MAX_SOURCES	; cursor X positions for each inactive buffer
 buffs_cury: .res MAX_SOURCES	; cursor Y positions for each inactive buffer
 banks:      .res MAX_SOURCES	; the corresponding bank for each buffer
-
-flags: .res MAX_SOURCES		; flags for each source buffer
+flags:      .res MAX_SOURCES	; flags for each source buffer
 
 .CODE
 ;*******************************************************************************
@@ -1136,10 +1135,9 @@ flags: .res MAX_SOURCES		; flags for each source buffer
 .proc __src_downn
 @cnt=r4
 	stxy @cnt
-@loop:	ldxy @cnt
-	decw @cnt
-	cmpw #$0000
-	beq @done
+@loop:	decw @cnt
+	ora @cnt+1		; check if @cnt is zero
+	beq @done		; if it is, we're done
 	jsr __src_down
 	bcc @loop
 @done:	ldxy @cnt

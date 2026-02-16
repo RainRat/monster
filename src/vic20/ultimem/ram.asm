@@ -220,7 +220,7 @@
 @done:	rts
 .endproc
 
-.segment "BANKCODE2"
+.segment "ULTICFG"
 ;*******************************************************************************
 ; PUSH BANK
 ; Saves the current RAM bank

@@ -37,10 +37,11 @@
 HEIGHT = WATCHVIEW_STOP-WATCHVIEW_START-1
 MAX_WATCHPOINTS = 8	; max number of watchpoints that may be set
 
+.importzp scroll
+.importzp select
+
 .BSS
 ;*******************************************************************************
-scroll: .byte 0
-row:	.byte 0
 
 __watches_num:  .byte 0		    ; number of active watches
 
@@ -70,8 +71,6 @@ __watches_watches_stophi:    .res MAX_WATCHPOINTS ; end address of watch range
 .export __watches_init
 .proc __watches_init
 	lda #$00
-	sta row
-	sta scroll
 	sta __watches_num
 	rts
 .endproc
@@ -102,7 +101,7 @@ __watches_watches_stophi:    .res MAX_WATCHPOINTS ; end address of watch range
 	bne @chkdel
 
 	; invoke the memory editor at the selected watch's address
-	lda row
+	lda select
 	clc
 	adc scroll
 	tax
@@ -119,7 +118,7 @@ __watches_watches_stophi:    .res MAX_WATCHPOINTS ; end address of watch range
 	cmp #K_DEL		; DEL
 	bne @done
 
-	lda row
+	lda select
 	clc
 	adc scroll
 	tax

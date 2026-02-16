@@ -103,29 +103,88 @@ saveblk1 = zp::banktmp+2
 ; IN:
 ;  - .XY: the virtual address
 ; OUT:
-;  - .XY: the physical address
-;  - .A:  the bank number of the physical address
+;  - addr:  physical address
+;  - .Y:    0
 .proc translate
-	; save current banks
+BASE=$2000
+	sty savey
+
+	; save curent banks
 	lda $9ff2
 	sta savecfg
 	lda $9ff8
 	sta saveblk1
 
-	cpy #$c0		; in ROM?
-	bcc @ram
-
-@rom:	; ROM doesn't need to be translated and will be read
-	; directly
+	; get translated address relative to BLK1 where it will be mapped
+	jsr @translate
 	stxy addr
+
+	; activate RAM (r/w) at BLK1
+	sta $9ff8
+	lda #$57
+	sta $9ff2		; make BLK1 RAM (r/w)
+
 	ldy #$00
+	rts
+
+;--------------------------------------
+; TRANSLATE
+; returns the translated address based at BLK1 in .XY and its bank in .A
+; bank0: $00-$0400, $1000-$2000, $9000-$9800 (internal)
+; bank1: $0400-$1000                         (RAM123)
+; bank2: $2000-$4000                         (BLK1)
+; bank3: $4000-$6000                         (BLK2)
+; bank4: $6000-$8000                         (BLK3)
+; bank5: $a000-$c000                         (BLK5)
+@translate:
+	cpy #>$0400
+	bcs :+
+
+@00:	; $00-$400 is stored in the prog00 buffer
+	add16 #(prog00-$00+BASE)
+	lda #SIMRAM_00_BANK
+	rts
+
+:	cpy #>$1000
+	bcs :+
+@0400:	; $0400-$1000 (RAM123)
+	add16 #(BASE-$0400)
+	lda #VMEM_RAM123_BANK
+	rts
+
+:	cpy #>$2000
+	bcs :+
+@1000:	; $1000-$2000
+	add16 #prog1000-$1000
+	lda #SIMRAM_00_BANK
+	rts
+
+:	cpy #>$8000
+	bcc @expansion		; $2000-$8000 -> BLK1/2/3
+	cpy #>$9000
+	bcc @rom		; $8000-$9000 -> ROM
+
+	cpy #>$9800
+	bcs :+
+@9000:	add16 #prog9000-$9000
+	rts
+
+:	cpy #$a0
+	bcs :+
+@9800:	; $9800-$a000 (IO123)
+	add16 #(BASE+$1800)-$9800
+	lda #VMEM_RAM123_BANK
+	rts
+
+:	cpy #$c0		; in ROM?
+	bcc @expansion
+
+@rom:	; ROM doesn't need to be translated and will be read directly
 	lda #SIMRAM_00_BANK	; any bank (doesn't really matter)
 	rts
 
-@ram:	sty savey
-	stx addr		; store address LSB as is
-
-	; get most significant 3 bits to get the bank to use
+@expansion:
+	; get most significant 3 bits to get the bank to use (BLK 1,2,3, or 5)
 	tya
 	lsr
 	lsr
@@ -133,17 +192,14 @@ saveblk1 = zp::banktmp+2
 	lsr
 	lsr
 	clc
-	adc #SIMRAM_00_BANK
-	sta $9ff8		; bank in the virutal memory (BLK1)
-
+	adc #VMEM_BLK1_BANK
+	pha			; save bank
 	tya
 	and #$1f		; get lower 5 bits of MSB (offset from bank)
 	;clc
 	adc #$20		; add BLK1 base ($2000)
-	sta addr+1
-	lda #$57
-	sta $9ff2		; make BLK1 RAM (r/w)
-	ldy #$00
+	tay
+	pla			; restore bank
 	rts
 .endproc
 
@@ -159,11 +215,11 @@ saveblk1 = zp::banktmp+2
 ;   - .C: set if the address is NOT writable
 .export __vmem_writable
 .proc __vmem_writable
-	cmpw #$8000
+	cpy #$80
 	bcc @done	; [$00, $8000) -> writable
-	cmpw #$c000
+	cpy #$c0
 	bcs @done	; [$c000, $ffff) -> not writable
-	cmpw #$a000
+	cpy #$a0
 	bcs @writable
 	sec		; [$8000, $a000) -> not writable
 	rts
@@ -183,9 +239,9 @@ saveblk1 = zp::banktmp+2
 ;  - .Z: set if the address in [$00,$2000] or [$8000,$a000]
 .export is_internal_address
 .proc is_internal_address
-	cmpw #$2000
+	cpy #$20
 	bcc @internal
-	cmpw #$8000
+	cpy #$80
 	bcc @external
 	cmpw #$94f0
 	bcc @internal

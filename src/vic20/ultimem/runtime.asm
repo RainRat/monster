@@ -57,8 +57,10 @@ ret:     .word 0
 ; Initializes the user state by running the BASIC coldstart process
 .export __run_clr
 .proc __run_clr
+@dst=r0
 	sei
 
+	; pull return address and save it
 	pla
 	sta ret
 	pla
@@ -99,12 +101,12 @@ ret:     .word 0
 
 :	jsr $e55b
 
-
 	jsr $e518	; initialize rest of hardware
 	; blank screen so user doesn't see garbage
-	lda #$00
-	sta $9002
-	sta $9003
+	;lda #$00
+	;sta $9002
+	;sta $9003
+
 	jsr $e45b	; init BASIC vectors
 	jsr $e3a4	; init BASIC RAM locations
 	jsr $e404	; print startup message and init pointers
@@ -139,13 +141,38 @@ ret:     .word 0
 	; restore the rest of Monster's RAM and enter the application
 	jsr fcpy::restore_debug_state
 
+	; clear $400-$1000 (RAM123) in virtual memory
+	lda #VMEM_RAM123_BANK
+	sta $9ffe		; in BLK5
+	lda #$d5		; RAM in BLK5
+	sta $9ff2
+
+	ldy #>$a000		; BLK5
+	sty @dst+1
+	ldy #$00
+	sty @dst
+	tya
+	ldx #($10-$04)		; # of pages to clear
+:	sta (@dst),y
+	dey
+	bne :-
+	inc @dst+1
+	dex
+	bne :-
+
 	; write the KERNAL's default values for $9002 & $9003
-	lda #23<<1
-	ldxy #$9003
-	jsr vmem::store
+	lda #VMEM_IO_BANK
+	sta $9ffe		; in BLK5
 	lda #22|$80
-	ldxy #$9002
-	jsr vmem::store
+	sta $a402		; $a402 maps to $9002
+	lda #23<<1
+	sta $a403		; $a403 maps to $9003
+
+	; switch back to default config
+	lda #$55
+	sta $9ff2
+	lda #$04
+	sta $9ffe
 
 	; initialize PC to warm start
 	ldxy #$c474
@@ -467,20 +494,20 @@ nmi_handler_size=*-nmi_handler
 .import step_done
 step_handler:
 	; switch to USER bank
-	lda #SIMRAM_00_BANK+1
+	lda #VMEM_BLK1_BANK
 	sta $9ff8		; BLK1
-	lda #SIMRAM_00_BANK+2
+	lda #VMEM_BLK2_BANK
 	sta $9ffa		; BLK2
-	lda #SIMRAM_00_BANK+3
+	lda #VMEM_BLK3_BANK
 	sta $9ffc		; BLK3
-	lda #SIMRAM_00_BANK+4
+	lda #VMEM_BLK5_BANK
 	sta $9ffe		; BLK5
 
 	; set RAM123 and IO2/3 to RAM (r/w)
+	lda #VMEM_RAM123_BANK
+	sta $9ff4
+
 	; TODO: write protect IO region
-	; TODO: use a dedicated RAM1,2,3 / IO bank for this handler + user RAM
-	;lda #$3f
-	;sta $9ff1
 
 	; set BLK 1,2,3, and 5 to RAM (r/w)
 	lda #$ff
@@ -507,6 +534,8 @@ STEP_EXEC_BUFFER:
 	pha			; save .A
 
 	; switch back to DEBUGGER bank
+	lda #$00
+	sta $9ff4
 	lda #$01
 	sta $9ff8		; BLK1
 	lda #$02
@@ -526,6 +555,9 @@ STEP_EXEC_BUFFER:
 trampoline:
 	lda #FINAL_BANK_USER
 	SELECT_BANK_A
+	lda #VMEM_RAM123_BANK	; $0000-$2000
+	sta $9ff4
+	jmp *
 
 	lda #$82		; enable RESTORE key interrupt
 	sta $911e

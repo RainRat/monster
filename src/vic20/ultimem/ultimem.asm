@@ -11,7 +11,16 @@
 .include "banks.inc"
 .include "../../zeropage.inc"
 
-.segment "BANKCODE"
+.segment "ULTIREGS"
+;*******************************************************************************
+; BANK
+; This virtual register contains the current "bank", which is used to
+; select the appropriate configuration of Ultimem registers by looking them
+; up in the tables (see ultim::select_bank)
+.export __ultimem_bank
+__ultimem_bank: .byte 0
+
+.segment "ULTICFG"
 
 ;*******************************************************************************
 ; SELECT PROG 00
@@ -38,17 +47,6 @@
 	sta $9ff2
 	rts
 .endproc
-
-.segment "ULTIREGS"
-;*******************************************************************************
-; BANK
-; This virtual register contains the current "bank", which is used to
-; select the appropriate configuration of Ultimem registers by looking them
-; up in the tables (see ultim::select_bank)
-.export __ultimem_bank
-__ultimem_bank: .byte 0
-
-.segment "ULTICFG"
 
 ;*******************************************************************************
 ; SELECT BANK

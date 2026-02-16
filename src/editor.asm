@@ -849,20 +849,19 @@ main:	jsr key::getch
 
 	pushcur			; save the cursor state
 
-	ldxy @prompt
-	cmpw #0
-	beq @terminate_prompt
 	ldy #$00
+	iszero @prompt
+	beq @terminate_prompt
 
 	; read the user prompt into the linebuffer
 :	lda (@prompt),y
 	beq @terminate_prompt
 	sta mem::linebuffer,y
 	iny
-	bne :-
+	bne :-			; branch always
 
 @terminate_prompt:
-	lda #$00
+	;lda #$00
 	sta mem::linebuffer+1,y	; 0-terminate prompt
 	lda #':'
 	sta mem::linebuffer,y
@@ -889,7 +888,7 @@ main:	jsr key::getch
 	plp			; get success state
 	popcur			; restore cursor
 
-	rts
+:	rts			; <- ONKEY
 .endproc
 
 ;*******************************************************************************
@@ -898,9 +897,8 @@ main:	jsr key::getch
 .proc onkey
 @insert:
 	jsr handle_universal_keys
-	bcc :+
-	rts
-:	jmp insert
+	bcs :-			; -> RTS
+	jmp insert
 .endproc
 
 ;*******************************************************************************
@@ -1290,16 +1288,6 @@ main:	jsr key::getch
 @move:	jsr src::popgoto
 	ldxy @target
 	jmp gotoline
-.endproc
-
-;*******************************************************************************
-; ON_LINE_1
-; OUT:
-;  - .Z: set if we're on the 1st line of the source
-.proc on_line1
-	jsr src::currline
-	cmpw #1
-	rts
 .endproc
 
 ;*******************************************************************************
@@ -3042,12 +3030,12 @@ goto_buffer:
 
 	stxy @file
 	jsr file::exists
-	bcc :+
+	bcc @open
 
 @err:	jsr irq::on
 	jmp report_drive_error
 
-:	ldxy @file
+@open:	ldxy @file
 	jsr file::open_r	; open the file
 	bcs @err
 
@@ -3664,10 +3652,12 @@ goto_buffer:
 .proc ccup
 @xend=r9
 @ch=ra
-	jsr on_line1
-	bne :+
+	; are we already on the first line of the buffer?
+	jsr src::currline
+	cmpw #1
+	bne :+			; not first line -> continue
 	;sec
-	rts
+	rts			; return, can't move up
 
 :	jsr src::atcursor
 	sta @ch
